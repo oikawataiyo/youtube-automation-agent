@@ -79,3 +79,12 @@ backup/
 # Cache
 .cache/
 *.cache
+
+# OAuth client secrets
+config/client_secret.json
+
+# Analysis data (regenerated via scripts)
+data/analysis/
+
+# Asset/video info files
+data/**/*.info
