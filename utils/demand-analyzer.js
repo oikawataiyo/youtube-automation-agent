@@ -16,10 +16,10 @@ const TOPIC_RULES = [
   { topic: 'Big Tech News',   keywords: ['google', 'microsoft', 'apple', 'meta', 'amazon', 'nvidia', 'tesla'] },
 ];
 
-function classifyVideo(title, tags) {
+function classifyVideo(title, tags, topicRules = TOPIC_RULES) {
   const text = [title, ...(tags || [])].join(' ').toLowerCase();
   const matched = [];
-  for (const rule of TOPIC_RULES) {
+  for (const rule of topicRules) {
     if (rule.keywords.some(kw => text.includes(kw))) {
       matched.push(rule.topic);
     }
@@ -27,11 +27,11 @@ function classifyVideo(title, tags) {
   return matched.length > 0 ? matched : ['Other'];
 }
 
-function flattenVideosWithContext(channelData) {
+function flattenVideosWithContext(channelData, topicRules = TOPIC_RULES) {
   const videos = [];
   for (const ch of channelData.channels) {
     for (const v of ch.videos) {
-      const topics = classifyVideo(v.title, v.tags);
+      const topics = classifyVideo(v.title, v.tags, topicRules);
       videos.push({
         ...v,
         channel: ch.name,
@@ -150,8 +150,8 @@ function computeRecencyTrend(videos) {
   return trends.sort((a, b) => b.change - a.change);
 }
 
-function runFullAnalysis(channelData) {
-  const videos = flattenVideosWithContext(channelData);
+function runFullAnalysis(channelData, topicRules = TOPIC_RULES) {
+  const videos = flattenVideosWithContext(channelData, topicRules);
   const topicRanking = computeTopicRanking(videos);
   const opportunities = computeOpportunityScore(topicRanking);
   const durationSweetSpot = computeDurationSweetSpot(topicRanking, videos);

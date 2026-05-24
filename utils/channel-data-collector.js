@@ -90,6 +90,57 @@ class ChannelDataCollector {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   }
 
+  async collectViaPlaylist(channelId, maxVideos = 10) {
+    const chRes = await this.youtube.channels.list({
+      part: 'contentDetails,statistics,snippet',
+      id: channelId,
+    });
+
+    if (!chRes.data.items || chRes.data.items.length === 0) return null;
+
+    const chData = chRes.data.items[0];
+    const uploadsPlaylistId = chData.contentDetails.relatedPlaylists.uploads;
+    const subs = parseInt(chData.statistics.subscriberCount || '0');
+    const totalViews = parseInt(chData.statistics.viewCount || '0');
+
+    const playlistRes = await this.youtube.playlistItems.list({
+      part: 'contentDetails',
+      playlistId: uploadsPlaylistId,
+      maxResults: maxVideos,
+    });
+
+    const videoIds = playlistRes.data.items
+      .map(i => i.contentDetails.videoId)
+      .filter(Boolean);
+
+    if (videoIds.length === 0) return { channelId, name: chData.snippet.title, subscribers: subs, totalViews, publishedAt: chData.snippet.publishedAt, videos: [] };
+
+    const videosRes = await this.youtube.videos.list({
+      part: 'snippet,statistics,contentDetails',
+      id: videoIds.join(','),
+    });
+
+    const videos = videosRes.data.items.map(v => ({
+      id: v.id,
+      title: v.snippet.title,
+      publishedAt: v.snippet.publishedAt,
+      tags: v.snippet.tags || [],
+      views: parseInt(v.statistics.viewCount || '0'),
+      likes: parseInt(v.statistics.likeCount || '0'),
+      comments: parseInt(v.statistics.commentCount || '0'),
+      duration: parseDuration(v.contentDetails.duration),
+    }));
+
+    return {
+      channelId,
+      name: chData.snippet.title,
+      subscribers: subs,
+      totalViews,
+      publishedAt: chData.snippet.publishedAt,
+      videos,
+    };
+  }
+
   isCacheStale(filePath, maxAgeHours = 24) {
     if (!fs.existsSync(filePath)) return true;
     const data = this.loadFromFile(filePath);
