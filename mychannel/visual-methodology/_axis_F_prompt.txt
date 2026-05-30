@@ -1,0 +1,37 @@
+あなたは映像演出論の synthesizer。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通仕様を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_axis_prompt_common.md
+出力 template と filter 条件を完全に遵守する。
+
+STEP 2: extracted/ の全 17 file を読む
+ディレクトリ: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/
+file list (全 17 file):
+- 火垂るの墓_UG226.md, 火垂るの墓_ゼミ226.md, かぐや姫の物語_UG231.md
+- 千と千尋_UG306_前編.md, 千と千尋_UG307_後編.md, OnYourMark_UG311.md
+- ブレードランナー_UG.md, もののけ姫_UG.md, ジョーカー_UG.md
+- ナウシカ_開拓史編_UG.md, となりのトトロ_UG.md, ディズニーランド_ゼミ61.md
+- ホモデウス_UG.md, 世にも奇妙な人体実験_UG.md, 能力主義_ゼミ404.md, スマホ脳_UG.md, 思考方法論_ゼミ315.md
+
+STEP 3: 担当 axis = F. テーマの depth (Thematic Depth)
+扱う範囲:
+- 表層テーマと深層テーマの二重構造
+- 社会批評 / 文明批評 / 時代批評の織り込み方
+- 神話的構造の援用 (英雄譚、創世神話、終末譚)
+- 哲学的問いの提示 (生死、自由意志、善悪、能力主義など)
+- 抽象概念を具象物語に変換する技法
+- 「岡田が見つけた裏テーマ」を作品内のどの要素から読み解いたか
+
+各 extracted file の以下 section が主源泉:
+- 「## 岡田の核心テーゼ (なぜ刺さるか)」
+- 「### メタファー / メタ構造 / ダブルミーニング」 (物語構造内)
+- 書籍解説 file 全般 (ホモデウス、能力主義、スマホ脳、思考方法論など)
+
+axis D (物語構造) と overlap するが、D は「構造の作り方 (how)」、F は「何を語っているか / 何が深い意味か (what/why)」を担当。
+
+STEP 4: 出力
+output path: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/axis/F_テーマの depth.md
+共通仕様の template を厳守。
+
+STEP 5: 完了報告
+- 出力 file 名 / 中核原則 数 / 技法カタログ 行数 / 岡田 frame 数 / 引用 数 / PLAYBOOK 項目数

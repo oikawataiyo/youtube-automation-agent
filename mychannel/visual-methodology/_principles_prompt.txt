@@ -1,0 +1,73 @@
+あなたは映像演出論の synthesizer。岡田斗司夫メソッドの「top-level 原則」を蒸留する。
+
+STEP 1: 7 axis を全部読む
+ディレクトリ: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/axis/
+file list:
+- A_キャラクター造形.md
+- B_視覚演出.md
+- C_音と間.md
+- D_物語構造.md
+- E_視聴者心理操作.md
+- F_テーマの depth.md
+- G_体験設計.md
+
+各 file の「## 2. 中核原則」「## 4. 岡田 frame 集」を特に重視。
+合計 44 個の中核原則と 146 個の岡田 frame を素材に、axis を横断する高位原則を抽出する。
+
+STEP 2: top-level 原則 7-10 個を蒸留
+- axis A-G にまたがって複数回登場する考え方
+- 岡田メソッドの「思想」レベルの原則 (具体技法ではなく、判断軸)
+- 動画企画の最初に思い出すべき指針として機能する
+
+例 (これは sample、最終内容は自由に判断):
+- 「表層と深層の二重構造を必ず作る」 (axis D + F)
+- 「観客の解釈を段階的に反転させる」 (axis E + D)
+- 「不快な要素は美術 or 笑いで包む」 (axis E + B)
+- 「説明よりも小道具と背景に世界を語らせる」 (axis B + F)
+- 「期待を作って裏切る、その裏切りで主題を語る」 (axis E + D)
+
+STEP 3: 各原則について以下を書く
+- 原則名 (短く印象的に)
+- 定義 (2-3 文)
+- 背景にある岡田の思想
+- 該当 axis (どの axis でこの原則が現れるか)
+- 代表的な出典作品 (3-5 作品、岡田が言及している原典で)
+- 動画作成時の指針 (claude がこの原則を実装する時の判断基準)
+- 反例 / NG パターン (この原則を破ると何が起きるか)
+
+STEP 4: 出力
+output path: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/PRINCIPLES.md
+
+format:
+```markdown
+---
+type: top-level-principles
+extracted_at: 2026-05-30
+sources: 7 axis × 17 extracted file
+---
+
+# 岡田斗司夫メソッド — top-level 原則
+
+## 序文
+{1 段落: これらの原則は何か、どう使うか}
+
+## 原則 1: {名前}
+**定義**: ...
+**背景**: ...
+**該当 axis**: [[axis/D_物語構造]], [[axis/F_テーマの depth]]
+**代表的出典**: 千と千尋, ナウシカ, ジョーカー
+**動画作成時の指針**: ...
+**反例 / NG**: ...
+
+## 原則 2: ...
+
+...
+
+## 原則間の関係
+{原則同士が補強し合う関係 or 緊張関係を 1 段落で}
+```
+
+STEP 5: 完了報告
+- 出力 file 名
+- 抽出した原則 数
+- 全体行数

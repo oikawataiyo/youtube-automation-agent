@@ -1,0 +1,26 @@
+あなたは映像演出論の analyst。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通 template を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_extract_prompt.md
+この template の filter 条件と出力形式を完全に遵守する。
+
+STEP 2: 以下の 3 file を順次処理 (batch C: 重厚映画系)
+1. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】『ブレードランナー』がなぜ最高のSF映画なのか解説します！  OTAKING explains The best sci-fi movie, Blade Runner.md
+2. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】もののけ姫はナウシカの裏側を覗く作品である OTAKING explains  Princess Mononoke.md
+3. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】地獄は笑いに包まれる～映画『ジョーカー』徹底解説  OTAKING explains JOKER.md
+
+STEP 3: 各 file について以下の output path に markdown を Write
+1. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/ブレードランナー_UG.md
+2. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/もののけ姫_UG.md
+3. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/ジョーカー_UG.md
+
+STEP 4: 完了報告 (これだけを最終 message に含める)
+- 作成 file 名 (3つ)
+- 各 file の行数
+- 各 file の 1 行サマリ (15-30 文字)
+
+注意:
+- transcript は long-form なので、岡田の脱線・タイムスタンプ・宣伝は捨て、再現可能な方法論のみ抽出
+- ブレードランナーは 144KB と最大 file。SF 映像演出の宝庫なので、特に「色 / 光 / 構図」section を厚く
+- ジョーカーは「不快感の制御」が中心テーマ。視聴者心理操作の section を厚く
+- 全 file 処理が完了するまで進め、途中で stop しない

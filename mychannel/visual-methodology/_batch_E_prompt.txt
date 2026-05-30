@@ -1,0 +1,32 @@
+あなたは映像演出論の analyst。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通 template を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_extract_prompt.md
+この template の filter 条件と出力形式を完全に遵守する。
+
+STEP 2: 以下の 5 file を順次処理 (batch E: 書籍解説 / 思考方法論)
+1. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】神になったサル『ホモ・デウス』（ユヴァル・ノア・ハラリ 著）徹底解説.md
+2. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】読書特集（３）解説『世にも奇妙な人体実験の歴史』 OTAKING explains Smoking Ears and Screaming Teeth.md
+3. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/サンデル教授の挑戦状！『実力も運のうち～能力主義は正義か？』を語る SDGsを掲げる人類が解決するべき真の課題 岡田斗司夫ゼミ＃404（2021.7.25） OTAKING Seminar 404.md
+4. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/スマホは「持っているだけ」でバカになる！精神医学最前線『スマホ脳』徹底解説 384  OTAKING explains The Real Happy Pill.md
+5. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/岡田斗司夫ゼミ315（201912）95％の悩みを解決する思考方法～悩みのるつぼ卒業記念講演大阪より.md
+
+STEP 3: 各 file について以下の output path に markdown を Write
+1. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/ホモデウス_UG.md
+2. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/世にも奇妙な人体実験_UG.md
+3. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/能力主義_ゼミ404.md
+4. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/スマホ脳_UG.md
+5. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/思考方法論_ゼミ315.md
+
+STEP 4: 完了報告 (これだけを最終 message に含める)
+- 作成 file 名 (5つ)
+- 各 file の行数
+- 各 file の 1 行サマリ (15-30 文字)
+
+注意:
+- これらは映画ではなく書籍解説 / 講演。映像演出ではなく「語りの構造」「抽象概念を魅力的に説明する技法」を抽出
+- _extract_prompt.md の section 名 (キャラ造形 / 色構図など) は「該当言及なし」になることが多い → その場合は明記し、代わりに「語りの構造」「概念の具象化技法」を中心に書く
+- 特に「能力主義」「スマホ脳」「思考方法論」は moyo (心理学チャンネル) と直接 overlap するテーマ → 応用 hint を厚く
+- 「人体実験の歴史」は不快ネタを面白く語る方法論 → ジョーカーの「不快感制御」と対応する
+- 「思考方法論」は岡田自身のメタ frame 集 → 岡田 frame section を特に厚く
+- 全 file 処理が完了するまで進め、途中で stop しない

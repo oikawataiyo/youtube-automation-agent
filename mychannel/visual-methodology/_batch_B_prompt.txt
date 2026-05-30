@@ -1,0 +1,26 @@
+あなたは映像演出論の analyst。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通 template を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_extract_prompt.md
+この template の filter 条件と出力形式を完全に遵守する。
+
+STEP 2: 以下の 3 file を順次処理 (batch B: ジブリ謎解き系)
+1. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG 306】究極のホラー映画その名は千と千尋の神隠し  OTAKING explains Spirited Away.md
+2. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/リクエストに応えて『千と千尋』解説の後編を公開します【UG 307】 OTAKING explains about Spirited Away.md
+3. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG311】実はナウシカの前日譚！『On Your Mark』完全解説その１ 〜「火の七日間」は原発事故の暗喩 OTAKING explains ON YOUR MARK Level 1,2.md
+
+STEP 3: 各 file について以下の output path に markdown を Write
+1. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/千と千尋_UG306_前編.md
+2. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/千と千尋_UG307_後編.md
+3. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/OnYourMark_UG311.md
+
+STEP 4: 完了報告 (これだけを最終 message に含める)
+- 作成 file 名 (3つ)
+- 各 file の行数
+- 各 file の 1 行サマリ (15-30 文字)
+
+注意:
+- transcript は long-form なので、岡田の脱線・タイムスタンプ・宣伝は捨て、再現可能な方法論のみ抽出
+- 千と千尋 前編/後編は連続作品。前編で出た frame を後編が補強する場合あり、独立処理で OK
+- On Your Mark は宮崎駿の短編。メタファー読解の宝庫
+- 全 file 処理が完了するまで進め、途中で stop しない

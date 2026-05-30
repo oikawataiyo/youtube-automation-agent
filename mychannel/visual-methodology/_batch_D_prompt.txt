@@ -1,0 +1,26 @@
+あなたは映像演出論の analyst。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通 template を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_extract_prompt.md
+この template の filter 条件と出力形式を完全に遵守する。
+
+STEP 2: 以下の 3 file を順次処理 (batch D: 体験/世界観系)
+1. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG】独占公開！国宝級のお宝「王蟲の●●」〜ナウシカ完全解説（２）風の谷開拓史編  OTAKING explains Nausicaä of the Valley of the Wind 2.md
+2. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/ジブリ特集７ 君はまだ"本当のトトロ"を知らない！『となりのトトロ』のダークサイドとは何か？【UG動画】 OTAKING explains My Neighbor Totoro.md
+3. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/岡田斗司夫ゼミ61（2015.2.15）夢と魔法と打算の国ディズニーランドを徹底解説！.md
+
+STEP 3: 各 file について以下の output path に markdown を Write
+1. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/ナウシカ_開拓史編_UG.md
+2. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/となりのトトロ_UG.md
+3. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/ディズニーランド_ゼミ61.md
+
+STEP 4: 完了報告 (これだけを最終 message に含める)
+- 作成 file 名 (3つ)
+- 各 file の行数
+- 各 file の 1 行サマリ (15-30 文字)
+
+注意:
+- transcript は long-form なので、岡田の脱線・タイムスタンプ・宣伝は捨て、再現可能な方法論のみ抽出
+- ナウシカ開拓史編は「世界観構築」、トトロは「ダブルミーニング / ダークサイド」、ディズニーランドは「体験設計」が中心
+- 特にディズニーランドは映像作品ではないが「没入体験の設計原則」として汎用化可能 → 応用 hint を厚く書く
+- 全 file 処理が完了するまで進め、途中で stop しない

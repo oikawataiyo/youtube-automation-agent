@@ -1,0 +1,26 @@
+あなたは映像演出論の analyst。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通 template を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_extract_prompt.md
+この template の filter 条件と出力形式を完全に遵守する。
+
+STEP 2: 以下の 3 file を順次処理 (batch A: 高畑勲特集)
+1. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG 226】祝100万再生突破！「本当は10倍怖い『火垂るの墓』」OTAKING explains Grave of the Fireflies.md
+2. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/岡田斗司夫ゼミ226（2018.4）本当は10倍怖い『火垂るの墓』～アニメ界の怪物・高畑勲監督追悼特集.md
+3. C:/Users/oioce/OneDrive/obsidian_vault/Clippings/【UG 231】『かぐや姫の物語』宮崎駿が憧れたアニメ界の怪物・高畑勲が描く世界一美しい怪物 OTAKING explains The Tale of the Princess Kaguya.md
+
+STEP 3: 各 file について以下の output path に markdown を Write
+1. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/火垂るの墓_UG226.md
+2. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/火垂るの墓_ゼミ226.md
+3. → C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/かぐや姫の物語_UG231.md
+
+STEP 4: 完了報告 (これだけを最終 message に含める)
+- 作成 file 名 (3つ)
+- 各 file の行数
+- 各 file の 1 行サマリ (15-30 文字)
+
+注意:
+- transcript は long-form なので、岡田の脱線・タイムスタンプ・宣伝は捨て、再現可能な方法論のみ抽出
+- 「火垂るの墓」は 2 file あるが同一作品の別 source。双方を独立に処理 (統合しない)
+- 同じ作品の異なる視点なので、内容が一部重複しても問題ない
+- 全 file 処理が完了するまで進め、途中で stop しない

@@ -1,0 +1,55 @@
+あなたは映像演出論の synthesizer。以下の手順を厳守して作業せよ。
+
+STEP 1: 共通仕様を読む
+Read: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/_axis_prompt_common.md
+出力 template と filter 条件を完全に遵守する。
+
+STEP 2: extracted/ の全 17 file を読む
+ディレクトリ: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/extracted/
+file list:
+- 火垂るの墓_UG226.md
+- 火垂るの墓_ゼミ226.md
+- かぐや姫の物語_UG231.md
+- 千と千尋_UG306_前編.md
+- 千と千尋_UG307_後編.md
+- OnYourMark_UG311.md
+- ブレードランナー_UG.md
+- もののけ姫_UG.md
+- ジョーカー_UG.md
+- ナウシカ_開拓史編_UG.md
+- となりのトトロ_UG.md
+- ディズニーランド_ゼミ61.md
+- ホモデウス_UG.md
+- 世にも奇妙な人体実験_UG.md
+- 能力主義_ゼミ404.md
+- スマホ脳_UG.md
+- 思考方法論_ゼミ315.md
+
+STEP 3: 担当 axis = A. キャラクター造形 (Character Design)
+扱う範囲:
+- キャラクターの顔・身体のデフォルメ、表情の記号化
+- 服装・小道具によるシンボル化
+- キャラクターの「立ち位置 (上手/下手/中央)」「向き」「視線」
+- 主人公の所属の不安定さ (宙ぶらりん状態)
+- 善悪・二面性のキャラ表現
+- 動物・神・モンスター・人工生命などの非人間キャラ造形
+
+各 extracted file の以下 section から関連記述を集める:
+- 「### キャラ造形 / 表情 / シンボル」
+- 「## 岡田 frame」 でキャラ関連のもの
+- 「## 応用 hint」 でキャラ関連のもの
+
+書籍解説 (ホモデウス、能力主義、スマホ脳、思考方法論、人体実験) では「キャラ造形」が登場しない場合が多い。
+その時は「語りの中で人物像をどう構築するか」(具体的個人エピソードを通したシンボル化等) に拡張して考えてよい。
+
+STEP 4: 出力
+output path: C:/Users/oioce/dev/youtube-automation-agent/mychannel/visual-methodology/axis/A_キャラクター造形.md
+共通仕様の template を厳守。
+
+STEP 5: 完了報告 (最終 message)
+- 出力 file 名
+- 中核原則 数
+- 技法カタログ 行数
+- 岡田 frame 数
+- 引用 数
+- PLAYBOOK 項目数
