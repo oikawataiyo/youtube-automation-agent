@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/narration/seg-00-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --bg-grid: #141925; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --alarm: #d8392e; --warn: #ff5a3c; --gold: #caa86a;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      /* ----- background ----- */
+      #grid { position: absolute; inset: 0;
+        background-image:
+          linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 70% 60% at 50% 44%, transparent 40%, rgba(0,0,0,0.55) 100%); }
+      .particle { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #3a4658; opacity: 0; }
+
+      /* ----- bomber stage ----- */
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+      #bomber path, #bomber polygon, #bomber rect, #bomber circle.frame {
+        fill: none; stroke: var(--bone); stroke-width: 2.4; stroke-linejoin: round; }
+      #bomber .fill { fill: rgba(232,228,216,0.05); stroke: var(--bone); stroke-width: 2.4; }
+      .dot { fill: var(--alarm); opacity: 0; }
+      .clean-glow { fill: var(--warn); opacity: 0; }
+
+      /* ----- kinetic type ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .affirm { font-size: 40px; font-weight: 300; letter-spacing: 0.04em; color: var(--steel);
+        text-transform: none; }
+      .affirm .strike { position:absolute; left:-6px; top:52%; height:3px; width:0; background:var(--alarm); }
+      #wrong { left: 50%; top: 50%;
+        font-size: 138px; font-weight: 800; letter-spacing: 0.02em; color: var(--alarm);
+        text-align:center; line-height:0.95; text-shadow: 0 0 40px rgba(216,57,46,0.35); }
+      .domain { font-size: 34px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--ink); }
+      #promise { left: 50%; top: 50%;
+        font-size: 72px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--ink); text-align: center; width: 1400px; line-height: 1.05; }
+      #promise b { color: var(--warn); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--gold); }
+      #kickerline { position:absolute; left:88px; top:122px; height:2px; width:0; background:var(--steel); opacity:0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 43px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="49.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="49.5" data-track-index="9"
+             src="assets/narration/seg-00-hook.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="49.5" data-track-index="0">
+        <div id="grid"></div>
+        <div id="particles"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="49.5" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="bomber">
+            <!-- fuselage -->
+            <path class="fill" d="M960 236 L986 300 L992 700 L928 700 L934 300 Z" />
+            <!-- left wing (swept back) -->
+            <polygon class="fill" points="934,440 470,536 470,572 940,520" />
+            <!-- right wing -->
+            <polygon class="fill" points="986,440 1450,536 1450,572 980,520" />
+            <!-- left tail stabilizer -->
+            <polygon class="fill" points="936,648 762,690 762,710 940,700" />
+            <!-- right tail stabilizer -->
+            <polygon class="fill" points="984,648 1158,690 1158,710 980,700" />
+            <!-- cockpit (clean) -->
+            <circle class="frame" cx="960" cy="300" r="26" />
+            <!-- engines (clean) -->
+            <circle class="frame" cx="690" cy="512" r="20" />
+            <circle class="frame" cx="560" cy="540" r="20" />
+            <circle class="frame" cx="1230" cy="512" r="20" />
+            <circle class="frame" cx="1360" cy="540" r="20" />
+          </g>
+          <g id="glow">
+            <circle class="clean-glow" cx="960" cy="300" r="46" />
+            <circle class="clean-glow" cx="690" cy="512" r="40" />
+            <circle class="clean-glow" cx="560" cy="540" r="40" />
+            <circle class="clean-glow" cx="1230" cy="512" r="40" />
+            <circle class="clean-glow" cx="1360" cy="540" r="40" />
+          </g>
+          <g id="dots"></g>
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="49.5" data-track-index="2">
+        <div class="ktype affirm" id="a1" style="left:1180px; top:300px;">that seems obvious<span class="strike"></span></div>
+        <div class="ktype affirm" id="a2" style="left:1180px; top:372px;">that seems careful<span class="strike"></span></div>
+        <div class="ktype affirm" id="a3" style="left:1180px; top:444px;">that seems data-driven<span class="strike"></span></div>
+        <div class="ktype" id="wrong">DANGEROUSLY<br>WRONG</div>
+        <div class="ktype domain" id="d1" style="left:300px; top:300px;">your career</div>
+        <div class="ktype domain" id="d2" style="left:1360px; top:360px;">your investments</div>
+        <div class="ktype domain" id="d3" style="left:330px; top:720px;">your relationships</div>
+        <div class="ktype domain" id="d4" style="left:1330px; top:716px;">tomorrow</div>
+        <div class="ktype" id="promise">WE'RE GOING TO FIND<br>THE <b>MISSING PLANES</b></div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="49.5" data-track-index="3">
+        <div id="kicker">SURVIVORSHIP BIAS &nbsp;·&nbsp; <span class="num">PART 01</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="49.5" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ---------- deterministic PRNG ----------
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(20260531);
+
+      const SVGNS = "http://www.w3.org/2000/svg";
+
+      // ---------- seeded ambient particles ----------
+      (function(){
+        const host = document.getElementById("particles");
+        for (let i=0;i<70;i++){
+          const p=document.createElement("div"); p.className="particle";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*1080)+"px";
+          p.style.transform="scale("+(0.6+rnd()*1.6)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- seeded bullet-hole dots (avoid clean zones) ----------
+      const cleanZones=[[960,300,52],[690,512,46],[560,540,46],[1230,512,46],[1360,540,46]];
+      const scatterZones=[
+        [474,432,462,108],   // left wing
+        [984,432,462,108],   // right wing
+        [930,260,64,438],    // fuselage
+        [766,652,170,54],    // left tail
+        [988,652,170,54],    // right tail
+      ];
+      function inClean(x,y){return cleanZones.some(([cx,cy,r])=>Math.hypot(x-cx,y-cy)<r);}
+      const dotsG=document.getElementById("dots");
+      const dotEls=[];
+      let guard=0;
+      while(dotEls.length<46 && guard<4000){
+        guard++;
+        const z=scatterZones[Math.floor(rnd()*scatterZones.length)];
+        const x=z[0]+rnd()*z[2], y=z[1]+rnd()*z[3];
+        if(inClean(x,y)) continue;
+        const c=document.createElementNS(SVGNS,"circle");
+        c.setAttribute("cx",x.toFixed(1)); c.setAttribute("cy",y.toFixed(1));
+        const rr=(3.6+rnd()*2.4).toFixed(1);
+        c.setAttribute("r","0"); c.dataset.r=rr;
+        c.setAttribute("class","dot");
+        dotsG.appendChild(c); dotEls.push(c);
+      }
+
+      // ---------- captions from word timings ----------
+      const WORDS = window.SEG00_WORDS || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // GSAP owns the transform for centered display type (avoids CSS translate conflict)
+      gsap.set(["#wrong","#promise"],{xPercent:-50,yPercent:-50});
+
+      // bg in
+      tl.to("#grid",{opacity:0.5,duration:1.4,ease:"power2.out"},0)
+        .to(".particle",{opacity:0.5,duration:2,stagger:{each:0.02,from:"random"},ease:"power1.out"},0.2);
+      // subtle finite particle drift
+      gsap.utils.toArray(".particle").forEach((p,i)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"+="+(d*30),duration:24,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:300,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // B0: bomber draws in (0–1.6)
+      tl.from("#bomber",{opacity:0,scale:0.94,transformOrigin:"50% 44%",duration:1.5,ease:"power3.out"},0.1);
+
+      // B1: red dots accumulate (1.58–5.6) — animate SVG radius so each grows from its own center
+      tl.fromTo(dotEls,{attr:{r:0},opacity:0},
+        {attr:{r:(i,t)=>t.dataset.r},opacity:1,duration:0.34,
+         stagger:{each:(5.6-1.7)/dotEls.length},ease:"back.out(1.8)"},1.7);
+
+      // B3 affirmations (10.2 / 11.76 / 13.28)
+      tl.fromTo("#a1",{opacity:0,y:18},{opacity:1,y:0,duration:0.6,ease:"power2.out"},10.2)
+        .fromTo("#a2",{opacity:0,y:18},{opacity:1,y:0,duration:0.6,ease:"power2.out"},11.76)
+        .fromTo("#a3",{opacity:0,y:18},{opacity:1,y:0,duration:0.6,ease:"power2.out"},13.28);
+
+      // B4 GEAR-CHANGE — "dangerously wrong" (15.66). strike the affirmations, slam WRONG, ignite clean glow.
+      tl.to(".affirm .strike",{width:300,duration:0.4,ease:"power4.in"},15.5)
+        .to(".affirm",{color:"#3a4250",duration:0.5},15.7)
+        .fromTo("#wrong",{opacity:0,scale:1.6},{opacity:1,scale:1,duration:0.42,ease:"power4.in"},15.86)
+        .to("#wrong",{scale:1.04,duration:0.12,yoyo:true,repeat:1,ease:"power1.inOut"},16.3)
+        .to(".clean-glow",{opacity:0.16,duration:0.6,ease:"power2.out"},16.0)
+        .to("#wrong",{opacity:0,scale:0.92,duration:0.5,ease:"power2.in"},17.9)
+        .to(".affirm",{opacity:0,duration:0.5},17.9);
+
+      // B5 recontextualize — domains map onto the plane (23.5–28.7)
+      tl.to(".clean-glow",{opacity:0.05,duration:1.0},18.6)
+        .fromTo("#d1",{opacity:0,scale:0.8},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.7)"},23.5)
+        .fromTo("#d2",{opacity:0,scale:0.8},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.7)"},24.36)
+        .fromTo("#d3",{opacity:0,scale:0.8},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.7)"},25.5)
+        .fromTo("#d4",{opacity:0,scale:0.8},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.7)"},28.0)
+        .to(".domain",{opacity:0,duration:0.6,ease:"power2.in"},35.6);
+
+      // B8 PROMISE — "find the missing planes" (39.12). Clean areas finally the subject.
+      tl.to("#dots circle",{opacity:0.28,duration:0.8,ease:"power2.inOut"},38.8)
+        .to(".clean-glow",{opacity:0.42,duration:0.7,ease:"power2.out"},39.0)
+        .to("#bomber circle.frame",{stroke:"#ff5a3c",strokeWidth:3.4,duration:0.7,ease:"power2.out"},39.0)
+        .fromTo("#promise",{opacity:0,y:26},{opacity:1,y:0,duration:0.8,ease:"power3.out"},39.4)
+        .to(".clean-glow",{opacity:0.22,duration:1.2,yoyo:true,repeat:2,ease:"sine.inOut"},40.2);
+
+      // B9 settle — restore dots, hold final frame (41.7+)
+      tl.to("#dots circle",{opacity:1,duration:0.8,ease:"power2.inOut"},41.4)
+        .to("#promise",{opacity:0,y:-18,duration:0.7,ease:"power2.in"},45.8);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : 49.4;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
