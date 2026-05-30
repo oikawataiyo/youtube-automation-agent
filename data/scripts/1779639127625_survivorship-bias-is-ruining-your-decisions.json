@@ -1,0 +1,110 @@
+{
+  "generated_at": "2026-05-25T00:00:00.000Z",
+  "topic": "Survivorship bias is ruining your decisions",
+  "pillar": "biases",
+  "script": {
+    "title": "Why You Keep Trusting the Wrong Success Stories (Survivorship Bias)",
+    "hook": {
+      "text": "Look at this airplane. Every red dot is a bullet hole. The military said: armor the planes where the holes are. They were exactly wrong — and you're making the same mistake right now.",
+      "visual_note": "Silhouette of a WW2 bomber, viewed from above, with clusters of red dots saturating the wings, tail, and fuselage. The engines and cockpit remain unmarked. The clean areas pulse with a faint, unsettling warning glow."
+    },
+    "sections": [
+      {
+        "heading": "The Planes That Came Back",
+        "narration": "World War II. Allied bombers are getting shredded over Europe, and the military has a problem. Planes are heavy. Fuel is precious. You can't armor everything. So they do what feels obvious — they study the bombers that come back. They map every bullet hole on every returning plane. The pattern is clear. Holes everywhere on the wings, the tail, the fuselage. Almost nothing on the engines. So the conclusion is easy. Armor the wings. Armor the tail. That's where the bullets are landing. Then a mathematician named Abraham Wald, working at Columbia University's Statistical Research Group in 1943, looks at the same data and says something that changes how we think about evidence. He says — you're looking at the wrong planes. The bullet holes you're mapping are the ones a bomber can survive. The clean areas — the engines, the cockpit — those aren't the safe spots. Those are the places where, when a bullet hits, the plane doesn't come home to be measured at all. The armor needs to go where there are no holes. Wald saved thousands of pilots. He also named the thing that's quietly shaping almost every decision you make. Survivorship bias — the systematic error of drawing conclusions from cases that survived, while invisibly ignoring the ones that didn't. The founders you read about, the influencers on your feed, the friend who quit their job and made it work — those are the planes that came back. Everything you're missing is in the silence. And once you see this, you can't unsee it.",
+        "visual_note": "Camera slowly pans across a hangar floor lined with damaged but intact bombers, then dissolves to an empty cold-water Atlantic — gray waves, no wreckage visible. A subtle outline of a plane fades in beneath the surface, then dims away.",
+        "duration_estimate_seconds": 95
+      },
+      {
+        "heading": "Why Your Brain Can't See What Isn't There",
+        "narration": "Here's the thing about your brain — it runs on what's in front of it. In 1973, Amos Tversky and Daniel Kahneman published a paper in Cognitive Psychology describing the availability heuristic. It's a mental shortcut where you judge how likely or important something is based on how easily examples come to mind. Sounds harmless. It's not. Because examples don't come to mind based on truth. They come to mind based on visibility. Successful founders write books. Failed founders update their résumés. Successful actors give interviews. Failed actors get other jobs. Successful funds advertise their returns. Failed funds quietly close — and disappear from the database entirely. A 1995 study by Brown, Goetzmann, Ibbotson, and Ross in the Review of Financial Studies found that survivorship bias inflates reported mutual fund returns by 0.5 to 1.5 percent every year, because the dead funds get scrubbed from the historical record. The investor who looks at past performance isn't seeing a fair sample. They're seeing the winners, lined up like the bombers that came back. Nassim Taleb, in his 2001 book Fooled by Randomness, called this the silent evidence problem — the data the world creates but never lets you see. The cemetery of failed companies, failed marriages, failed dreams, failed predictions, doesn't put up a billboard. So you walk around with a mental dataset that looks like a highlight reel, and you draw life conclusions from it that are statistically broken at the core. And this isn't because you're stupid. It's because you're well-evolved. Your ancestors needed to learn from what they could see — the lion that ate someone, the berry that healed someone. Your pattern-recognition is doing exactly what it was built to do. The problem is that you're using a stone-age tool in a world that systematically hides the bodies.",
+        "visual_note": "A long museum corridor of glass display cases, each holding a polished trophy or framed photo of a famous success. The camera glides past them, then drifts down a parallel hallway in shadow — case after case, all empty, each with a small unread plaque.",
+        "duration_estimate_seconds": 100
+      },
+      {
+        "heading": "The Industries Built To Hide the Holes",
+        "narration": "And this is where it gets worse. Survivorship bias isn't just a glitch in how you see — entire industries are structured to feed on it. Walk through any airport bookstore. Every cover is the same. The founder in the hoodie. The dropout who built the unicorn. The thirty-year-old who retired early. Inside the book, you get their habits, their morning routine, their philosophy. What you don't get is the millions of people who followed the exact same playbook and ended up bankrupt. A 2003 paper by Jerker Denrell in Organization Science showed that most management research suffers from selection on the dependent variable — researchers study the firms that succeeded and extract the patterns. They almost never study the failed firms with identical patterns. So the lessons can never be wrong. They've been pre-filtered to be right. The self-help industry runs the same engine. A famous coach gathers everyone who succeeded after using their method. They don't gather the ones who failed. Why would they? The failures don't show up to the seminar. They don't post testimonials. They go quiet. And then there's your phone. Social media might be the most efficient survivorship bias machine ever built. Every fitness influencer with a six-pack is in your feed because the algorithm rewards visibility, and visibility correlates with surviving a brutal selection. Thousands of people with the same genetics, the same workouts, the same discipline — who never broke through — are invisible to you by definition. You're not seeing the average outcome of trying. You're seeing the absolute extreme top of a hidden pyramid, served back to you as if it's normal. Advertising knows this and packages it. Five-star reviews. Before-and-after photos. The trader who turned ten thousand into a million. None of these are lies. They're survivors. You're being shown survivors specifically because the failures will never speak. The marketing isn't broken when it shows you only winners. That is the product.",
+        "visual_note": "A bookstore display table seen from above, glossy hardcover spines all glowing softly. The camera tilts down through the table, revealing an underground archive of identical-looking manuscripts wrapped in dust covers labelled REJECTED, BANKRUPT, FORGOTTEN, stretching into darkness.",
+        "duration_estimate_seconds": 100
+      },
+      {
+        "heading": "The Decisions This Is Ruining Right Now",
+        "narration": "And here's where it stops being abstract. Career. You study what someone successful did at twenty-four, and you try to reverse-engineer the path. You don't know how many people quit stable jobs to write novels and never got published. How many left engineering to chase music and never broke through. You only know about the ones who did. The path you're admiring is real. The base rate is hidden. Relationships. You take dating advice from couples who lasted thirty years. You don't survey the people who tried the exact same advice and divorced. The advice survived. The couple survived. So you assume the advice caused the survival. Sometimes it did. Often it didn't. Investing. A 2018 study by Hendrik Bessembinder in the Journal of Financial Economics found that just four percent of U.S. stocks created the entire net wealth gain of the stock market between 1926 and 2016. The other ninety-six percent collectively lost money or broke even. So every stock-picker telling you about their winning trade is, statistically, a survivor pulled from a small lucky sample. The thousands who blew up their portfolios using the same strategy don't get podcasts. Risk-taking in general. You read a founder's story — quit the job, bet the savings, made it work — and you feel inspired. You're seeing the survivor. The actuarial reality, according to U.S. Bureau of Labor Statistics data on business survival, is that around twenty percent of new businesses fail in their first year, and over sixty percent fail within ten. The hero story isn't fake. It's one data point pulled from a graveyard of identical-looking attempts. Here's the part that took me a while to accept — the mistake isn't admiring the survivor. The mistake is using them as evidence for what your own decision is likely to produce. Inspiration without base rates is a coin toss someone happened to win, repackaged and sold to you as a strategy.",
+        "visual_note": "Split screen. On the left, a single illuminated podium with a person in a spotlight giving a TED-style talk. On the right, a long dim stretch of identical empty podiums extending into the distance, each with a faint outline of a person who never made it onstage.",
+        "duration_estimate_seconds": 100
+      },
+      {
+        "heading": "How To See What Isn't There",
+        "narration": "Okay. So what do you actually do? Wald's correction is still the technique. Every time you're about to be persuaded by a success story, ask one question — where are the planes that didn't come back? First. Look for the base rate. When someone tells you a strategy works, don't ask for the testimonial. Ask for the denominator. How many people tried it, and what percentage succeeded? If a real estate course shows you ten people who got rich, ask how many bought the course. If it's ten out of ten thousand — that's a 0.1 percent success rate. The story is true. The strategy is a lottery. Second. Run a graveyard analysis. Deliberately go find the failures. If you're considering a career path, talk to people who tried it and quit. If you're starting a business, interview owners who closed their doors. Their stories are less dramatic. They're harder to find. They're also more honest. Third. Run a pre-mortem. Gary Klein wrote about this in Harvard Business Review in 2007. Before you start a project, imagine it has already failed — and work backward to identify why. It's a forced retrieval of the missing data, performed before the data exists. The teams that do this make better decisions. Not because they're smarter. Because they've manually inserted the failures the world will refuse to show them. Fourth. Distinguish survivable from optimal. Some strategies survive because they're good. Some survive because they got lucky. From the inside, they look identical. So here's a useful test — would this strategy still look smart if it had failed? If the only reason you admire it is that it worked, you might be admiring randomness. And finally. When you consume advice — books, podcasts, mentors — ask what would falsify the lesson. If nothing could, you're not learning. You're being inducted into a survivor's mythology. Daniel Kahneman, in Thinking, Fast and Slow, called this the narrative fallacy — the brain's habit of building coherent stories out of incoherent data after the fact. The cure isn't more stories. It's the deliberate, slightly uncomfortable practice of asking what story the failures would have told.",
+        "visual_note": "A hand on a chalkboard erases a single dramatic success curve and replaces it with a cloud of scattered grey dots, most of them low on the chart. Then a finger circles the empty space beneath the cloud, where a thicker, unseen layer of dots sits below the visible data.",
+        "duration_estimate_seconds": 105
+      }
+    ],
+    "outro": {
+      "narration": "The planes that came back were never the lesson. Wald's real gift wasn't a formula. It was a habit of mind. Treat every success story as a partial dataset. Treat every confident piece of advice as evidence from the survivors. The decisions you'll be proudest of, if you live long enough to look back, are probably going to be the ones where you noticed the silence. Where you asked the question nobody else was asking. Where you respected the data that wasn't there. The world will keep handing you survivors. Your job, every single time, is to ask quietly — who is missing from this story?",
+      "cta": "If this changed the way you'll read the next success story, send it to someone who's about to make a big decision. And I'll see you in the next one."
+    },
+    "metadata": {
+      "total_word_count": 1703,
+      "estimated_duration_minutes": 9,
+      "target_audience": "Decision-conscious viewers aged 22-40 who watch HealthyGamerGG, Better Ideas, Sisyphus 55, Einzelganger and similar long-form psychology / behavioral economics channels. Founders, investors, career-switchers, and anyone tired of survivor-style success content.",
+      "key_studies_referenced": [
+        "Wald, A. (1943) — A Method of Estimating Plane Vulnerability Based on Damage of Survivors, Statistical Research Group, Columbia University",
+        "Tversky, A. & Kahneman, D. (1973) — Availability: A Heuristic for Judging Frequency and Probability (Cognitive Psychology)",
+        "Brown, S. J., Goetzmann, W., Ibbotson, R. G. & Ross, S. A. (1995) — Survivorship Bias in Performance Studies (Review of Financial Studies)",
+        "Taleb, N. N. (2001) — Fooled by Randomness: The Hidden Role of Chance in Life and in the Markets (silent evidence problem)",
+        "Denrell, J. (2003) — Vicarious Learning, Undersampling of Failure, and the Myths of Management (Organization Science)",
+        "Bessembinder, H. (2018) — Do Stocks Outperform Treasury Bills? (Journal of Financial Economics)",
+        "Klein, G. (2007) — Performing a Project Premortem (Harvard Business Review)",
+        "Kahneman, D. (2011) — Thinking, Fast and Slow (narrative fallacy)",
+        "U.S. Bureau of Labor Statistics — Business Employment Dynamics: Entrepreneurship and the U.S. Economy (business survival rates)"
+      ]
+    }
+  },
+  "seo": {
+    "optimized_title": "Why You Keep Trusting the Wrong Success Stories (Survivorship Bias)",
+    "description": "A mathematician saved thousands of pilots in World War II by noticing the one thing nobody else could see — the planes that didn't come back. And the same blind spot is quietly running your career, your relationships, and your money right now.\n\nSurvivorship bias is the cognitive error of drawing conclusions from cases that survived, while invisibly ignoring the ones that didn't. The founders you study, the funds you read about, the influencers on your feed — they are all planes that came back. The much larger graveyard of people who tried the same things and failed never reaches you. So you make decisions on a dataset that looks like a highlight reel and acts like a lie.\n\nIn this video we trace the bias from Abraham Wald's 1943 bomber analysis through the availability heuristic, mutual fund return distortions, the management literature, the self-help industry, social media, and the financial decisions you're making right now — then break down four practical techniques for seeing the missing data: base rates, graveyard analysis, pre-mortems, and falsification.\n\nTimestamps:\n0:00 — The planes that came back\n1:35 — Why your brain can't see what isn't there\n3:15 — The industries built to hide the holes\n4:55 — The decisions this is ruining right now\n6:35 — How to see what isn't there\n8:20 — Closing thoughts\n\nResearch referenced:\n• Wald (1943) — Statistical Research Group bomber survivability analysis\n• Tversky & Kahneman (1973) — Availability heuristic (Cognitive Psychology)\n• Brown, Goetzmann, Ibbotson & Ross (1995) — Survivorship bias in fund performance\n• Nassim Taleb (2001) — Fooled by Randomness, silent evidence\n• Denrell (2003) — Undersampling of failure in management research\n• Bessembinder (2018) — Do stocks outperform Treasury bills? (JFE)\n• Klein (2007) — Performing a project premortem (HBR)\n• Kahneman (2011) — Thinking, Fast and Slow, narrative fallacy\n• U.S. Bureau of Labor Statistics — business survival rates\n\nSubscribe for more psychology that actually changes the way you see your own life.\n\n#psychology #survivorshipbias #cognitivebias #decisionmaking #criticalthinking #behavioralpsychology #abrahamwald",
+    "tags": [
+      "survivorship bias",
+      "survivorship bias explained",
+      "why successful people lie",
+      "why success stories are wrong",
+      "abraham wald",
+      "abraham wald bomber",
+      "cognitive bias",
+      "cognitive bias explained",
+      "psychology of decision making",
+      "why your brain lies to you",
+      "availability heuristic",
+      "tversky and kahneman",
+      "thinking fast and slow",
+      "narrative fallacy",
+      "silent evidence",
+      "nassim taleb fooled by randomness",
+      "why self help doesn't work",
+      "selection bias",
+      "base rate neglect",
+      "behavioral economics",
+      "critical thinking",
+      "rationality",
+      "premortem analysis",
+      "how to make better decisions",
+      "healthygamergg style",
+      "better ideas style",
+      "sisyphus 55 style",
+      "psych2go style"
+    ],
+    "hashtags": [
+      "#Psychology",
+      "#SurvivorshipBias",
+      "#CognitiveBias",
+      "#DecisionMaking",
+      "#CriticalThinking",
+      "#BehavioralPsychology",
+      "#Rationality",
+      "#MentalModels",
+      "#AbrahamWald",
+      "#ThinkingFastAndSlow"
+    ]
+  }
+}
