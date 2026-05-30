@@ -52,10 +52,24 @@ You are generating a long-form psychology / behavioral-science YouTube script in
 ## CITATIONS — HARD RULE
 Use ONLY the studies listed in the topic-specific spec file. Do NOT invent. If you need an extra source for flow, use one from the same list a second time rather than fabricating.
 
+## DUAL OUTPUT REQUIREMENT (EN JSON + JP MD)
+
+Every script delivery MUST produce **two files** with the same `{ts}_{slug}` prefix:
+
+1. **EN JSON** (source of truth) — `data/scripts/{ts}_{slug}.json`
+   - Format: as specified above (`generated_at`, `topic`, `pillar`, `script`, `seo`).
+   - Used by downstream agents (thumbnail, audio, publishing).
+
+2. **JP MD** (human-readable translation) — `data/scripts/{ts}_{slug}.md`
+   - Format / translation rules / カタカナ NG list: see `tasks/script-jp-md-template.md` (mandatory read).
+   - JSON is source of truth. MD is derived. Do not edit MD and back-flow to JSON.
+
 ## DELIVERY
 1. Read this shared spec.
 2. Read the topic-specific spec file passed to you.
 3. Read the reference script JSON to lock in voice + schema.
-4. Write the new script JSON to the specified output path.
-5. Verify the file parses as JSON and word count is within range.
-6. Report ONLY: output file path + total_word_count + estimated_duration_minutes. Nothing else.
+4. Read `tasks/script-jp-md-template.md` for JP MD format + translation rules.
+5. Write the new script JSON to the specified output path.
+6. Write the JP MD twin file at `data/scripts/{ts}_{slug}.md` (same prefix as JSON).
+7. Verify both files: JSON parses, MD has all required headings (Hook / 5 sections / Outro / 参考研究 / SEO), word count is within range.
+8. Report ONLY: JSON path + MD path + total_word_count (EN) + estimated_duration_minutes. Nothing else.
