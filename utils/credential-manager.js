@@ -146,6 +146,12 @@ class CredentialManager {
     );
 
     oauth2Client.setCredentials(this.tokens.youtube);
+    // Persist refreshed access_token + expiry_date.
+    // Refresh responses omit refresh_token, so merge to preserve it.
+    oauth2Client.on('tokens', (newTokens) => {
+      this.tokens.youtube = { ...this.tokens.youtube, ...newTokens };
+      this.saveTokens().catch((err) => this.logger.error('Failed to persist refreshed tokens:', err));
+    });
     return oauth2Client;
   }
 

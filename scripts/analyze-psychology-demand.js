@@ -26,8 +26,9 @@ function parseArgs() {
 
 function createYouTubeClient() {
   const configDir = path.join(__dirname, '..', 'config');
+  const tokensPath = path.join(configDir, 'tokens.json');
   const creds = JSON.parse(fs.readFileSync(path.join(configDir, 'credentials.json'), 'utf8'));
-  const tokens = JSON.parse(fs.readFileSync(path.join(configDir, 'tokens.json'), 'utf8'));
+  const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
 
   const oauth2Client = new google.auth.OAuth2(
     creds.youtube.client_id,
@@ -35,6 +36,12 @@ function createYouTubeClient() {
     creds.youtube.redirect_uris[0]
   );
   oauth2Client.setCredentials(tokens.youtube);
+  // Persist refreshed access_token + expiry_date back to file.
+  // Refresh responses omit refresh_token, so merge to preserve it.
+  oauth2Client.on('tokens', (newTokens) => {
+    tokens.youtube = { ...tokens.youtube, ...newTokens };
+    fs.writeFileSync(tokensPath, JSON.stringify(tokens, null, 2));
+  });
   return google.youtube({ version: 'v3', auth: oauth2Client });
 }
 

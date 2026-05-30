@@ -6,8 +6,9 @@ const { ChannelDataCollector, DEFAULT_CHANNELS } = require('../utils/channel-dat
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', 'analysis', 'channel-data.json');
 
 async function main() {
+  const tokensPath = path.join(__dirname, '..', 'config', 'tokens.json');
   const creds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', 'credentials.json'), 'utf8'));
-  const tokens = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', 'tokens.json'), 'utf8'));
+  const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
 
   const oauth2Client = new google.auth.OAuth2(
     creds.youtube.client_id,
@@ -15,6 +16,10 @@ async function main() {
     creds.youtube.redirect_uris[0]
   );
   oauth2Client.setCredentials(tokens.youtube);
+  oauth2Client.on('tokens', (newTokens) => {
+    tokens.youtube = { ...tokens.youtube, ...newTokens };
+    fs.writeFileSync(tokensPath, JSON.stringify(tokens, null, 2));
+  });
   const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
 
   const collector = new ChannelDataCollector(youtube);
