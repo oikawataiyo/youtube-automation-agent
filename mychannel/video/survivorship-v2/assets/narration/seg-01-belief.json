@@ -1,0 +1,7 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-01-belief.txt",
+  "generated_at": "2026-05-31T05:00:00.000Z",
+  "engine": "hyperframes tts (kokoro-82M)"
+}
