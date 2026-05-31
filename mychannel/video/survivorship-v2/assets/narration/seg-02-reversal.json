@@ -1,0 +1,8 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-02-reversal.txt",
+  "generated_at": "2026-05-31T13:12:00.000Z",
+  "engine": "hyperframes tts (kokoro-82M)",
+  "duration_seconds": 236.8
+}

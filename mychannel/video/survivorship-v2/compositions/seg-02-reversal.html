@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-02-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --bg-grid: #141925; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --alarm: #d8392e; --warn: #ff5a3c; --gold: #caa86a;
+        --deep: #1d3a52;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      /* ----- background ----- */
+      #grid { position: absolute; inset: 0;
+        background-image:
+          linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 70% 60% at 50% 46%, transparent 40%, rgba(0,0,0,0.55) 100%); }
+      .particle { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #3a4658; opacity: 0; }
+      /* cold ocean wash for the "missing planes" beat */
+      #deepwash { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+        background: linear-gradient(180deg, transparent 30%, rgba(29,58,82,0.45) 100%); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--gold); }
+      #kickerline { position:absolute; left:88px; top:122px; height:2px; width:0; background:var(--steel); opacity:0.5; }
+
+      /* ----- bomber stage (reused motif from the hook) ----- */
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+      #bomber path, #bomber polygon, #bomber rect, #bomber circle.frame {
+        fill: none; stroke: var(--bone); stroke-width: 2.4; stroke-linejoin: round; }
+      #bomber .fill { fill: rgba(232,228,216,0.05); stroke: var(--bone); stroke-width: 2.4; }
+      .dot { fill: var(--alarm); opacity: 0; }
+      .clean-glow { fill: var(--warn); opacity: 0; }
+      /* ghost bomber — the plane that didn't come back */
+      #ghost path, #ghost polygon, #ghost circle { fill: none; stroke: var(--deep); stroke-width: 2.2; opacity: 0; }
+
+      /* ----- armor annotation brackets ----- */
+      .armor { position: absolute; opacity: 0; }
+      .armor .lab { font-size: 26px; font-weight: 700; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--alarm); white-space: nowrap; }
+      .armor.good .lab { color: var(--warn); }
+      .armor .tick { position:absolute; height:2px; background: currentColor; }
+
+      /* ----- constraint chips ----- */
+      .chip { position:absolute; opacity:0; font-size: 24px; font-weight: 600;
+        letter-spacing: 0.14em; text-transform: uppercase; color: var(--steel); }
+      .chip b { color: var(--ink); }
+
+      /* ----- kinetic display type ----- */
+      #type { position: absolute; inset: 0; }
+      .big { position:absolute; left:50%; top:50%; opacity:0; text-align:center;
+        width: 1500px; font-weight: 800; line-height: 1.05; color: var(--ink); }
+      #wrongplanes { font-size: 104px; letter-spacing: 0.01em; }
+      #wrongplanes b { color: var(--warn); }
+      #noholes { font-size: 96px; text-transform: uppercase; }
+      #noholes b { color: var(--warn); }
+      #notmeasured { font-size: 60px; font-weight: 300; color: var(--steel);
+        line-height: 1.25; }
+      #notmeasured b { color: var(--ink); font-weight: 700; }
+
+      /* ----- Wald name card ----- */
+      #wald { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1400px; }
+      #waldName { font-size: 116px; font-weight: 800; letter-spacing: 0.03em;
+        color: var(--gold); text-transform: uppercase; line-height: 1; }
+      #waldSub { margin-top: 16px; font-size: 30px; font-weight: 300; letter-spacing: 0.06em;
+        color: var(--steel); }
+
+      /* ----- survivorship-bias title card ----- */
+      #sbias { position:absolute; left:50%; top:300px; opacity:0; text-align:center; width:1600px; }
+      #sbiasTitle { font-size: 132px; font-weight: 800; letter-spacing: 0.02em;
+        color: var(--ink); text-transform: uppercase; line-height: 0.98; }
+      #sbiasTitle b { color: var(--warn); }
+      #sbiasDef { margin: 34px auto 0; max-width: 1180px; font-size: 38px; font-weight: 300;
+        line-height: 1.34; color: var(--steel); }
+      #sbiasDef b { color: var(--ink); font-weight: 600; }
+
+      /* ----- domains: planes that came back ----- */
+      .domain { position:absolute; opacity:0; font-size: 44px; font-weight: 700;
+        letter-spacing: 0.04em; color: var(--ink); white-space:nowrap; }
+      #cameback { position:absolute; left:50%; top:760px; opacity:0; transform:translateX(-50%);
+        font-size: 38px; font-weight: 300; letter-spacing: 0.06em; color: var(--steel); }
+      #cameback b { color: var(--warn); font-weight: 700; }
+
+      /* ----- "the engine" ----- */
+      #engine { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px;
+        font-size: 72px; font-weight: 800; text-transform: uppercase; line-height: 1.06; color: var(--ink); }
+      #engine b { color: var(--warn); }
+
+      /* ----- journal cards ----- */
+      .journal { position:absolute; opacity:0; width: 460px; padding: 34px 38px;
+        background: rgba(20,25,37,0.9); border: 1px solid rgba(154,166,178,0.4); }
+      .journal .jname { font-size: 26px; font-weight: 700; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--gold); }
+      .journal .jyear { float:right; font-size: 26px; font-weight: 700; color: var(--steel); }
+      .journal .jtitle { margin-top: 16px; font-size: 34px; font-weight: 300; line-height: 1.25;
+        color: var(--ink); }
+      .journal .jauth { margin-top: 14px; font-size: 22px; letter-spacing: 0.06em; color: var(--mute); }
+
+      /* ----- availability heuristic line ----- */
+      #avail { position:absolute; left:50%; top:300px; opacity:0; transform:translateX(-50%);
+        text-align:center; width:1500px; font-size: 56px; font-weight: 300; line-height: 1.25; color: var(--steel); }
+      #avail b { color: var(--ink); font-weight: 700; }
+
+      /* ----- visibility vs truth ledger ----- */
+      #ledger { position:absolute; left:50%; top:300px; opacity:0; width: 1480px; }
+      #ledger .lhd { display:flex; justify-content:space-between; margin-bottom: 26px;
+        font-size: 26px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+      #ledger .lhd .win { color: var(--gold); }
+      #ledger .lhd .lose { color: var(--mute); }
+      .lrow { position:relative; display:flex; justify-content:space-between; align-items:center;
+        opacity:0; padding: 14px 0; font-size: 38px; }
+      .lrow .lwin { color: var(--ink); font-weight: 600; }
+      .lrow .llose { color: var(--mute); font-weight: 300; text-align:right; }
+      .lrow .ldiv { position:absolute; left:50%; top:0; bottom:0; width:1px; background: rgba(154,166,178,0.25); }
+
+      /* ----- inflation stat ----- */
+      #stat { position:absolute; left:50%; top:340px; opacity:0; text-align:center; width:1400px; }
+      #statNum { font-size: 184px; font-weight: 800; color: var(--bone); font-variant-numeric: tabular-nums; line-height: 1; }
+      #statNum .pct { font-size: 96px; color: var(--steel); }
+      #statLab { margin-top: 10px; font-size: 30px; font-weight: 600; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--steel); }
+      #statSub { margin-top: 28px; font-size: 34px; font-weight: 300; color: var(--mute); }
+      #statSub b { color: var(--ink); font-weight: 600; }
+      #compound { position:absolute; left:260px; top:760px; opacity:0; }
+
+      /* ----- layer-one progress ----- */
+      #layer { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px; }
+      #layerTitle { font-size: 88px; font-weight: 800; text-transform: uppercase; color: var(--ink); letter-spacing: 0.02em; }
+      #layerTitle b { color: var(--gold); }
+      #layerSub { margin-top: 24px; font-size: 38px; font-weight: 300; color: var(--steel); line-height: 1.3; }
+      #layerSub b { color: var(--ink); font-weight: 600; }
+      #progwrap { position:absolute; left:50%; bottom:188px; transform:translateX(-50%);
+        width: 900px; height: 6px; background: rgba(154,166,178,0.18); opacity:0; }
+      #progbar { position:absolute; left:0; top:0; bottom:0; width:0; background: var(--gold); }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 43px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-02-reversal"
+      data-start="0"
+      data-duration="236.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="236.5" data-track-index="9"
+             src="../assets/narration/seg-02-reversal.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="236.5" data-track-index="0">
+        <div id="grid"></div>
+        <div id="particles"></div>
+        <div id="deepwash"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="236.5" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="ghost">
+            <path d="M960 236 L986 300 L992 700 L928 700 L934 300 Z" />
+            <polygon points="934,440 470,536 470,572 940,520" />
+            <polygon points="986,440 1450,536 1450,572 980,520" />
+            <polygon points="936,648 762,690 762,710 940,700" />
+            <polygon points="984,648 1158,690 1158,710 980,700" />
+          </g>
+          <g id="bomber">
+            <path class="fill" d="M960 236 L986 300 L992 700 L928 700 L934 300 Z" />
+            <polygon class="fill" points="934,440 470,536 470,572 940,520" />
+            <polygon class="fill" points="986,440 1450,536 1450,572 980,520" />
+            <polygon class="fill" points="936,648 762,690 762,710 940,700" />
+            <polygon class="fill" points="984,648 1158,690 1158,710 980,700" />
+            <circle class="frame" cx="960" cy="300" r="26" />
+            <circle class="frame" cx="690" cy="512" r="20" />
+            <circle class="frame" cx="560" cy="540" r="20" />
+            <circle class="frame" cx="1230" cy="512" r="20" />
+            <circle class="frame" cx="1360" cy="540" r="20" />
+          </g>
+          <g id="glow">
+            <circle class="clean-glow" cx="960" cy="300" r="46" />
+            <circle class="clean-glow" cx="690" cy="512" r="40" />
+            <circle class="clean-glow" cx="560" cy="540" r="40" />
+            <circle class="clean-glow" cx="1230" cy="512" r="40" />
+            <circle class="clean-glow" cx="1360" cy="540" r="40" />
+          </g>
+          <g id="dots"></g>
+        </svg>
+      </div>
+
+      <div id="anno" class="clip" data-start="0" data-duration="236.5" data-track-index="2">
+        <!-- constraint chips -->
+        <div class="chip" id="c1" style="left:300px; top:300px;">planes are <b>heavy</b></div>
+        <div class="chip" id="c2" style="left:1360px; top:330px;">fuel is <b>precious</b></div>
+        <div class="chip" id="c3" style="left:330px; top:760px;">can't armor <b>everything</b></div>
+        <!-- WRONG read: armor the holes -->
+        <div class="armor" id="aw1" style="left:300px; top:520px;"><span class="lab">armor the wings</span><span class="tick" style="left:200px; top:34px; width:160px;"></span></div>
+        <div class="armor" id="aw2" style="left:760px; top:740px;"><span class="lab">armor the tail</span><span class="tick" style="left:150px; top:34px; width:90px;"></span></div>
+        <!-- RIGHT read: armor the clean zones -->
+        <div class="armor good" id="ag1" style="left:1430px; top:480px;"><span class="lab">armor here</span><span class="tick" style="left:-180px; top:34px; width:170px;"></span></div>
+        <div class="armor good" id="ag2" style="left:1000px; top:240px;"><span class="lab">and here</span><span class="tick" style="left:-60px; top:34px; width:50px;"></span></div>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="236.5" data-track-index="3">
+        <div class="big" id="wrongplanes">YOU'RE LOOKING AT<br>THE <b>WRONG PLANES</b></div>
+        <div class="big" id="noholes">ARMOR WHERE THERE<br>ARE <b>NO HOLES</b></div>
+        <div class="big" id="notmeasured">the plane never came home<br><b>to be measured at all</b></div>
+        <div id="wald"><div id="waldName">ABRAHAM WALD</div><div id="waldSub">Columbia University · Statistical Research Group · 1943</div></div>
+
+        <div id="sbias">
+          <div id="sbiasTitle">SURVIVORSHIP <b>BIAS</b></div>
+          <div id="sbiasDef">drawing conclusions from the cases that <b>survived</b> a hidden selection — while invisibly ignoring <b>the ones that didn't</b></div>
+        </div>
+
+        <div class="domain" id="dm1" style="left:300px; top:330px;">the founders you read about</div>
+        <div class="domain" id="dm2" style="left:1090px; top:470px;">the influencers on your feed</div>
+        <div class="domain" id="dm3" style="left:360px; top:610px;">the friend who quit and made it work</div>
+        <div id="cameback">they are the <b>planes that came back</b></div>
+
+        <div id="engine">NOT A GLITCH —<br>THE <b>ENGINE</b> UNDER EVERY<br>SUCCESS STORY YOU'VE ABSORBED</div>
+
+        <div id="avail">you judge what's <b>likely</b> by how <b>easily</b><br>examples come to mind</div>
+
+        <div id="ledger">
+          <div class="lhd"><span class="win">what you see</span><span class="lose">what disappears</span></div>
+          <div class="lrow" id="lr1"><span class="lwin">founders write books</span><span class="ldiv"></span><span class="llose">failures update résumés</span></div>
+          <div class="lrow" id="lr2"><span class="lwin">actors give interviews</span><span class="ldiv"></span><span class="llose">failures get other jobs</span></div>
+          <div class="lrow" id="lr3"><span class="lwin">funds advertise returns</span><span class="ldiv"></span><span class="llose">dead funds vanish from the data</span></div>
+        </div>
+
+        <div id="stat">
+          <div id="statNum">0.0<span class="pct">%</span></div>
+          <div id="statLab">inflation of reported fund returns · every year</div>
+          <div id="statSub">over 30 years of compounding — <b>a comfortable retirement, or a delayed one</b></div>
+        </div>
+
+        <div id="layer">
+          <div id="layerTitle">THAT'S <b>LAYER ONE</b></div>
+          <div id="layerSub">a third of the way in — already ahead of most of your industry.<br><b>but layer one is the cheap version.</b></div>
+        </div>
+      </div>
+
+      <div id="journals" class="clip" data-start="0" data-duration="236.5" data-track-index="4">
+        <div class="journal" id="jk" style="left:730px; top:430px;">
+          <span class="jyear">1973</span><div class="jname">Cognitive Psychology</div>
+          <div class="jtitle">Availability: A Heuristic for Judging Frequency and Probability</div>
+          <div class="jauth">Tversky &amp; Kahneman</div>
+        </div>
+        <div class="journal" id="jb" style="left:730px; top:430px;">
+          <span class="jyear">1992</span><div class="jname">Review of Financial Studies</div>
+          <div class="jtitle">Survivorship Bias in Performance Studies</div>
+          <div class="jauth">Brown · Goetzmann · Ibbotson · Ross</div>
+        </div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="236.5" data-track-index="5">
+        <div id="kicker">SURVIVORSHIP BIAS &nbsp;·&nbsp; <span class="num">PART 03</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="236.5" data-track-index="6"></div>
+    </div>
+
+    <script>
+      // ---------- deterministic PRNG ----------
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(20260602);
+      const SVGNS = "http://www.w3.org/2000/svg";
+
+      // ---------- seeded ambient particles ----------
+      (function(){
+        const host = document.getElementById("particles");
+        for (let i=0;i<70;i++){
+          const p=document.createElement("div"); p.className="particle";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*1080)+"px";
+          p.style.transform="scale("+(0.6+rnd()*1.6)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- seeded bullet-hole dots (same scatter logic as the hook) ----------
+      const cleanZones=[[960,300,52],[690,512,46],[560,540,46],[1230,512,46],[1360,540,46]];
+      const scatterZones=[
+        [474,432,462,108],   // left wing
+        [984,432,462,108],   // right wing
+        [930,260,64,438],    // fuselage
+        [766,652,170,54],    // left tail
+        [988,652,170,54],    // right tail
+      ];
+      function inClean(x,y){return cleanZones.some(([cx,cy,r])=>Math.hypot(x-cx,y-cy)<r);}
+      const dotsG=document.getElementById("dots");
+      const dotEls=[];
+      let guard=0;
+      while(dotEls.length<46 && guard<4000){
+        guard++;
+        const z=scatterZones[Math.floor(rnd()*scatterZones.length)];
+        const x=z[0]+rnd()*z[2], y=z[1]+rnd()*z[3];
+        if(inClean(x,y)) continue;
+        const c=document.createElementNS(SVGNS,"circle");
+        c.setAttribute("cx",x.toFixed(1)); c.setAttribute("cy",y.toFixed(1));
+        const rr=(3.6+rnd()*2.4).toFixed(1);
+        c.setAttribute("r","0"); c.dataset.r=rr;
+        c.setAttribute("class","dot");
+        dotsG.appendChild(c); dotEls.push(c);
+      }
+
+      // ---------- captions from word timings ----------
+      const WORDS = window.SEG02_WORDS || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const DUR = 236.5; // reconciled to actual narration (last word ends 236.45)
+
+      // GSAP owns transform for centered display blocks
+      gsap.set([".big","#wald","#engine","#layer"],{xPercent:-50,yPercent:-50});
+      gsap.set(["#sbias","#ledger","#stat"],{xPercent:-50});
+
+      // bg in
+      tl.to("#grid",{opacity:0.5,duration:1.4,ease:"power2.out"},0)
+        .to(".particle",{opacity:0.5,duration:2,stagger:{each:0.02,from:"random"},ease:"power1.out"},0.2);
+      gsap.utils.toArray(".particle").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"+="+(d*30),duration:30,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:300,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // ===================== BEATS (anchors filled from real word timings) =====================
+      const dotEls2 = dotEls;
+
+      // --- B0: bomber draws in + wartime constraints (0.6 – 15) ---
+      tl.from("#bomber",{opacity:0,scale:0.94,transformOrigin:"50% 44%",duration:1.5,ease:"power3.out"},0.6);
+      tl.fromTo("#c1",{opacity:0,y:18},{opacity:1,y:0,duration:0.5,ease:"power2.out"},7.06)
+        .fromTo("#c2",{opacity:0,y:18},{opacity:1,y:0,duration:0.5,ease:"power2.out"},8.12)
+        .fromTo("#c3",{opacity:0,y:18},{opacity:1,y:0,duration:0.5,ease:"power2.out"},9.86)
+        .to([".chip"],{opacity:0,duration:0.5,ease:"power2.in"},14.6);
+
+      // --- B1: red dots accumulate over wings/tail/fuselage (15.94 – 29) ---
+      tl.fromTo(dotEls2,{attr:{r:0},opacity:0},
+        {attr:{r:(i,t)=>t.dataset.r},opacity:1,duration:0.34,
+         stagger:{each:(28.6-15.94)/dotEls2.length},ease:"back.out(1.8)"},15.94);
+
+      // --- B2: the obvious (wrong) read — armor the holes (31.84 – 44) ---
+      tl.fromTo("#aw1",{opacity:0,x:-16},{opacity:1,x:0,duration:0.5,ease:"power2.out"},31.84)
+        .fromTo("#aw1 .tick",{width:0},{width:160,duration:0.5,ease:"power2.out"},31.9)
+        .fromTo("#aw2",{opacity:0,x:-16},{opacity:1,x:0,duration:0.5,ease:"power2.out"},34.4)
+        .fromTo("#aw2 .tick",{width:0},{width:90,duration:0.5,ease:"power2.out"},34.46);
+
+      // --- B3: Wald enters (44.48 – 55) ---
+      tl.to(["#bomber","#dots",".armor"],{opacity:0.28,duration:0.7,ease:"power2.inOut"},43.9)
+        .fromTo("#wald",{opacity:0,y:24},{opacity:1,y:0,duration:0.8,ease:"power3.out"},44.48)
+        .fromTo("#waldName",{scale:1.06},{scale:1,duration:0.8,ease:"power2.out"},44.6);
+
+      // --- B4: THE REVERSAL — gear-change (55.6 – 77) ---
+      tl.to("#wald",{opacity:0,duration:0.3,ease:"power4.in"},55.2)
+        .to(["#bomber","#dots"],{opacity:1,duration:0.4,ease:"power2.out"},55.2)
+        .fromTo("#wrongplanes",{opacity:0,scale:1.5},{opacity:1,scale:1,duration:0.42,ease:"power4.in"},55.6)
+        .to("#grid",{opacity:0.95,duration:0.04,ease:"power4.in"},55.6)
+        .to("#grid",{opacity:0.5,duration:0.24,ease:"power2.out"},55.66)
+        .to("#wrongplanes b",{scale:1.06,duration:0.13,ease:"power2.out",yoyo:true,repeat:1},57.2)
+        .to("#wrongplanes",{opacity:0,y:-16,duration:0.5,ease:"power2.in"},61.2);
+      // "the holes a bomber can survive" — pulse the red dots
+      tl.to("#dots circle",{scale:1.35,transformOrigin:"center",duration:0.4,ease:"power2.out",yoyo:true,repeat:1,stagger:{each:0.004,from:"random"}},62.58);
+      // "the clean areas — engines and cockpit" — ignite the warning glow, strike the wrong labels
+      tl.to(".clean-glow",{opacity:0.34,duration:0.7,ease:"power2.out"},64.66)
+        .to("#bomber circle.frame",{stroke:"#ff5a3c",strokeWidth:3.4,duration:0.7,ease:"power2.out"},64.66)
+        .to(".armor:not(.good) .lab",{color:"#3a4250",duration:0.5,ease:"power2.inOut"},64.9)
+        .to(".armor:not(.good) .tick",{opacity:0.25,duration:0.5},64.9);
+      // "doesn't come home to be measured at all" — ghost plane sinks
+      tl.fromTo("#notmeasured",{opacity:0,y:20},{opacity:1,y:0,duration:0.7,ease:"power3.out"},72.84)
+        .to("#deepwash",{opacity:0.5,duration:1.4,ease:"power1.inOut"},73.0)
+        .fromTo("#ghost",{opacity:0,y:-4},{opacity:0.55,duration:0.8,ease:"power2.out"},73.56)
+        .to("#ghost",{y:150,opacity:0,duration:2.4,ease:"power1.in"},74.4)
+        .to("#notmeasured",{opacity:0,y:-14,duration:0.5,ease:"power2.in"},75.9);
+      // "armor where there are no holes" — good labels snap onto the clean zones
+      tl.fromTo("#noholes",{opacity:0,scale:1.18},{opacity:1,scale:1,duration:0.5,ease:"power3.out"},76.3)
+        .to("#deepwash",{opacity:0,duration:1.0,ease:"power1.inOut"},76.3)
+        .fromTo("#ag1",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"back.out(1.6)"},76.6)
+        .fromTo("#ag1 .tick",{width:0},{width:170,duration:0.5,ease:"power2.out"},76.66)
+        .fromTo("#ag2",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"back.out(1.6)"},77.0)
+        .fromTo("#ag2 .tick",{width:0},{width:50,duration:0.5,ease:"power2.out"},77.06);
+
+      // --- B5: Wald was right — pilots came home (77.68 – 99) ---
+      tl.to("#noholes",{opacity:0,y:-14,duration:0.6,ease:"power2.in"},86.0)
+        .to(".clean-glow",{opacity:0.2,duration:1.2,yoyo:true,repeat:1,ease:"sine.inOut"},82.6);
+      // recede the whole bomber stage to make room for the title
+      tl.to(["#bomber","#dots","#glow",".armor.good"],{opacity:0.12,duration:1.0,ease:"power1.inOut"},97.0)
+        .to(".clean-glow",{opacity:0.05,duration:1.0,ease:"power1.inOut"},97.0);
+
+      // --- B6: SURVIVORSHIP BIAS named (99.76 – 110) ---
+      tl.fromTo("#sbias",{opacity:0,y:24},{opacity:1,y:0,duration:0.9,ease:"power3.out"},99.76)
+        .to("#sbias",{opacity:0,y:-16,duration:0.6,ease:"power2.in"},109.6);
+
+      // --- B7: modern domains = planes that came back (111.14 – 125) ---
+      tl.to(["#bomber","#dots","#glow",".armor"],{opacity:0,duration:0.6,ease:"power2.inOut"},110.2)
+        .fromTo("#dm1",{opacity:0,y:18},{opacity:1,y:0,duration:0.55,ease:"power3.out"},111.14)
+        .fromTo("#dm2",{opacity:0,y:18},{opacity:1,y:0,duration:0.55,ease:"power3.out"},113.0)
+        .fromTo("#dm3",{opacity:0,y:18},{opacity:1,y:0,duration:0.55,ease:"power3.out"},115.06)
+        .fromTo("#cameback",{opacity:0},{opacity:1,duration:0.6,ease:"power2.out"},118.46)
+        .to(".domain",{color:"#5b6472",duration:0.7,ease:"power2.inOut"},121.68)
+        .to(["#cameback",".domain"],{opacity:0,duration:0.6,ease:"power2.in"},124.6);
+
+      // --- B8: not a glitch — the engine (127.44 – 132) ---
+      tl.fromTo("#engine",{opacity:0,scale:1.12},{opacity:1,scale:1,duration:0.6,ease:"power3.out"},127.44)
+        .to("#engine b",{scale:1.05,transformOrigin:"center",duration:0.18,ease:"power2.out",yoyo:true,repeat:1},129.4)
+        .to("#engine",{opacity:0,y:-14,duration:0.6,ease:"power2.in"},131.8);
+
+      // --- B9a: Tversky & Kahneman 1973 (132.64 – 152) ---
+      tl.fromTo("#jk",{opacity:0,x:-30},{opacity:1,x:0,duration:0.7,ease:"power3.out"},135.44)
+        .to("#jk",{opacity:0,x:30,duration:0.6,ease:"power2.in"},151.8);
+      // availability heuristic line (153.52 – 164.5)
+      tl.fromTo("#avail",{opacity:0},{opacity:1,duration:0.7,ease:"power2.out"},153.0)
+        .to("#avail b",{color:"#ff5a3c",duration:0.5,ease:"power2.inOut"},159.62)
+        .to("#avail",{opacity:0,duration:0.6,ease:"power2.in"},164.2);
+
+      // --- B9b: visibility ledger (166.84 – 185) ---
+      tl.fromTo("#ledger",{opacity:0,y:18},{opacity:1,y:0,duration:0.6,ease:"power2.out"},165.6)
+        .fromTo("#lr1",{opacity:0,x:-24},{opacity:1,x:0,duration:0.5,ease:"power2.out"},166.84)
+        .fromTo("#lr2",{opacity:0,x:-24},{opacity:1,x:0,duration:0.5,ease:"power2.out"},172.38)
+        .fromTo("#lr3",{opacity:0,x:-24},{opacity:1,x:0,duration:0.5,ease:"power2.out"},177.52)
+        .to("#lr3 .llose",{color:"#d8392e",x:8,duration:0.5,ease:"power2.out",yoyo:true,repeat:1},182.82)
+        .to("#ledger",{opacity:0,y:-16,duration:0.6,ease:"power2.in"},184.8);
+
+      // --- B10: Brown 1992 + inflation stat (185.68 – 218) ---
+      tl.fromTo("#jb",{opacity:0,x:-30},{opacity:1,x:0,duration:0.7,ease:"power3.out"},185.68)
+        .to("#jb",{opacity:0,duration:0.6,ease:"power2.in"},196.0);
+      const statProxy = {v:0};
+      tl.fromTo("#stat",{opacity:0,y:18},{opacity:1,y:0,duration:0.7,ease:"power3.out"},196.4)
+        .to(statProxy,{v:0.8,duration:3.2,ease:"power2.out",
+          onUpdate:()=>{ statNum.innerHTML = statProxy.v.toFixed(1)+'<span class="pct">%</span>'; }},196.8)
+        .fromTo("#statSub",{opacity:0},{opacity:1,duration:0.7,ease:"power2.out"},203.82)
+        .to("#statSub b",{color:"#caa86a",duration:0.5,ease:"power2.inOut"},207.26)
+        .to("#stat",{opacity:0,y:-16,duration:0.6,ease:"power2.in"},216.8);
+
+      // --- B11: bomber callback — "bombers that came back, lined up in rows" (218 – 224) ---
+      tl.to(["#bomber","#dots"],{opacity:0.4,duration:0.8,ease:"power2.out"},218.0)
+        .to("#glow .clean-glow",{opacity:0.16,duration:0.8,ease:"power2.out"},218.4)
+        .to(["#bomber","#dots","#glow"],{opacity:0.1,duration:0.8,ease:"power1.inOut"},223.6);
+
+      // --- B12: layer one — the outro hook (225.09 – 236.45) ---
+      tl.fromTo("#layer",{opacity:0,y:22},{opacity:1,y:0,duration:0.8,ease:"power3.out"},224.6)
+        .fromTo("#progwrap",{opacity:0},{opacity:1,duration:0.6,ease:"power2.out"},226.0)
+        .fromTo("#progbar",{width:0},{width:300,duration:1.4,ease:"power2.out"},226.93)
+        .to("#layerSub b",{color:"#f4efe6",duration:0.4,ease:"power2.inOut"},235.53);
+
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : DUR-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-02-reversal"] = tl;
+    </script>
+  </body>
+</html>
