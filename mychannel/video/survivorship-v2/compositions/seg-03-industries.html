@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-03-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --bg-grid: #141925; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --alarm: #d8392e; --warn: #ff5a3c; --gold: #caa86a;
+        --green: #6aa878; --paper: #c9c1ad; --deep: #172638;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #grid { position: absolute; inset: 0;
+        background-image:
+          linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 70% 58% at 50% 47%, transparent 36%, rgba(0,0,0,0.62) 100%); }
+      #warmwash, #coldwash, #phonewash { position:absolute; inset:0; pointer-events:none; opacity:0; }
+      #warmwash { background: radial-gradient(ellipse 55% 45% at 50% 42%, rgba(202,168,106,0.14), transparent 68%); }
+      #coldwash { background: linear-gradient(180deg, transparent 25%, rgba(23,38,56,0.55) 100%); }
+      #phonewash { background: radial-gradient(ellipse 42% 68% at 50% 47%, rgba(61,99,135,0.20), transparent 72%); }
+      .particle { position:absolute; width:3px; height:3px; border-radius:50%; background:#3a4658; opacity:0; }
+
+      #stageSvg { position:absolute; inset:0; width:1920px; height:1080px; }
+      .thin { fill:none; stroke:var(--steel); stroke-width:1.5; }
+      .paper { fill:rgba(201,193,173,0.10); stroke:rgba(232,228,216,0.42); stroke-width:1.4; }
+      .paper.dead { fill:rgba(91,100,114,0.08); stroke:rgba(91,100,114,0.45); }
+      .cover { fill:rgba(20,25,37,0.96); stroke:rgba(154,166,178,0.44); stroke-width:1.2; }
+      .goldLine { stroke:var(--gold); stroke-width:2; fill:none; }
+      .redLine { stroke:var(--alarm); stroke-width:2; fill:none; }
+      .hiddenDot { fill:#5b6472; opacity:0; }
+      .survivorDot { fill:var(--gold); opacity:0; }
+      .feedCard { fill:rgba(20,25,37,0.96); stroke:rgba(154,166,178,0.36); stroke-width:1.2; }
+      .bar { fill:var(--gold); opacity:0; }
+      .bar.dim { fill:#3a4658; }
+
+      #kicker { position:absolute; left:88px; top:84px; opacity:0;
+        font-size:22px; letter-spacing:0.32em; text-transform:uppercase; color:var(--steel); }
+      #kicker .num { color:var(--gold); }
+      #kickerline { position:absolute; left:88px; top:122px; height:2px; width:0; background:var(--steel); opacity:0.5; }
+
+      #type { position:absolute; inset:0; }
+      .centerBlock { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px; }
+      .bigTitle { font-size:92px; font-weight:800; line-height:1.04; letter-spacing:0.02em; color:var(--ink); text-transform:uppercase; }
+      .bigTitle b { color:var(--warn); }
+      .sub { margin-top:22px; font-size:34px; font-weight:300; line-height:1.28; color:var(--steel); }
+      .sub b { color:var(--ink); font-weight:700; }
+
+      #bookLabel, #archiveLabel, #denrellLabel, #selfHelpLabel, #phoneLabel, #adLabel {
+        position:absolute; opacity:0; font-size:24px; font-weight:700; letter-spacing:0.18em;
+        text-transform:uppercase; color:var(--steel); white-space:nowrap;
+      }
+      #bookLabel { left:260px; top:210px; }
+      #archiveLabel { left:260px; top:786px; color:var(--alarm); }
+      #denrellLabel { left:242px; top:212px; color:var(--gold); }
+      #selfHelpLabel { left:260px; top:198px; color:var(--gold); }
+      #phoneLabel { left:250px; top:204px; color:var(--gold); }
+      #adLabel { left:258px; top:198px; color:var(--gold); }
+
+      .callout { position:absolute; opacity:0; padding:18px 22px; border:1px solid rgba(154,166,178,0.34);
+        background:rgba(10,12,16,0.72); color:var(--ink); font-size:28px; line-height:1.18; font-weight:300; }
+      .callout b { color:var(--warn); font-weight:800; }
+      #millions { left:1070px; top:590px; width:560px; }
+      #prefilter { left:1160px; top:642px; width:500px; }
+      #mirror { left:1130px; top:334px; width:520px; }
+      #quiet { left:1160px; top:640px; width:470px; }
+      #coin { left:1280px; top:478px; width:360px; text-align:center; font-size:58px; font-weight:800; color:var(--gold); }
+      #average { left:1110px; top:652px; width:540px; }
+      #broken { left:1170px; top:250px; width:520px; }
+      .storyCard { position:absolute; opacity:0; width:480px; padding:26px 30px;
+        background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.40); }
+      .storyCard .cap { font-size:24px; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; }
+      .storyCard .line { margin-top:14px; color:var(--steel); font-size:28px; line-height:1.22; font-weight:300; }
+      #traderBook { left:300px; top:662px; }
+      #traderBook .cap { color:var(--gold); }
+      #studentFootnote { left:1140px; top:662px; }
+      #studentFootnote .cap { color:var(--alarm); }
+      #product { left:50%; top:50%; width:1200px; text-align:center; font-size:114px; font-weight:800; color:var(--warn); text-transform:uppercase; }
+
+      #journal, #journal2 { position:absolute; left:270px; top:276px; opacity:0; width:620px; min-height:330px;
+        padding:34px 38px; background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.42); }
+      #journal .year, #journal2 .year { float:right; color:var(--steel); font-size:28px; font-weight:700; }
+      #journal .name, #journal2 .name { color:var(--gold); font-size:28px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; }
+      #journal .paperTitle, #journal2 .paperTitle { clear:both; margin-top:24px; font-size:42px; line-height:1.13; color:var(--ink); font-weight:300; }
+      #journal .author, #journal2 .author { margin-top:20px; color:var(--mute); font-size:24px; letter-spacing:0.06em; }
+
+      #stageText { position:absolute; left:50%; top:220px; opacity:0; width:1200px; text-align:center;
+        color:var(--ink); font-size:58px; font-weight:800; line-height:1.08; text-transform:uppercase; }
+      #stageText b { color:var(--warn); }
+      #aside { position:absolute; left:50%; top:50%; opacity:0; width:1420px; text-align:center;
+        color:var(--ink); font-size:66px; line-height:1.08; font-weight:800; }
+      #aside b { color:var(--gold); }
+
+      #phoneFrame { position:absolute; left:50%; top:50%; opacity:0; width:404px; height:720px;
+        margin-left:-202px; margin-top:-360px; border:2px solid rgba(232,228,216,0.55);
+        border-radius:42px; background:rgba(10,12,16,0.78); box-shadow:0 0 80px rgba(61,99,135,0.18); }
+      #phoneFrame::before { content:""; position:absolute; left:143px; top:16px; width:118px; height:8px; border-radius:8px; background:rgba(154,166,178,0.35); }
+      #phoneTitle { position:absolute; left:40px; top:42px; color:var(--steel); font-size:20px; letter-spacing:0.18em; text-transform:uppercase; }
+      .metric { position:absolute; opacity:0; text-align:center; color:var(--ink); }
+      .metric .num { font-size:118px; font-weight:800; color:var(--bone); line-height:1; font-variant-numeric:tabular-nums; }
+      .metric .lab { margin-top:8px; color:var(--steel); font-size:24px; letter-spacing:0.12em; text-transform:uppercase; }
+      #m1 { left:245px; top:570px; width:460px; }
+      #m2 { left:1218px; top:570px; width:460px; }
+
+      #pyramid { position:absolute; left:50%; top:50%; opacity:0; width:1240px; height:520px; }
+      #horizonLine { position:absolute; left:280px; top:640px; width:0; height:2px; background:var(--steel); opacity:0; }
+
+      .adCard { position:absolute; opacity:0; width:360px; min-height:180px; padding:26px;
+        background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.38); }
+      .adCard .stars { color:var(--gold); font-size:34px; letter-spacing:0.07em; }
+      .adCard .headline { margin-top:20px; color:var(--ink); font-size:34px; line-height:1.1; font-weight:700; }
+      .adCard .small { margin-top:14px; color:var(--mute); font-size:22px; line-height:1.25; }
+      #ad1 { left:270px; top:320px; } #ad2 { left:780px; top:252px; } #ad3 { left:1290px; top:350px; }
+
+      #recap { position:absolute; left:50%; top:50%; opacity:0; width:1320px; }
+      .layerRow { position:relative; opacity:0; display:flex; align-items:center; gap:32px; padding:22px 0;
+        border-bottom:1px solid rgba(154,166,178,0.18); }
+      .layerRow .n { width:130px; color:var(--gold); font-size:42px; font-weight:800; letter-spacing:0.06em; }
+      .layerRow .txt { color:var(--ink); font-size:44px; font-weight:700; }
+      .layerRow .note { margin-left:auto; color:var(--mute); font-size:28px; font-weight:300; }
+      #deepTease { margin-top:32px; opacity:0; color:var(--warn); text-align:center; font-size:52px; font-weight:800; text-transform:uppercase; }
+
+      #caps { position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
+        width:1500px; text-align:center; }
+      .phrase { position:absolute; left:0; right:0; bottom:0; opacity:0;
+        font-size:41px; line-height:1.34; letter-spacing:0.01em; color:var(--mute); font-weight:400; }
+      .phrase .w { color:var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-03-industries"
+      data-start="0"
+      data-duration="336.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="336.7" data-track-index="9"
+             src="../assets/narration/seg-03-industries.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="336.7" data-track-index="0">
+        <div id="grid"></div>
+        <div id="particles"></div>
+        <div id="warmwash"></div>
+        <div id="coldwash"></div>
+        <div id="phonewash"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="336.7" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="bookTable"></g>
+          <g id="archive"></g>
+          <g id="denrellViz"></g>
+          <g id="seminarViz"></g>
+          <g id="feedViz"></g>
+          <g id="pyramidSvg"></g>
+        </svg>
+      </div>
+
+      <div id="labels" class="clip" data-start="0" data-duration="336.7" data-track-index="2">
+        <div id="kicker">SURVIVORSHIP BIAS &nbsp;.&nbsp; <span class="num">PART 04</span></div>
+        <div id="kickerline"></div>
+        <div id="bookLabel">AIRPORT BOOKSTORE SAMPLE</div>
+        <div id="archiveLabel">REJECTED / BANKRUPT / FORGOTTEN</div>
+        <div id="denrellLabel">DENRELL 2003 / UNDERSAMPLING OF FAILURE</div>
+        <div id="selfHelpLabel">LAYER TWO / SELF-HELP INDUSTRY</div>
+        <div id="phoneLabel">LAYER THREE / YOUR PHONE</div>
+        <div id="adLabel">ADVERTISING PACKAGES SURVIVORS</div>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="336.7" data-track-index="3">
+        <div class="centerBlock" id="intro">
+          <div class="bigTitle">ENTIRE INDUSTRIES<br><b>FEED ON IT</b></div>
+          <div class="sub">not a glitch in perception, but an economy of attention</div>
+        </div>
+
+        <div id="journal">
+          <span class="year">2003</span>
+          <div class="name">Organization Science</div>
+          <div class="paperTitle">Vicarious Learning, Undersampling of Failure, and the Myths of Management</div>
+          <div class="author">Jerker Denrell</div>
+        </div>
+
+        <div id="journal2">
+          <span class="year">2005</span>
+          <div class="name">Harvard Business Review</div>
+          <div class="paperTitle">Selection Bias and the Perils of Benchmarking</div>
+          <div class="author">Jerker Denrell</div>
+        </div>
+
+        <div class="callout" id="broken">the entire best-practices genre<br><b>sits on one broken sample</b></div>
+
+        <div class="callout" id="millions"><b>what you do not get</b><br>millions who followed the same playbook</div>
+        <div class="callout" id="mirror"><b>the mirror study</b><br>failed firms with identical practices</div>
+        <div class="callout" id="prefilter">the conclusions have been<br><b>pre-filtered to be right</b></div>
+        <div id="stageText">THE FAILURES<br><b>DON'T SHOW UP</b></div>
+        <div class="callout" id="quiet">they quietly go quiet<br><b>no seminar, no testimonial</b></div>
+        <div id="aside">A BOOK ON THE TABLE.<br><b>A FOOTNOTE IN THE GRAVEYARD.</b></div>
+        <div class="storyCard" id="traderBook"><div class="cap">THE BOOK</div><div class="line">internally consistent<br>reasoning sharp</div></div>
+        <div class="storyCard" id="studentFootnote"><div class="cap">THE STUDENT</div><div class="line">math PhD, disciplined<br>lost everything</div></div>
+        <div class="callout" id="coin">COIN FLIP</div>
+
+        <div id="phoneFrame"><div id="phoneTitle">FOR YOU / SELECTED HITS</div></div>
+        <div class="metric" id="m1"><div class="num" id="topViews">0%</div><div class="lab">top 20% collect views</div></div>
+        <div class="metric" id="m2"><div class="num" id="bestVideo">0x</div><div class="lab">best video vs median</div></div>
+        <div class="callout" id="average"><b>not the average outcome</b><br>the extreme of a hidden distribution</div>
+
+        <div id="pyramid"></div>
+        <div id="horizonLine"></div>
+
+        <div class="adCard" id="ad1"><div class="stars">*****</div><div class="headline">five-star reviews</div><div class="small">the failures never leave copy</div></div>
+        <div class="adCard" id="ad2"><div class="stars">BEFORE / AFTER</div><div class="headline">photogenic proof</div><div class="small">selected because it survived</div></div>
+        <div class="adCard" id="ad3"><div class="stars">$10K -> $1M</div><div class="headline">course graduate</div><div class="small">shown because the losers are silent</div></div>
+        <div class="callout" id="product">THAT IS<br>THE PRODUCT</div>
+
+        <div id="recap">
+          <div class="layerRow" id="r1"><div class="n">01</div><div class="txt">your brain quietly miscounts</div><div class="note">perception</div></div>
+          <div class="layerRow" id="r2"><div class="n">02</div><div class="txt">an industry was built on the miscount</div><div class="note">market</div></div>
+          <div class="layerRow" id="r3"><div class="n">03</div><div class="txt">software amplifies the industry</div><div class="note">algorithm</div></div>
+          <div id="deepTease">we still have not reached the deepest layer</div>
+        </div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="336.7" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(20260603);
+      const SVGNS = "http://www.w3.org/2000/svg";
+
+      function svg(tag, attrs, parent){
+        const el = document.createElementNS(SVGNS, tag);
+        for (const [k,v] of Object.entries(attrs || {})) el.setAttribute(k, v);
+        if (parent) parent.appendChild(el);
+        return el;
+      }
+      function textSvg(txt, x, y, cls, parent, size){
+        const t = svg("text", {x, y, class: cls || "", fill:"currentColor"}, parent);
+        t.textContent = txt;
+        if (size) t.setAttribute("font-size", size);
+        return t;
+      }
+
+      (function(){
+        const host = document.getElementById("particles");
+        for (let i=0;i<80;i++){
+          const p=document.createElement("div"); p.className="particle";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*1080)+"px";
+          p.style.transform="scale("+(0.6+rnd()*1.6)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // Bookstore surface and survivor books.
+      const bookG = document.getElementById("bookTable");
+      svg("rect", {x:250,y:238,width:1420,height:500,rx:4,fill:"rgba(20,25,37,0.78)",stroke:"rgba(154,166,178,0.24)","stroke-width":2,opacity:0}, bookG).setAttribute("id","tableTop");
+      const bookEls=[];
+      const titles=[
+        ["UNICORN","FOUNDER"],["DROP OUT","WINNER"],["REAL ESTATE","AT 30"],["MORNING","ROUTINE"],
+        ["SEVEN","PRINCIPLES"],["HABITS","OF SCALE"],["THE","PLAYBOOK"],["NEVER","FAIL"]
+      ];
+      for(let i=0;i<8;i++){
+        const x=310+(i%4)*330, y=300+Math.floor(i/4)*205;
+        const g=svg("g",{class:"book",opacity:0},bookG);
+        svg("rect",{x,y,width:250,height:150,rx:3,class:"cover"},g);
+        svg("line",{x1:x+24,y1:y+40,x2:x+226,y2:y+40,class:i%3===0?"redLine":"goldLine"},g);
+        const a=textSvg(titles[i][0],x+24,y+86,"",g,28); a.setAttribute("fill","#f4efe6"); a.setAttribute("font-weight","800"); a.setAttribute("letter-spacing","2");
+        const b=textSvg(titles[i][1],x+24,y+122,"",g,24); b.setAttribute("fill","#9aa6b2"); b.setAttribute("letter-spacing","2");
+        bookEls.push(g);
+      }
+
+      const archiveG = document.getElementById("archive");
+      const archiveEls=[];
+      for(let i=0;i<58;i++){
+        const col=i%14, row=Math.floor(i/14);
+        const x=265+col*96+(rnd()*16-8), y=770+row*52+(rnd()*8-4);
+        const r=svg("rect",{x:x.toFixed(1),y:y.toFixed(1),width:74,height:36,rx:2,class:"paper dead",opacity:0},archiveG);
+        archiveEls.push(r);
+      }
+      const rejected=textSvg("REJECTED",340,902,"",archiveG,30); rejected.setAttribute("fill","#d8392e"); rejected.setAttribute("font-weight","800"); rejected.setAttribute("letter-spacing","6"); rejected.setAttribute("opacity","0");
+      const bankrupt=textSvg("BANKRUPT",740,902,"",archiveG,30); bankrupt.setAttribute("fill","#d8392e"); bankrupt.setAttribute("font-weight","800"); bankrupt.setAttribute("letter-spacing","6"); bankrupt.setAttribute("opacity","0");
+      const forgotten=textSvg("FORGOTTEN",1160,902,"",archiveG,30); forgotten.setAttribute("fill","#d8392e"); forgotten.setAttribute("font-weight","800"); forgotten.setAttribute("letter-spacing","6"); forgotten.setAttribute("opacity","0");
+
+      // Denrell sample diagram.
+      const denG = document.getElementById("denrellViz");
+      svg("line",{x1:260,y1:710,x2:1660,y2:710,class:"thin",opacity:0},denG).setAttribute("id","sampleLine");
+      const survivorDots=[]; const failedDots=[];
+      for(let i=0;i<36;i++){
+        const x=310+rnd()*600, y=640-rnd()*230;
+        survivorDots.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:0,class:"survivorDot"},denG));
+      }
+      for(let i=0;i<74;i++){
+        const x=950+rnd()*620, y=420+rnd()*330;
+        failedDots.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:0,class:"hiddenDot"},denG));
+      }
+      const survivorLab=textSvg("SUCCESSFUL FIRMS",335,372,"",denG,24); survivorLab.setAttribute("fill","#caa86a"); survivorLab.setAttribute("font-weight","800"); survivorLab.setAttribute("letter-spacing","4"); survivorLab.setAttribute("opacity","0");
+      const failedLab=textSvg("MIRROR SAMPLE: FAILED FIRMS",970,372,"",denG,24); failedLab.setAttribute("fill","#5b6472"); failedLab.setAttribute("font-weight","800"); failedLab.setAttribute("letter-spacing","4"); failedLab.setAttribute("opacity","0");
+      const filter=svg("rect",{x:900,y:322,width:38,height:430,fill:"rgba(216,57,46,0.20)",stroke:"#d8392e","stroke-width":2,opacity:0},denG);
+      const stamp=textSvg("FILTERED",1160,585,"",denG,72); stamp.setAttribute("fill","#d8392e"); stamp.setAttribute("font-weight","800"); stamp.setAttribute("letter-spacing","6"); stamp.setAttribute("opacity","0"); stamp.setAttribute("transform","rotate(-12 1160 585)");
+
+      // Self-help stage.
+      const semG = document.getElementById("seminarViz");
+      const stageBase=svg("path",{d:"M560 670 L1360 670 L1510 805 L410 805 Z",fill:"rgba(20,25,37,0.86)",stroke:"rgba(154,166,178,0.32)","stroke-width":2,opacity:0},semG);
+      const spotlight=svg("path",{d:"M960 250 L690 670 L1230 670 Z",fill:"rgba(202,168,106,0.10)",opacity:0},semG);
+      const coach=svg("g",{opacity:0},semG);
+      svg("circle",{cx:960,cy:390,r:38,fill:"#caa86a"},coach);
+      svg("path",{d:"M900 505 Q960 430 1020 505 L1040 650 L880 650 Z",fill:"#e8e4d8"},coach);
+      const seats=[];
+      for(let row=0;row<5;row++){
+        for(let col=0;col<15;col++){
+          const x=430+col*76+row*14, y=690+row*42;
+          seats.push(svg("ellipse",{cx:x,cy:y,rx:18,ry:8,fill:"none",stroke:"#5b6472","stroke-width":1.5,opacity:0},semG));
+        }
+      }
+      const testimony=[];
+      for(let i=0;i<5;i++){
+        const g=svg("g",{class:"testimony",opacity:0},semG);
+        const x=410+i*260, y=300+(i%2)*56;
+        svg("rect",{x,y,width:210,height:96,rx:4,fill:"rgba(20,25,37,0.96)",stroke:"rgba(202,168,106,0.55)"},g);
+        const s=textSvg("SUCCESS",x+24,y+44,"",g,24); s.setAttribute("fill","#caa86a"); s.setAttribute("font-weight","800");
+        const q=textSvg("METHOD WORKED",x+24,y+76,"",g,18); q.setAttribute("fill","#9aa6b2"); q.setAttribute("letter-spacing","2");
+        testimony.push(g);
+      }
+
+      // Phone feed.
+      const feedG = document.getElementById("feedViz");
+      const phoneCards=[];
+      for(let i=0;i<7;i++){
+        const y=335+i*96;
+        const g=svg("g",{class:"phoneCard",opacity:0},feedG);
+        svg("rect",{x:785,y,width:350,height:78,rx:8,class:"feedCard"},g);
+        svg("rect",{x:805,y:y+14,width:74,height:50,rx:4,fill:i<2?"rgba(202,168,106,0.55)":"rgba(154,166,178,0.20)"},g);
+        const l=textSvg(i<2?"VIRAL HIT":"median attempt",895,y+35,"",g,i<2?22:20); l.setAttribute("fill",i<2?"#f4efe6":"#6b7280"); l.setAttribute("font-weight",i<2?"800":"400");
+        const v=textSvg(i<2?(i===0?"64x":"76%"):"hidden by rank",895,y+60,"",g,18); v.setAttribute("fill",i<2?"#caa86a":"#5b6472"); v.setAttribute("letter-spacing","2");
+        phoneCards.push(g);
+      }
+      const hiddenPeople=[];
+      for(let i=0;i<120;i++){
+        const x=230+rnd()*1450, y=310+rnd()*510;
+        if(x>730 && x<1190 && y>250 && y<850) continue;
+        hiddenPeople.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:0,fill:"#5b6472",opacity:0},feedG));
+      }
+      const barBase=[];
+      for(let i=0;i<20;i++){
+        barBase.push(svg("rect",{x:300+i*22,y:730,width:14,height:0,class:i>15?"bar":"bar dim"},feedG));
+      }
+      const bars2=[];
+      for(let i=0;i<20;i++){
+        bars2.push(svg("rect",{x:1320+i*22,y:730,width:14,height:0,class:i>15?"bar":"bar dim"},feedG));
+      }
+
+      // Pyramid.
+      const pyrG = document.getElementById("pyramidSvg");
+      const pyr=svg("polygon",{points:"960,300 620,760 1300,760",fill:"rgba(20,25,37,0.80)",stroke:"rgba(154,166,178,0.42)","stroke-width":2,opacity:0},pyrG);
+      const apex=svg("polygon",{points:"960,300 880,408 1040,408",fill:"rgba(202,168,106,0.42)",opacity:0},pyrG);
+      const horizon=textSvg("APEX PYRAMID PRETENDING TO BE A HORIZON",590,820,"",pyrG,32); horizon.setAttribute("fill","#f4efe6"); horizon.setAttribute("font-weight","800"); horizon.setAttribute("letter-spacing","4"); horizon.setAttribute("opacity","0");
+
+      // Captions with short phrase groups, not full sentences.
+      const WORDS = window.SEG03_WORDS || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach((w)=>{
+        cur.push(w);
+        const punct=/[.!?]$/.test(w[0]);
+        const comma=/[,]$/.test(w[0]) && cur.length>=6;
+        if (punct || comma || cur.length>=10) { phrases.push(cur); cur=[]; }
+      });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w"; s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div,start:ph[0][1],end:ph[ph.length-1][2],words:[...div.querySelectorAll(".w")]};
+      });
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const DUR = 336.7;
+      const topViewsEl = document.getElementById("topViews");
+      const bestVideoEl = document.getElementById("bestVideo");
+      gsap.set(["#intro","#product","#aside","#recap"],{xPercent:-50,yPercent:-50});
+      gsap.set(["#stageText"],{xPercent:-50});
+      gsap.set("#pyramid",{xPercent:-50,yPercent:-50});
+
+      tl.to("#grid",{opacity:0.52,duration:1.4,ease:"power2.out"},0)
+        .to(".particle",{opacity:0.45,duration:2,stagger:0.018,ease:"power1.out"},0.2)
+        .fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:300,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+      gsap.utils.toArray(".particle").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"+="+(d*30),duration:34,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // Intro: an attention economy rather than a perception glitch.
+      tl.fromTo("#intro",{opacity:0,y:24},{opacity:1,y:0,duration:0.8,ease:"power3.out"},0.2)
+        .to("#intro .bigTitle b",{scale:1.035,transformOrigin:"center",duration:0.18,yoyo:true,repeat:1,ease:"power2.out"},7.0)
+        .to("#intro",{opacity:0,y:-18,duration:0.55,ease:"power2.in"},18.4);
+
+      // Bookstore surface: visible winners on top, failures below.
+      tl.to("#warmwash",{opacity:0.16,duration:1.0,ease:"power1.inOut"},18.6)
+        .fromTo("#bookLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},18.9)
+        .to("#tableTop",{opacity:1,duration:0.7,ease:"power2.out"},18.95)
+        .fromTo(bookEls,{opacity:0,y:22,rotation:-2},{opacity:1,y:0,rotation:0,duration:0.5,stagger:0.12,ease:"power3.out"},19.35)
+        .to(bookEls,{y:-6,duration:2.6,ease:"sine.inOut",yoyo:true,repeat:1,stagger:0.03},31.4)
+        .fromTo("#millions",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},37.6)
+        .to("#tableTop",{y:-38,opacity:0.38,duration:0.9,ease:"power2.inOut"},38.0)
+        .to(bookEls,{y:-44,opacity:0.35,duration:0.9,ease:"power2.inOut",stagger:0.025},38.0)
+        .fromTo("#archiveLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},39.0)
+        .to(archiveEls,{opacity:0.66,duration:0.45,stagger:0.018,ease:"power1.inOut"},39.0)
+        .to([rejected,bankrupt,forgotten],{opacity:0.9,duration:0.35,stagger:0.14,ease:"power2.out"},43.8)
+        .to("#millions",{opacity:0,duration:0.45,ease:"power2.in"},48.2);
+
+      // Denrell: evidence layer and the missing mirror sample.
+      tl.to(["#bookLabel","#archiveLabel","#tableTop",...bookEls,...archiveEls,rejected,bankrupt,forgotten],{opacity:0,duration:0.75,ease:"power2.inOut"},50.4)
+        .to("#warmwash",{opacity:0,duration:0.8,ease:"power1.inOut"},50.4)
+        .fromTo("#denrellLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},51.0)
+        .fromTo("#journal",{opacity:0,x:-34},{opacity:1,x:0,duration:0.72,ease:"power3.out"},51.3)
+        .to(survivorDots,{attr:{r:7},opacity:1,duration:0.25,stagger:0.022,ease:"back.out(1.7)"},70.5)
+        .to(survivorLab,{opacity:1,duration:0.4,ease:"power2.out"},71.0)
+        .fromTo("#mirror",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},75.1)
+        .to(failedDots,{attr:{r:5},opacity:0.34,duration:0.22,stagger:0.01,ease:"power1.out"},77.2)
+        .to(failedLab,{opacity:1,duration:0.4,ease:"power2.out"},78.0)
+        .to(filter,{opacity:1,duration:0.35,ease:"power2.out"},82.4)
+        .to(failedDots,{opacity:0.08,duration:0.8,ease:"power2.inOut"},83.0)
+        .to("#mirror",{opacity:0,duration:0.4,ease:"power2.in"},96.8)
+        .fromTo("#prefilter",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},103.1)
+        .to(stamp,{opacity:0.82,duration:0.3,ease:"power4.in"},105.1)
+        .to("#journal",{opacity:0,duration:0.6,ease:"power1.inOut"},108.3)
+        .fromTo("#journal2",{opacity:0,x:-34},{opacity:1,x:0,duration:0.72,ease:"power3.out"},108.5)
+        .to("#prefilter",{opacity:0,duration:0.5,ease:"power2.in"},116.0)
+        .fromTo("#broken",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},122.0)
+        .to("#broken b",{color:"#ff5a3c",duration:0.35,ease:"power2.inOut"},124.0)
+        .to("#denrellLabel",{opacity:0,duration:0.5},119.8)
+        .to("#journal2 .paperTitle",{color:"#ff5a3c",duration:0.4,yoyo:true,repeat:1,ease:"power2.out"},135.3)
+        .to([...survivorDots,...failedDots,survivorLab,failedLab,filter,stamp,"#journal","#journal2","#broken"],{opacity:0,duration:0.75,ease:"power2.inOut"},136.8);
+
+      // Layer two: success stage and absent failures.
+      tl.fromTo("#selfHelpLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},137.9)
+        .to([stageBase,spotlight],{opacity:1,duration:0.65,ease:"power2.out"},138.0)
+        .fromTo("#stageText",{opacity:0,y:20},{opacity:1,y:0,duration:0.6,ease:"power3.out"},138.2)
+        .fromTo(coach,{opacity:0,y:24},{opacity:1,y:0,duration:0.5,ease:"power2.out"},139.85)
+        .to(testimony,{opacity:1,duration:0.4,stagger:0.12,ease:"power2.out"},140.45)
+        .to(seats,{opacity:0.46,duration:0.35,stagger:0.012,ease:"power1.out"},145.7)
+        .to(seats,{opacity:0.12,stroke:"#d8392e",duration:0.55,stagger:0.012,ease:"power1.inOut"},148.6)
+        .fromTo("#quiet",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},148.8)
+        .to(testimony,{y:-8,duration:1.5,ease:"sine.inOut",yoyo:true,repeat:1,stagger:0.04},154.7)
+        .to("#stageText",{opacity:0,duration:0.55,ease:"power2.in"},158.0)
+        .to("#quiet",{opacity:0,duration:0.45,ease:"power2.in"},159.8);
+
+      // Aside: the book vs the footnote.
+      tl.fromTo("#aside",{opacity:0,y:24},{opacity:1,y:0,duration:0.65,ease:"power3.out"},160.3)
+        .to([stageBase,spotlight,coach,...testimony,...seats],{opacity:0.18,duration:0.75,ease:"power1.inOut"},162.4)
+        .to("#aside b",{color:"#ff5a3c",duration:0.4,ease:"power2.inOut"},178.2)
+        .fromTo("#traderBook",{opacity:0,y:22},{opacity:1,y:0,duration:0.55,ease:"power3.out"},172.5)
+        .fromTo("#studentFootnote",{opacity:0,y:22},{opacity:1,y:0,duration:0.55,ease:"power3.out"},188.6)
+        .to("#studentFootnote .cap",{color:"#ff5a3c",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},191.0)
+        .fromTo("#coin",{opacity:0,scale:0.55,rotation:-90},{opacity:1,scale:1,rotation:0,duration:0.55,ease:"back.out(1.7)"},194.0)
+        .to("#coin",{rotation:360,duration:1.2,ease:"power2.inOut"},196.4)
+        .to("#coin",{color:"#d8392e",duration:0.28,yoyo:true,repeat:1,ease:"power2.out"},199.6)
+        .to(["#traderBook","#studentFootnote"],{opacity:0,y:-14,duration:0.5,ease:"power2.in"},208.4)
+        .to("#aside",{opacity:0,y:-18,duration:0.55,ease:"power2.in"},209.2)
+        .to("#coin",{opacity:0,duration:0.45,ease:"power2.in"},209.3)
+        .to("#selfHelpLabel",{opacity:0,duration:0.5},209.4)
+        .to([stageBase,spotlight,coach,...testimony,...seats],{opacity:0,duration:0.65,ease:"power2.inOut"},210.2);
+
+      // Layer three: the phone and the hidden distribution.
+      tl.to("#phonewash",{opacity:0.20,duration:0.8,ease:"power1.inOut"},211.0)
+        .fromTo("#phoneLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},211.0)
+        .fromTo("#phoneFrame",{opacity:0,scale:0.88},{opacity:1,scale:1,duration:0.65,ease:"power3.out"},211.2)
+        .to(phoneCards,{opacity:1,duration:0.35,stagger:0.13,ease:"power2.out"},213.4)
+        .to(phoneCards.slice(0,2),{x:0,y:-8,scale:1.04,duration:0.45,yoyo:true,repeat:1,ease:"power2.out",stagger:0.14},218.7)
+        .to(hiddenPeople,{attr:{r:4},opacity:0.18,duration:0.18,stagger:0.006,ease:"power1.out"},229.6)
+        .fromTo("#average",{opacity:0,x:18},{opacity:1,x:0,duration:0.55,ease:"power2.out"},241.9)
+        .to("#average b",{color:"#ff5a3c",duration:0.35,ease:"power2.inOut"},244.4)
+        .to("#average",{opacity:0,duration:0.45,ease:"power2.in"},252.0);
+      const topProxy={v:0}, bestProxy={v:0}, ytProxy={v:0}, ytBest={v:0};
+      tl.fromTo("#m1",{opacity:0,y:20},{opacity:1,y:0,duration:0.55,ease:"power2.out"},255.7)
+        .fromTo("#m2",{opacity:0,y:20},{opacity:1,y:0,duration:0.55,ease:"power2.out"},256.3)
+        .to(topProxy,{v:76,duration:2.4,ease:"power2.out",onUpdate:()=>{topViewsEl.textContent=Math.round(topProxy.v)+"%";}},262.4)
+        .to(bestProxy,{v:64,duration:2.6,ease:"power2.out",onUpdate:()=>{bestVideoEl.textContent=Math.round(bestProxy.v)+"x";}},267.8)
+        .to(barBase,{attr:{height:(i)=>18+i*5,y:(i)=>730-(18+i*5)},opacity:1,duration:0.35,stagger:0.018,ease:"power2.out"},262.4)
+        .to(bars2,{attr:{height:(i)=>16+i*4,y:(i)=>730-(16+i*4)},opacity:1,duration:0.35,stagger:0.018,ease:"power2.out"},274.7)
+        .to(ytProxy,{v:73,duration:1.2,ease:"power2.out",onUpdate:()=>{topViewsEl.textContent=Math.round(ytProxy.v)+"%";}},274.8)
+        .to(ytBest,{v:40,duration:1.2,ease:"power2.out",onUpdate:()=>{bestVideoEl.textContent=Math.round(ytBest.v)+"x";}},275.0)
+        .to(phoneCards.slice(0,1),{scale:1.12,transformOrigin:"960px 375px",duration:0.35,yoyo:true,repeat:1,ease:"power2.out"},280.7);
+
+      // Apex pyramid: the visual lie of the horizon.
+      tl.to(["#phoneFrame",...phoneCards,...hiddenPeople,"#m1","#m2",...barBase,...bars2],{opacity:0,duration:0.65,ease:"power2.inOut"},286.6)
+        .to(pyr,{opacity:1,duration:0.7,ease:"power2.out"},286.9)
+        .to(apex,{opacity:1,duration:0.45,ease:"power2.out"},287.7)
+        .fromTo("#horizonLine",{width:0,opacity:0},{width:1360,opacity:0.65,duration:1.2,ease:"power2.out"},288.6)
+        .to(horizon,{opacity:1,duration:0.5,ease:"power2.out"},289.5)
+        .to("#phoneLabel",{opacity:0,duration:0.5},290.8)
+        .to([pyr,apex,horizon,"#horizonLine"],{opacity:0,duration:0.7,ease:"power2.inOut"},293.4);
+
+      // Advertising packages the survivor sample.
+      tl.fromTo("#adLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power2.out"},291.2)
+        .to(".adCard",{opacity:1,y:0,duration:0.48,stagger:0.16,ease:"power3.out"},293.6)
+        .to("#ad1 .stars",{color:"#f4efe6",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},303.0)
+        .to(".adCard",{borderColor:"rgba(216,57,46,0.52)",duration:0.5,ease:"power1.inOut"},305.3)
+        .fromTo("#product",{opacity:0,scale:1.18},{opacity:1,scale:1,duration:0.42,ease:"power4.in"},312.3)
+        .to(".adCard",{opacity:0.12,duration:0.55,ease:"power1.inOut"},312.5)
+        .to("#product",{opacity:0,y:-20,duration:0.55,ease:"power2.in"},313.7)
+        .to([".adCard","#adLabel","#phonewash"],{opacity:0,duration:0.65,ease:"power2.inOut"},313.8);
+
+      // Three-layer recap and bridge into the deepest layer.
+      tl.fromTo("#recap",{opacity:0,y:24},{opacity:1,y:0,duration:0.65,ease:"power3.out"},314.0)
+        .fromTo("#r1",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45,ease:"power2.out"},314.1)
+        .fromTo("#r2",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45,ease:"power2.out"},316.9)
+        .fromTo("#r3",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45,ease:"power2.out"},320.5)
+        .to(["#r1 .note","#r2 .note","#r3 .note"],{color:"#caa86a",duration:0.25,stagger:0.12,yoyo:true,repeat:1,ease:"power2.out"},324.8)
+        .fromTo("#deepTease",{opacity:0,y:18},{opacity:1,y:0,duration:0.55,ease:"power3.out"},325.0)
+        .to("#deepTease",{color:"#f4efe6",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},330.5);
+
+      // Caption karaoke.
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.15);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.1 : DUR-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.28,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.10,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.24,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.24);
+        }
+      });
+
+      window.__timelines["seg-03-industries"] = tl;
+    </script>
+  </body>
+</html>

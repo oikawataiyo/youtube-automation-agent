@@ -1,0 +1,8 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-03-industries.txt",
+  "generated_at": "2026-05-31T15:05:00.000Z",
+  "engine": "hyperframes tts (kokoro-82M)",
+  "duration_seconds": 336.64
+}
