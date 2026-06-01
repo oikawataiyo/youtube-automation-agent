@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-06-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 36% 46% at 34% 46%, rgba(40,48,62,0.5) 0%, transparent 64%),
+          linear-gradient(180deg, var(--bg) 0%, var(--dawn) 50%, var(--bg) 100%); }
+      /* pale-blue recovery grade — starts high, recovery is complete by the outro */
+      #bluewash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 50% 58% at 34% 42%, rgba(79,123,181,0.26) 0%, transparent 66%),
+          linear-gradient(180deg, transparent 0%, rgba(127,168,201,0.12) 52%, transparent 100%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 80% 76% at 38% 46%, transparent 38%, rgba(0,0,0,0.64) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* ----- re-trained forecast (callback to seg-05) ----- */
+      .axis { stroke: rgba(154,166,178,0.30); stroke-width: 1.6; opacity: 0; }
+      #hopeCurve { stroke: var(--glass); stroke-width: 5; fill: none;
+        stroke-linecap: round; opacity: 0; }
+      #peakNode { fill: var(--glass); opacity: 0; }
+      #peakRing { fill: none; stroke: var(--glass); stroke-width: 2.5; opacity: 0; }
+      #curveLab { fill: var(--glass); font-size: 24px; font-weight: 700;
+        letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; }
+
+      /* ----- old model: the missing-nutrient molecule, struck out ----- */
+      #mol circle { fill: rgba(202,168,106,0.16); stroke: var(--dope); stroke-width: 2.4; }
+      #mol line { stroke: var(--dope); stroke-width: 2.2; }
+      #mol { opacity: 0; }
+      #molStrike { stroke: var(--alarm); stroke-width: 6; stroke-linecap: round; opacity: 0; }
+      #molLab { fill: var(--mute); font-size: 26px; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; text-anchor: middle; opacity: 0; }
+
+      /* ----- evidence tokens (rise from the bottom) ----- */
+      #tokTitle { fill: var(--mute); font-size: 24px; letter-spacing: 0.18em;
+        text-transform: uppercase; opacity: 0; }
+      .tok { fill: rgba(22,28,38,0.6); stroke: var(--glass); stroke-width: 2.2; opacity: 0; }
+      .toklab { fill: var(--steel); font-size: 28px; font-weight: 600;
+        letter-spacing: 0.03em; text-transform: uppercase; opacity: 0; }
+      #pulse { fill: var(--glass); opacity: 0; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .sechead { left: 1240px; width: 620px; font-size: 40px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.08; }
+      .line { left: 1240px; width: 620px; font-size: 31px; font-weight: 400;
+        color: var(--steel); letter-spacing: 0.01em; line-height: 1.28; }
+      .line b { color: var(--ink); font-weight: 700; }
+      .line u { color: var(--glass); text-decoration: none; font-weight: 700; }
+      .line s { color: var(--mute); text-decoration: none; }
+      #struckQ { left: 1240px; top: 360px; width: 620px; font-size: 40px; font-weight: 800;
+        color: var(--mute); letter-spacing: 0.01em; line-height: 1.14; text-transform: uppercase;
+        position: absolute; opacity: 0; }
+      #qline { position: absolute; left: 1240px; top: 392px; height: 5px; width: 0;
+        background: var(--alarm); opacity: 0; border-radius: 3px; }
+      #qnew1 { left: 1240px; top: 470px; width: 620px; font-size: 46px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.12; text-transform: uppercase; }
+      #qnew1 u { color: var(--glass); text-decoration: none; }
+      #qnew2 { left: 1240px; top: 610px; width: 620px; font-size: 36px; font-weight: 700;
+        color: var(--glass); letter-spacing: 0.01em; line-height: 1.2; text-transform: uppercase; }
+      #updates { left: 1240px; top: 560px; width: 620px; font-size: 42px; font-weight: 800;
+        color: var(--glass); letter-spacing: 0.01em; line-height: 1.14; text-transform: uppercase; }
+      #updates b { color: var(--ink); }
+      #closerL { left: 1240px; top: 430px; width: 620px; font-size: 38px; font-weight: 700;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.22; }
+      #closerL u { color: var(--glass); text-decoration: none; }
+      #signoff { left: 1240px; top: 660px; width: 620px; font-size: 30px; font-weight: 400;
+        color: var(--steel); letter-spacing: 0.02em; }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--glass); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-06"
+      data-start="0"
+      data-duration="54.9"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="54.9" data-track-index="9"
+             src="../assets/narration/seg-06.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="54.9" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="bluewash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="54.9" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="graph">
+            <line id="axisY" class="axis" x1="240" y1="300" x2="240" y2="720" />
+            <line id="axisX" class="axis" x1="240" y1="720" x2="1020" y2="720" />
+            <path id="hopeCurve" d="M 240 660 C 470 652, 720 470, 1000 330" />
+            <circle id="peakRing" cx="1000" cy="330" r="34" />
+            <circle id="peakNode" cx="1000" cy="330" r="11" />
+            <text id="curveLab" x="1024" y="338">re-trained forecast</text>
+          </g>
+          <g id="oldmodel">
+            <g id="mol" transform="translate(470,470)">
+              <line x1="0" y1="0" x2="-66" y2="-40" />
+              <line x1="0" y1="0" x2="70" y2="-30" />
+              <line x1="0" y1="0" x2="20" y2="76" />
+              <circle cx="0" cy="0" r="30" />
+              <circle cx="-66" cy="-40" r="18" />
+              <circle cx="70" cy="-30" r="18" />
+              <circle cx="20" cy="76" r="18" />
+            </g>
+            <line id="molStrike" x1="372" y1="392" x2="568" y2="556" />
+            <text id="molLab" x="470" y="610">missing nutrient</text>
+          </g>
+          <g id="tokens">
+            <text id="tokTitle" x="250" y="592">evidence, from the bottom</text>
+            <rect class="tok" id="tok1" x="250" y="612" width="300" height="44" rx="7" />
+            <rect class="tok" id="tok2" x="250" y="668" width="300" height="44" rx="7" />
+            <rect class="tok" id="tok3" x="250" y="724" width="300" height="44" rx="7" />
+            <rect class="tok" id="tok4" x="250" y="780" width="430" height="44" rx="7" />
+            <text class="toklab" id="tl1" x="270" y="643">a walk</text>
+            <text class="toklab" id="tl2" x="270" y="699">a call</text>
+            <text class="toklab" id="tl3" x="270" y="755">a meal</text>
+            <text class="toklab" id="tl4" x="270" y="811">an hour of light</text>
+          </g>
+          <circle id="pulse" cx="400" cy="634" r="7" />
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="54.9" data-track-index="2">
+        <!-- A: the serotonin story -->
+        <div class="ktype sechead" id="oldHead" style="top:210px;">the serotonin story</div>
+        <div class="ktype line" id="oldL1" style="top:320px;">treated depression as a<br><b>missing nutrient</b></div>
+        <div class="ktype line" id="oldL2" style="top:460px;">kind in the short run &mdash;<br><s>wrong</s>, and it left people<br><b>stranded</b> when it didn&rsquo;t show</div>
+
+        <!-- B: the predictive brain story -->
+        <div class="ktype sechead" id="newHead" style="top:210px;">the predictive<br>brain story</div>
+        <div class="ktype line" id="newL1" style="top:360px;">harder &mdash; it asks the<br><b>body</b>, the <b>schedule</b>, the<br><b>inflammation</b>, the <b>past</b><br>all to count</div>
+
+        <!-- C: hopeful -->
+        <div class="ktype sechead" id="hopeHead" style="top:230px;">forecasts can be<br><span style="color:var(--glass)">retrained</span></div>
+        <div class="ktype line" id="hopeL1" style="top:420px;">the brain is built to do<br>exactly that &mdash; <u>whenever<br>evidence reaches it</u></div>
+
+        <!-- D: the reframe -->
+        <div class="ktype" id="struckQ">&ldquo;what&rsquo;s broken<br>in my chemistry?&rdquo;</div>
+        <div id="qline"></div>
+        <div class="ktype" id="qnew1">what does my brain<br><u>currently expect?</u></div>
+        <div class="ktype" id="qnew2">&amp; what&rsquo;s the smallest evidence<br>i can hand it today?</div>
+
+        <!-- E: evidence not affirmation -->
+        <div class="ktype" id="updates">the model updates<br>from the bottom.<br><b>it always has.</b></div>
+
+        <!-- F: closer -->
+        <div class="ktype" id="closerL">if this frame fits better than<br>the one you&rsquo;ve been carrying &mdash;<br><u>send it to someone</u> told their<br>problem is a missing chemical.</div>
+        <div class="ktype" id="signoff">&mdash; and I&rsquo;ll see you in the next one.</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="54.9" data-track-index="3">
+        <div id="kicker">DEPRESSION IS A PREDICTION ERROR &nbsp;&#183;&nbsp; <span class="num">PART 07</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="54.9" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798006);
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<36;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // hope-curve reveal geometry (callback to seg-05's re-training)
+      const hc=document.getElementById("hopeCurve");
+      const HLEN=hc.getTotalLength();
+      hc.style.strokeDasharray=HLEN+" "+HLEN;
+      hc.style.strokeDashoffset=HLEN;
+
+      // ---------- captions ----------
+      const WORDS = window.seg06 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 54.9;
+
+      // bg in — recovery already well underway
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to("#bluewash",{opacity:0.7,duration:3.0,ease:"power2.out"},0.4)
+        .to(".mote",{opacity:0.40,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:30,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:660,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // axes faint
+      tl.to(".axis",{opacity:1,duration:1.2,ease:"power2.out"},0.8);
+
+      // ===== A: the serotonin story (0.5–9) =====
+      tl.fromTo("#oldHead",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},0.6)
+        .fromTo("#mol",{opacity:0,scale:0.7,transformOrigin:"50% 50%"},
+                {opacity:0.9,scale:1,duration:0.8,ease:"power2.out"},1.4)
+        .fromTo("#molLab",{opacity:0},{opacity:0.9,duration:0.7},2.0)
+        .fromTo("#oldL1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},2.4)
+        .fromTo("#oldL2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},3.6);
+      // strike the molecule — "wrong, left people stranded" (~5.7)
+      tl.fromTo("#molStrike",{opacity:0,scaleX:0,transformOrigin:"0% 0%"},
+                {opacity:1,scaleX:1,duration:0.45,ease:"power3.in"},5.7)
+        .to("#mol",{opacity:0.32,duration:0.6},6.1)
+        .to("#molLab",{fill:"#5b6472",duration:0.6},6.1);
+
+      // ===== B: the predictive brain story (9.86–18) =====
+      tl.to(["#oldHead","#oldL1","#oldL2"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},9.0)
+        .to(["#mol","#molStrike","#molLab"],{opacity:0,duration:0.6},9.0)
+        .fromTo("#newHead",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},9.86)
+        .fromTo("#newL1",{opacity:0,y:16},{opacity:1,y:0,duration:0.8,ease:"power2.out"},12.6);
+
+      // ===== C: forecasts can be retrained (18.4–25) — the curve draws up =====
+      tl.to(["#newHead","#newL1"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},17.9)
+        .fromTo("#hopeHead",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},18.4)
+        .set("#hopeCurve",{opacity:1},18.6)
+        .to("#hopeCurve",{strokeDashoffset:0,duration:2.6,ease:"power2.inOut"},18.8)
+        .fromTo("#hopeL1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},20.86)
+        .fromTo("#curveLab",{opacity:0,x:14},{opacity:1,x:0,duration:0.7},21.8)
+        .fromTo("#peakNode",{opacity:0,scale:0.4,transformOrigin:"50% 50%"},
+                {opacity:1,scale:1,duration:0.5,ease:"back.out(2)"},22.0);
+
+      // ===== D: the reframe (25.98–36) =====
+      tl.to(["#hopeHead","#hopeL1"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},25.4)
+        .fromTo("#struckQ",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},25.98)
+        .to("#qline",{width:560,opacity:1,duration:0.4,ease:"power3.in"},28.4)
+        .fromTo("#qnew1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},29.6)
+        .fromTo("#qnew2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},32.6);
+
+      // ===== E: evidence not affirmation — tokens rise from the bottom (36.86–45) =====
+      tl.to(["#struckQ","#qline","#qnew1","#qnew2"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},36.4)
+        .fromTo("#tokTitle",{opacity:0},{opacity:0.9,duration:0.6},36.86);
+
+      // each token appears, then fires a pulse up to the curve peak
+      const toks=[
+        {box:"#tok1",lab:"#tl1",t:39.1,y:634},
+        {box:"#tok2",lab:"#tl2",t:39.9,y:690},
+        {box:"#tok3",lab:"#tl3",t:40.7,y:746},
+        {box:"#tok4",lab:"#tl4",t:42.4,y:802}
+      ];
+      toks.forEach(c=>{
+        tl.fromTo(c.box,{opacity:0,x:-14},{opacity:1,x:0,duration:0.4,ease:"power2.out"},c.t)
+          .fromTo(c.lab,{opacity:0,x:-14},{opacity:0.95,x:0,duration:0.4,ease:"power2.out"},c.t+0.04)
+          .set("#pulse",{attr:{cx:400,cy:c.y},r:7},c.t+0.2)
+          .fromTo("#pulse",{opacity:0},{opacity:0.95,duration:0.1,overwrite:"auto"},c.t+0.2)
+          .to("#pulse",{attr:{cx:1000,cy:330},duration:0.6,ease:"power1.inOut"},c.t+0.25)
+          .to("#pulse",{opacity:0,r:3,duration:0.2},c.t+0.78)
+          // each arrival pings the peak node
+          .fromTo("#peakRing",{opacity:0.8,scale:0.5,transformOrigin:"1000px 330px"},
+                  {opacity:0,scale:1.7,duration:0.6,ease:"power2.out"},c.t+0.8);
+      });
+
+      // "the model updates from the bottom. it always has." (44.14)
+      tl.fromTo("#updates",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},44.14)
+        .to("#peakNode",{scale:1.5,transformOrigin:"1000px 330px",duration:0.5,yoyo:true,repeat:1,ease:"power2.inOut"},44.6)
+        .to("#hopeCurve",{strokeWidth:6,duration:0.8},44.6);
+
+      // ===== F: closer (45.82–end) =====
+      tl.to(["#updates","#tokTitle","#tok1","#tok2","#tok3","#tok4","#tl1","#tl2","#tl3","#tl4"],
+            {opacity:0,y:-10,duration:0.5,stagger:0.02,ease:"power2.in"},45.4)
+        .fromTo("#closerL",{opacity:0,y:16},{opacity:1,y:0,duration:0.8,ease:"power2.out"},45.82)
+        .fromTo("#signoff",{opacity:0,y:14},{opacity:1,y:0,duration:0.7,ease:"power2.out"},53.16)
+        // final pulse completes the motif — lands on the peak and holds
+        .set("#pulse",{attr:{cx:400,cy:800},r:8},52.4)
+        .fromTo("#pulse",{opacity:0},{opacity:1,duration:0.12,overwrite:"auto"},52.4)
+        .to("#pulse",{attr:{cx:1000,cy:330},duration:0.7,ease:"power2.inOut"},52.5)
+        .to("#pulse",{opacity:0,duration:0.2},53.2)
+        .fromTo("#peakRing",{opacity:0.9,scale:0.5,transformOrigin:"1000px 330px"},
+                {opacity:0,scale:2.0,duration:1.0,ease:"power2.out"},53.2)
+        .to("#peakNode",{scale:1.7,transformOrigin:"1000px 330px",duration:0.6,ease:"power2.out"},53.2)
+        .to("#bluewash",{opacity:1.0,duration:1.6,ease:"power2.out"},53.0);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-06"] = tl;
+    </script>
+  </body>
+</html>
