@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-01-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      /* ----- background: institutional wall at dawn ----- */
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 60% 80% at 30% 26%, rgba(38,48,64,0.5) 0%, transparent 62%),
+          linear-gradient(120deg, var(--dawn) 0%, var(--bg) 52%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 80% 72% at 44% 46%, transparent 40%, rgba(0,0,0,0.6) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* ----- predictive wall behind the poster (the truth) ----- */
+      #wall { opacity: 0; }
+      #wall .scrib { fill: var(--bone); font-style: italic; opacity: 0.0; }
+      #wall .eq { font-size: 30px; font-weight: 300; letter-spacing: 0.01em; }
+      #wall .tag { font-size: 22px; font-weight: 600; letter-spacing: 0.18em;
+        text-transform: uppercase; fill: var(--steel); }
+      #wall line, #wall path, #wall polyline { fill: none; stroke: var(--steel);
+        stroke-width: 2; opacity: 0.0; }
+      #wall .pred { stroke: var(--dope); stroke-dasharray: 6 8; }
+
+      /* ----- 1990s clinic poster (the wrong map) ----- */
+      #poster .panel { fill: rgba(20,26,36,0.92); stroke: var(--steel); stroke-width: 2.2; }
+      #poster .head { fill: var(--steel); font-size: 26px; font-weight: 700;
+        letter-spacing: 0.22em; text-transform: uppercase; }
+      #poster .sub { fill: var(--mute); font-size: 19px; font-weight: 400; letter-spacing: 0.16em; }
+      #brain path, #brain ellipse { fill: none; stroke: var(--clinic); stroke-width: 2.6;
+        stroke-linejoin: round; stroke-linecap: round; }
+      #brain .haze { fill: rgba(79,123,181,0.07); stroke: none; }
+      #gap { fill: none; stroke: var(--clinic); stroke-width: 2.2; stroke-dasharray: 4 6; }
+      #gapLab { fill: var(--clinic); font-size: 26px; font-weight: 800; letter-spacing: 0.12em; }
+      #gapArrow { stroke: var(--clinic); stroke-width: 2; fill: none; }
+      #stamp { fill: none; stroke: var(--dope); stroke-width: 2.4; opacity: 0; }
+      #stampTxt { fill: var(--dope); font-size: 40px; font-weight: 800; letter-spacing: 0.06em; opacity: 0; }
+      #gloss { fill: #ffffff; opacity: 0; }
+      #tm { fill: var(--mute); font-size: 20px; opacity: 0; }
+      #posterCrack { stroke: var(--alarm); stroke-width: 2.4; fill: none;
+        opacity: 0; stroke-dasharray: 1000; stroke-dashoffset: 1000; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .credit { left: 1180px; font-size: 30px; font-weight: 300; color: var(--steel);
+        letter-spacing: 0.02em; width: 620px; line-height: 1.25; }
+      .credit b { color: var(--ink); font-weight: 700; }
+      #revEng { left: 1180px; top: 360px; font-size: 56px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.0; width: 640px; }
+      #cite { left: 1180px; top: 300px; width: 640px;
+        font-size: 26px; font-weight: 600; letter-spacing: 0.1em; color: var(--steel);
+        line-height: 1.5; border-left: 3px solid var(--clinic); padding-left: 22px; }
+      #cite b { color: var(--ink); }
+      .evrow { left: 1206px; font-size: 27px; font-weight: 400; color: var(--mute);
+        letter-spacing: 0.04em; }
+      #verdict { left: 1180px; top: 470px; width: 660px;
+        font-size: 58px; font-weight: 800; color: var(--alarm); letter-spacing: 0.01em;
+        line-height: 1.02; text-transform: uppercase; }
+      #scaffold { left: 1180px; top: 700px; width: 640px;
+        font-size: 40px; font-weight: 700; color: var(--steel); letter-spacing: 0.02em;
+        line-height: 1.1; text-transform: uppercase; }
+      #scaffold b { color: var(--ink); }
+      #bigger { left: 50%; top: 50%; width: 1500px; text-align: center;
+        font-size: 96px; font-weight: 800; color: var(--ink); letter-spacing: 0.01em;
+        line-height: 1.03; text-transform: uppercase; }
+      #bigger b { color: var(--dope); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--dope); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-01"
+      data-start="0"
+      data-duration="88.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="88.7" data-track-index="9"
+             src="../assets/narration/seg-01.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="88.7" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="88.7" data-track-index="1"
+           data-layout-allow-overflow>
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <!-- predictive wall (revealed when the poster peels) -->
+          <g id="wall">
+            <text class="scrib eq" x="430" y="250">prediction error = sensory &#8722; predicted</text>
+            <text class="scrib eq" x="430" y="430">mood = forecast( effort &#8594; reward )</text>
+            <text class="scrib tag" x="430" y="520">EFFORT</text>
+            <text class="scrib tag" x="900" y="520" text-anchor="end">REWARD</text>
+            <line class="pred" x1="450" y1="560" x2="900" y2="560" />
+            <polyline x1="0" points="450,560 620,560 900,560" />
+            <text class="scrib eq" x="470" y="720">free energy &#8595;</text>
+            <text class="scrib eq" x="470" y="800">interoception &#183; allostasis</text>
+            <path d="M 760 600 C 820 640, 840 700, 900 720" />
+          </g>
+
+          <!-- the wrong map: 1990s serotonin poster -->
+          <g id="poster">
+            <rect class="panel" x="360" y="150" width="700" height="800" rx="6" />
+            <text class="head" x="710" y="232" text-anchor="middle">THE CHEMICAL IMBALANCE</text>
+            <text class="sub" x="710" y="268" text-anchor="middle">FIG 1 &#183; AFFECTIVE DISORDER</text>
+
+            <g id="brain" transform="translate(710 540)">
+              <ellipse class="haze" cx="0" cy="0" rx="186" ry="150" />
+              <path d="M -186 6 C -184 -92, -96 -150, 6 -150 C 110 -150, 188 -86, 186 4
+                       C 184 92, 104 150, 0 150 C -100 150, -184 92, -186 6 Z" />
+              <path d="M -150 -36 C -96 -60, -40 -52, 6 -28" />
+              <path d="M -120 36 C -54 14, 20 26, 96 6" />
+              <path d="M -36 -120 C -52 -64, -44 -8, -18 44" />
+              <path d="M 70 -118 C 96 -56, 96 8, 64 70" />
+              <!-- serotonin deficit gap -->
+              <circle id="gap" cx="96" cy="58" r="34" />
+              <path id="gapArrow" d="M 160 96 L 118 70" />
+            </g>
+            <text id="gapLab" x="892" y="690">SEROTONIN</text>
+
+            <!-- "became a product" gloss + trademark -->
+            <rect id="gloss" x="360" y="150" width="240" height="800"
+                  transform="skewX(-18)" />
+            <text id="tm" x="1028" y="232">&#8482;</text>
+
+            <!-- 1965 date stamp -->
+            <g transform="translate(470 882) rotate(-9)">
+              <rect id="stamp" x="-86" y="-40" width="172" height="80" rx="6" />
+              <text id="stampTxt" x="0" y="14" text-anchor="middle">1965</text>
+            </g>
+
+            <!-- crack that opens at "no consistent evidence" -->
+            <path id="posterCrack" d="M 710 150 L 690 360 L 760 560 L 700 760 L 730 950" />
+          </g>
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="88.7" data-track-index="2">
+        <div class="ktype credit" id="credit" style="top:300px;">
+          <b>Schildkraut</b>, 1965 &mdash; catecholamine hypothesis,<br><i>Am. J. Psychiatry</i></div>
+        <div class="ktype" id="revEng">REVERSE-<br>ENGINEERED<br><span style="font-size:28px;font-weight:300;color:var(--steel);text-transform:none;letter-spacing:0.02em;">from the medicine, not the brain</span></div>
+        <div class="ktype" id="cite"><b>2022 &#183; Moncrieff et al.</b><br>UCL &#183; umbrella review<br>Molecular Psychiatry</div>
+        <div class="ktype evrow" id="ev1" style="top:470px;">&#183; serotonin metabolites</div>
+        <div class="ktype evrow" id="ev2" style="top:512px;">&#183; receptor density</div>
+        <div class="ktype evrow" id="ev3" style="top:554px;">&#183; transporter studies</div>
+        <div class="ktype evrow" id="ev4" style="top:596px;">&#183; depletion experiments</div>
+        <div class="ktype" id="verdict">NO CONSISTENT<br>EVIDENCE</div>
+        <div class="ktype" id="scaffold">SCAFFOLDING,<br><b>NOT BIOLOGY</b></div>
+        <div class="ktype" id="bigger">THE MAP WAS WRONG.<br>THE <b>TERRITORY</b> WAS BIGGER.</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="88.7" data-track-index="3">
+        <div id="kicker">THE MAP WE GOT WRONG &nbsp;&#183;&nbsp; <span class="num">PART 02</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="88.7" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798001);
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<48;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- captions ----------
+      const WORDS = window.seg01 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 88.7;
+
+      gsap.set(["#bigger"],{xPercent:-50,yPercent:-50});
+
+      // bg in
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.4,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:30,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:360,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // poster builds (0.3–6): panel, header, brain strokes, gap label
+      tl.from("#poster .panel",{opacity:0,y:24,duration:1.2,ease:"power3.out"},0.3)
+        .from(["#poster .head","#poster .sub"],{opacity:0,y:10,duration:0.8,stagger:0.12},0.9)
+        .from("#brain path",{opacity:0,duration:0.9,stagger:0.12,ease:"power2.out"},1.4)
+        .from(["#gap","#gapArrow"],{opacity:0,duration:0.6},2.6)
+        .from("#gapLab",{opacity:0,x:-14,duration:0.6},2.9);
+
+      // "Schildkraut, 1965" — credit + date stamp thunks in (2.92)
+      tl.fromTo("#credit",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},3.0)
+        .fromTo(["#stamp","#stampTxt"],{opacity:0,scale:1.5,transformOrigin:"50% 50%"},
+                {opacity:1,scale:1,duration:0.5,ease:"back.out(1.8)"},4.0);
+
+      // "reverse-engineered from the medicine, not the brain" (20.42)
+      tl.to("#credit",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},19.6)
+        .fromTo("#revEng",{opacity:0,y:18},{opacity:1,y:0,duration:0.7,ease:"power3.out"},20.4);
+
+      // "became a product" (24.66) — pharma gloss sweep + trademark; SEROTONIN brightens
+      tl.to("#revEng",{opacity:0,duration:0.5,ease:"power2.in"},23.8)
+        .fromTo("#gloss",{opacity:0,x:-260},{opacity:0.10,x:1400,duration:1.4,ease:"power2.inOut"},24.7)
+        .set("#gloss",{opacity:0},26.2)
+        .fromTo("#tm",{opacity:0},{opacity:1,duration:0.4},26.0)
+        .to("#gapLab",{fill:"#7fa8c9",duration:0.5},28.5)
+        .to(["#gap","#gapArrow"],{stroke:"#7fa8c9",duration:0.5},28.5)
+        .to(["#brain path"],{stroke:"#6f9bd6",duration:0.6},28.6);
+
+      // "In 2022, Moncrieff et al ... umbrella review" (40.74)
+      tl.fromTo("#cite",{opacity:0,x:24},{opacity:1,x:0,duration:0.7,ease:"power2.out"},40.8);
+
+      // evidence list stacks (49.86–56)
+      tl.fromTo(["#ev1","#ev2","#ev3","#ev4"],{opacity:0,x:18},
+                {opacity:1,x:0,duration:0.5,stagger:0.5,ease:"power2.out"},50.0);
+
+      // GEAR-CHANGE: "no consistent evidence ... deficiency of serotonin" (60.86)
+      tl.to(["#ev1","#ev2","#ev3","#ev4"],{opacity:0.25,duration:0.5},60.4)
+        .to("#cite",{opacity:0.3,duration:0.5},60.4)
+        .fromTo("#verdict",{opacity:0,scale:1.3,transformOrigin:"0% 50%"},
+                {opacity:1,scale:1,duration:0.5,ease:"power4.in"},60.9)
+        // serotonin label/gap struck through; poster cracks
+        .to("#gapLab",{color:"#d8392e",fill:"#d8392e",duration:0.4},61.4)
+        .to(["#gap"],{stroke:"#d8392e",duration:0.4},61.4)
+        .to("#posterCrack",{opacity:0.9,strokeDashoffset:0,duration:1.4,ease:"power2.inOut"},61.6);
+
+      // "scaffolding, not biology" (70.18)
+      tl.to("#verdict",{opacity:0,y:-14,duration:0.5,ease:"power2.in"},69.4)
+        .to(["#ev1","#ev2","#ev3","#ev4","#cite"],{opacity:0,duration:0.5},69.4)
+        .fromTo("#scaffold",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},70.2);
+
+      // emotional dim — "the implication landed on you" (77–85)
+      tl.to("#poster",{opacity:0.62,duration:1.4,ease:"power2.inOut"},77.0)
+        .to("#scaffold",{opacity:0,y:-12,duration:0.6,ease:"power2.in"},84.6);
+
+      // GEAR-CHANGE: "The map was wrong." (86.0) — poster peels away
+      tl.to("#wall",{opacity:1,duration:1.0,ease:"power2.out"},85.6)
+        .to("#wall .scrib",{opacity:0.85,duration:0.9,stagger:0.06,ease:"power2.out"},85.8)
+        .to("#wall line, #wall path, #wall polyline",{opacity:0.7,duration:0.9,stagger:0.05},86.0)
+        .to("#poster",{rotation:-7,x:-180,y:-120,opacity:0,transformOrigin:"0% 0%",
+             duration:1.4,ease:"power3.in"},86.0);
+
+      // "The territory was bigger." (87.28)
+      tl.fromTo("#bigger",{opacity:0,scale:0.92},{opacity:1,scale:1,duration:0.8,ease:"power3.out"},87.3)
+        .to("#wall .pred",{opacity:1,strokeWidth:3,duration:0.6,yoyo:true,repeat:1,ease:"sine.inOut"},87.6);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-01"] = tl;
+    </script>
+  </body>
+</html>
