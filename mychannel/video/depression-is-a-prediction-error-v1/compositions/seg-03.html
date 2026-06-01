@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-03-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 50% 70% at 30% 18%, rgba(40,36,30,0.5) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 50% at 30% 92%, rgba(60,20,18,0.32) 0%, transparent 64%),
+          linear-gradient(160deg, var(--dawn) 0%, var(--bg) 58%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 80% 76% at 36% 50%, transparent 38%, rgba(0,0,0,0.62) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* anatomical labels */
+      .zlab { font-size: 22px; font-weight: 700; letter-spacing: 0.16em;
+        text-transform: uppercase; opacity: 0; }
+      .zsub { font-size: 17px; font-weight: 400; letter-spacing: 0.06em;
+        fill: var(--mute); opacity: 0; }
+
+      /* plasma + blood cells */
+      #plasmaGlow { opacity: 0; }
+      .rbc { fill: rgba(150,38,32,0.0); stroke: rgba(180,52,44,0.0); stroke-width: 1.5; }
+
+      /* vagus nerve conduit */
+      #vagus { fill: none; stroke: var(--mute); stroke-width: 14; stroke-linecap: round; opacity: 0.0; }
+      #vagusGlow { fill: none; stroke: var(--glass); stroke-width: 5; stroke-linecap: round;
+        opacity: 0; filter: drop-shadow(0 0 6px rgba(127,168,201,0.6)); }
+      .cyto { fill: var(--warn); opacity: 0; }
+
+      /* basal ganglia */
+      #ganglia path { fill: rgba(22,27,36,0.9); stroke: var(--steel); stroke-width: 2; opacity: 0; }
+      #dopRing { fill: none; stroke: var(--dope); stroke-width: 3.5; opacity: 0; }
+      #dopCore { fill: var(--dope); opacity: 0; }
+
+      /* dopamine signal trace (ECG-like) */
+      #traceBox { stroke: var(--mute); stroke-width: 1.6; fill: none; opacity: 0; }
+      #traceLabel { fill: var(--dope); font-size: 19px; font-weight: 700;
+        letter-spacing: 0.14em; opacity: 0; }
+      #dopTrace { fill: none; stroke: var(--dope); stroke-width: 3;
+        stroke-linecap: round; stroke-linejoin: round;
+        stroke-dasharray: 1400; stroke-dashoffset: 1400; }
+      #flatTrace { fill: none; stroke: var(--warn); stroke-width: 2.6;
+        stroke-linecap: round; opacity: 0; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .cred { left: 1230px; width: 600px; font-size: 27px; font-weight: 300;
+        color: var(--steel); letter-spacing: 0.02em; line-height: 1.3;
+        border-left: 3px solid var(--warn); padding-left: 22px; }
+      .cred b { color: var(--ink); font-weight: 700; }
+      .cred i { color: var(--mute); font-style: normal; font-size: 21px; }
+      .fact { left: 1230px; width: 600px; font-size: 30px; font-weight: 400;
+        color: var(--steel); letter-spacing: 0.01em; line-height: 1.3; }
+      .fact b { color: var(--ink); font-weight: 700; }
+      .fact u { color: var(--warn); text-decoration: none; font-weight: 700; }
+      #mech { left: 1230px; top: 470px; width: 610px; font-size: 34px; font-weight: 700;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.2; text-transform: uppercase; }
+      #mech b { color: var(--warn); }
+      #mech u { color: var(--dope); text-decoration: none; }
+      .isdep { left: 1230px; font-size: 40px; font-weight: 800; color: var(--steel);
+        letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; }
+      #isdep3 { color: var(--ink); }
+      #wrongorgan { left: 1230px; top: 470px; width: 610px; font-size: 42px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.12; text-transform: uppercase; }
+      #wrongorgan b { color: var(--warn); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--dope); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-03"
+      data-start="0"
+      data-duration="100.4"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="100.4" data-track-index="9"
+             src="../assets/narration/seg-03.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="100.4" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="100.4" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <!-- plasma pool (bottom) -->
+          <ellipse id="plasmaGlow" cx="470" cy="940" rx="380" ry="120" fill="rgba(120,30,26,0.18)" />
+          <g id="rbcs"></g>
+          <text class="zlab" id="zlab1" x="200" y="1004" fill="var(--alarm)">SYSTEMIC INFLAMMATION</text>
+
+          <!-- vagus nerve conduit -->
+          <path id="vagus"    d="M 470 880 C 470 760, 560 660, 540 520 C 524 408, 470 360, 480 300" />
+          <path id="vagusGlow" d="M 470 880 C 470 760, 560 660, 540 520 C 524 408, 470 360, 480 300" />
+          <text class="zlab" id="zlab2" x="612" y="600" fill="var(--glass)">VAGUS NERVE</text>
+          <text class="zsub" id="zsub2" x="612" y="626">cytokine signal &#8594; brain</text>
+          <g id="cytos"></g>
+
+          <!-- basal ganglia (top) -->
+          <g id="ganglia" transform="translate(480 248)">
+            <path d="M -120 10 C -130 -54, -78 -92, -10 -86 C 30 -90, 84 -70, 96 -20
+                     C 112 36, 70 84, 4 80 C -64 90, -112 64, -120 10 Z" />
+            <path d="M -54 -14 C -40 -34, -8 -34, 6 -14 C 18 4, 4 26, -18 22 C -44 26, -60 6, -54 -14 Z" />
+          </g>
+          <text class="zlab" id="zlab3" x="612" y="232" fill="var(--dope)">BASAL GANGLIA</text>
+          <text class="zsub" id="zsub3" x="612" y="258">motivation &#183; reward circuit</text>
+
+          <!-- dopamine pulse node -->
+          <circle id="dopRing" cx="480" cy="248" r="30" />
+          <circle id="dopCore" cx="480" cy="248" r="13" />
+
+          <!-- dopamine signal trace -->
+          <rect id="traceBox" x="1232" y="690" width="612" height="150" rx="6" />
+          <text id="traceLabel" x="1252" y="722">DOPAMINE RELEASE</text>
+          <path id="dopTrace" d="M 1252 790
+            L 1320 790 L 1334 752 L 1348 828 L 1362 790
+            L 1452 790 L 1466 754 L 1480 826 L 1494 790
+            L 1584 790 L 1598 756 L 1612 824 L 1626 790
+            L 1716 790 L 1730 766 L 1744 814 L 1758 790
+            L 1824 790" />
+          <path id="flatTrace" d="M 1252 800 L 1470 800 L 1480 792 L 1490 806 L 1500 800
+            L 1640 800 L 1648 795 L 1656 803 L 1664 800 L 1824 800" />
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="100.4" data-track-index="2">
+        <div class="ktype cred" id="cred1" style="top:300px;">
+          <b>Raison &amp; Miller</b>, 2011<br><i>Current Psychiatry Reports</i></div>
+        <div class="ktype fact" id="fact1" style="top:300px;">
+          <b>interferon</b> for hepatitis spikes<br>inflammatory cytokines &rarr;<br><u>full depressive episodes</u></div>
+        <div class="ktype cred" id="cred2" style="top:300px;">
+          <b>Jennifer Felger</b>, 2019<br><i>Pharmacology &amp; Therapeutics</i></div>
+        <div class="ktype" id="mech">inflammation <b>suppresses</b><br><u>dopamine</u> in the<br>reward circuit</div>
+        <div class="ktype isdep" id="isdep1" style="top:430px;">looks like depression</div>
+        <div class="ktype isdep" id="isdep2" style="top:520px;">feels like depression</div>
+        <div class="ktype isdep" id="isdep3" style="top:610px;">it <span style="color:var(--dope)">IS</span> depression</div>
+        <div class="ktype cred" id="cred3" style="top:300px;">
+          <b>K&ouml;hler-Forsberg</b>, 2019<br><i>meta-analysis &#183; anti-inflammatory<br>adjuncts help a <span style="color:var(--ink);font-weight:700">subset</span></i></div>
+        <div class="ktype" id="wrongorgan">the medicine argued<br>with the <b>wrong organ</b></div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="100.4" data-track-index="3">
+        <div id="kicker">THE BODY THAT WON&rsquo;T STOP BURNING &nbsp;&#183;&nbsp; <span class="num">PART 04</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="100.4" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798003);
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<40;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // red blood cells in plasma
+      const SVGNS="http://www.w3.org/2000/svg";
+      (function(){
+        const host=document.getElementById("rbcs");
+        for(let i=0;i<26;i++){
+          const e=document.createElementNS(SVGNS,"ellipse");
+          const cx=140+rnd()*660, cy=880+rnd()*120;
+          e.setAttribute("cx",cx); e.setAttribute("cy",cy);
+          e.setAttribute("rx",(13+rnd()*9).toFixed(1)); e.setAttribute("ry",(7+rnd()*5).toFixed(1));
+          e.setAttribute("transform","rotate("+(rnd()*180).toFixed(0)+" "+cx+" "+cy+")");
+          e.setAttribute("class","rbc"); e.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(e);
+        }
+      })();
+      // cytokine particles seeded along the vagus
+      (function(){
+        const host=document.getElementById("cytos");
+        for(let i=0;i<10;i++){
+          const c=document.createElementNS(SVGNS,"circle");
+          c.setAttribute("r",(4+rnd()*3).toFixed(1));
+          c.setAttribute("cx",0); c.setAttribute("cy",0);
+          c.setAttribute("class","cyto"); c.dataset.phase=(rnd()).toFixed(3);
+          host.appendChild(c);
+        }
+      })();
+
+      // ---------- captions ----------
+      const WORDS = window.seg03 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 100.4;
+
+      // bg in
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.4,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:34,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:520,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // anatomy assembles bottom→top (0.3–4)
+      tl.to("#plasmaGlow",{opacity:1,duration:1.4,ease:"power2.out"},0.4)
+        .to(".rbc",{attr:{fill:"rgba(150,38,32,0.5)"},duration:1.2,stagger:{each:0.02,from:"random"}},0.6)
+        .to(".rbc",{stroke:"rgba(180,52,44,0.55)",duration:1.0,stagger:0.02},0.6)
+        .to("#vagus",{opacity:0.55,duration:1.2,ease:"power2.out"},1.2)
+        .to("#ganglia path",{opacity:1,duration:1.0,stagger:0.2,ease:"power2.out"},2.0)
+        .to(["#dopRing","#dopCore"],{opacity:1,duration:0.7},3.0);
+
+      // rbc gentle drift (whole segment)
+      gsap.utils.toArray(".rbc").forEach((e)=>{
+        const d=parseFloat(e.dataset.drift)||0;
+        tl.to(e,{x:"+="+(d*30),y:"-="+(6+Math.abs(d)*10),duration:24,ease:"sine.inOut",yoyo:true,repeat:1},0.6);
+      });
+
+      // STEADY dopamine pulse — amber, healthy (3.2 → ~50): rhythmic ring throb
+      tl.to("#dopRing",{scale:1.5,opacity:0.0,transformOrigin:"480px 248px",
+            duration:0.9,ease:"power1.out",repeat:18,repeatDelay:1.1},3.4);
+      tl.to("#dopCore",{scale:1.25,opacity:1,transformOrigin:"480px 248px",
+            duration:0.5,yoyo:true,ease:"sine.inOut",repeat:34},3.4);
+
+      // trace box + healthy trace draws (3.4–7)
+      tl.to("#traceBox",{opacity:0.7,duration:0.8},3.2)
+        .to("#traceLabel",{opacity:1,duration:0.6},3.4)
+        .to("#dopTrace",{strokeDashoffset:0,duration:3.4,ease:"none"},3.6);
+
+      // Raison & Miller 2011 (3.76)
+      tl.fromTo("#cred1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},3.9);
+
+      // "systemic inflammation tracks with depressive symptoms" (12.66): plasma label lights
+      tl.to("#zlab1",{opacity:1,duration:0.7,ease:"power2.out"},12.6)
+        .to("#plasmaGlow",{attr:{fill:"rgba(150,40,34,0.30)"},duration:1.0},12.8);
+
+      // interferon → cytokines (19.16): cred1 out, fact1 in; cytokines begin ascending
+      tl.to("#cred1",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},18.6)
+        .fromTo("#fact1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},19.2);
+
+      // cytokine particles climb the vagus from ~19.5 onward, looping
+      gsap.utils.toArray(".cyto").forEach((c,i)=>{
+        const startT=19.5 + i*0.9;
+        // ascend the vagus via manual control points (3 legs)
+        tl.fromTo(c,{opacity:0,x:470,y:880},
+          {opacity:0.9,duration:0.4},startT)
+          .to(c,{x:540,y:520,duration:1.4,ease:"power1.in"},startT)
+          .to(c,{x:480,y:300,duration:1.2,ease:"power1.out"},startT+1.4)
+          .to(c,{opacity:0,duration:0.3},startT+2.5);
+      });
+
+      // "something in the immune system was talking to the mood circuit" (32.38) — vagus glows
+      tl.to("#zlab2",{opacity:1,duration:0.6},32.3)
+        .to("#zsub2",{opacity:1,duration:0.6},32.5)
+        .to("#vagusGlow",{opacity:0.85,duration:1.0,ease:"power2.out"},32.6);
+
+      // Felger 2019 (37.98): fact1 out, cred2 in
+      tl.to("#fact1",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},37.4)
+        .fromTo("#cred2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},38.0);
+
+      // ganglia label appears as the mechanism localizes (44.8)
+      tl.to("#zlab3",{opacity:1,duration:0.6},44.8)
+        .to("#zsub3",{opacity:1,duration:0.6},45.0);
+
+      // mechanism statement (44.8) cred2 out / mech in
+      tl.to("#cred2",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},44.4)
+        .fromTo("#mech",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},45.0);
+
+      // GEAR-CHANGE: "suppresses dopamine ... goes quiet" (49.5–56) — pulse decays to flicker
+      // kill the steady throb, dim core, color shift toward warn; trace flatlines
+      tl.to("#dopRing",{opacity:0,duration:0.6,overwrite:"auto"},49.6)
+        .to("#dopCore",{fill:"#ff5a3c",duration:0.8,overwrite:"auto"},49.8)
+        // halting flicker: irregular opacity stabs
+        .to("#dopCore",{opacity:0.25,duration:0.18,yoyo:true,repeat:1},50.4)
+        .to("#dopCore",{opacity:0.9,duration:0.12},51.0)
+        .to("#dopCore",{opacity:0.18,duration:0.3,yoyo:true,repeat:1},51.8)
+        .to("#dopCore",{opacity:0.7,duration:0.1},52.8)
+        .to("#dopCore",{opacity:0.12,duration:0.5},53.6)
+        .to("#dopCore",{opacity:0.55,scale:0.7,transformOrigin:"480px 248px",duration:0.2},54.4)
+        .to("#dopCore",{opacity:0.1,duration:0.8},55.2)
+        // trace: healthy pulses fade, flat flicker line takes over
+        .to("#dopTrace",{opacity:0.12,duration:0.8},49.8)
+        .to("#flatTrace",{opacity:0.9,duration:0.8},50.4)
+        .to("#traceLabel",{fill:"#ff5a3c",duration:0.6},50.0);
+
+      // "result looks/feels/is depression" (64.0–69.8) — three stacked lines
+      tl.to("#mech",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},63.4)
+        .fromTo("#isdep1",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"power2.out"},64.0)
+        .fromTo("#isdep2",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"power2.out"},66.5)
+        .fromTo("#isdep3",{opacity:0,scale:1.16,transformOrigin:"0% 50%"},
+                {opacity:1,scale:1,duration:0.6,ease:"back.out(1.5)"},69.3);
+
+      // Köhler-Forsberg 2019 (70.48): subset benefit — partial pulse recovery
+      tl.to(["#isdep1","#isdep2","#isdep3"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},70.0)
+        .fromTo("#cred3",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},70.6);
+
+      // "anti-inflammatory adjuncts ... a subset" (77–86): a few amber pulses return
+      tl.to("#dopCore",{fill:"#caa86a",duration:0.8,overwrite:"auto"},77.2)
+        .to("#flatTrace",{opacity:0.2,duration:0.8},77.4)
+        .to("#dopCore",{opacity:0.85,scale:1.1,transformOrigin:"480px 248px",duration:0.4,
+             yoyo:true,repeat:5,ease:"sine.inOut"},77.8)
+        .to("#dopTrace",{opacity:0.5,duration:0.8},78.0);
+
+      // "mood you couldn't shake was an immune system in the wrong key" (91.1) cred3 out
+      tl.to("#cred3",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},90.4);
+
+      // "argued with the wrong organ" (95.26)
+      tl.fromTo("#wrongorgan",{opacity:0,y:16},{opacity:1,y:0,duration:0.8,ease:"power2.out"},95.0)
+        .to("#plasmaGlow",{attr:{fill:"rgba(150,40,34,0.22)"},duration:1.0},95.2)
+        .to("#vagusGlow",{opacity:0.5,strokeWidth:6,duration:0.7,yoyo:true,repeat:1,ease:"sine.inOut"},95.4);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-03"] = tl;
+    </script>
+  </body>
+</html>
