@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-02-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      /* ----- background: quiet research office at dawn ----- */
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 56% 76% at 64% 22%, rgba(36,46,62,0.5) 0%, transparent 60%),
+          linear-gradient(118deg, var(--dawn) 0%, var(--bg) 56%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 82% 74% at 42% 48%, transparent 40%, rgba(0,0,0,0.6) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* ----- whiteboard ----- */
+      #board { fill: rgba(18,24,33,0.94); stroke: var(--steel); stroke-width: 2.4; }
+      #board.tray { fill: var(--mute); }
+      .gridline { stroke: rgba(154,166,178,0.10); stroke-width: 1; }
+      .axis { stroke: var(--steel); stroke-width: 2.2; fill: none; opacity: 0; }
+      .axlab { fill: var(--steel); font-size: 21px; font-weight: 600;
+        letter-spacing: 0.14em; text-transform: uppercase; opacity: 0; }
+
+      #predCurve { fill: none; stroke: var(--glass); stroke-width: 4;
+        stroke-linecap: round; stroke-dasharray: 1240; stroke-dashoffset: 1240; }
+      #predLab { fill: var(--glass); font-size: 24px; font-weight: 700;
+        letter-spacing: 0.06em; opacity: 0; }
+      #actCurve { fill: none; stroke: var(--steel); stroke-width: 4;
+        stroke-linecap: round; stroke-dasharray: 920; stroke-dashoffset: 920; }
+      #actLab { fill: var(--steel); font-size: 24px; font-weight: 700;
+        letter-spacing: 0.06em; opacity: 0; }
+
+      #gapFill { fill: rgba(216,57,46,0.10); stroke: none; opacity: 0; }
+      #gapRing { fill: none; stroke: var(--alarm); stroke-width: 3;
+        stroke-dasharray: 6 9; opacity: 0; }
+      #gapLab { fill: var(--alarm); font-size: 30px; font-weight: 800;
+        letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; }
+
+      /* inverted/flattened forecast (gear change) */
+      #predFlat { fill: none; stroke: var(--warn); stroke-width: 4;
+        stroke-linecap: round; stroke-dasharray: 1100; stroke-dashoffset: 1100; opacity: 0; }
+
+      /* clock that ticks while the gap widens */
+      #clock circle { fill: none; stroke: var(--mute); stroke-width: 2.2; }
+      #clockHand { stroke: var(--steel); stroke-width: 2.6; stroke-linecap: round;
+        transform-box: fill-box; transform-origin: 0% 50%; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .cred { left: 1268px; width: 580px; font-size: 28px; font-weight: 300;
+        color: var(--steel); letter-spacing: 0.02em; line-height: 1.3;
+        border-left: 3px solid var(--glass); padding-left: 22px; }
+      .cred b { color: var(--ink); font-weight: 700; }
+      .cred i { color: var(--mute); font-style: normal; font-size: 22px; }
+      #term1 { left: 1268px; top: 318px; width: 600px; font-size: 50px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.02; }
+      #term1 b { color: var(--glass); }
+      .intero { left: 1300px; font-size: 28px; font-weight: 400; color: var(--mute);
+        letter-spacing: 0.04em; }
+      #term2 { left: 1268px; top: 470px; width: 600px; font-size: 52px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.02em; text-transform: uppercase; }
+      #term2 b { color: var(--glass); }
+      #moodEq { left: 1268px; top: 560px; width: 600px; font-size: 32px; font-weight: 600;
+        color: var(--steel); letter-spacing: 0.01em; line-height: 1.34; }
+      #moodEq b { color: var(--ink); }
+      #moodEq u { color: var(--glass); text-decoration: none; }
+      #term3 { left: 1268px; top: 470px; width: 600px; font-size: 50px; font-weight: 800;
+        color: var(--warn); letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.02; }
+      .strike { left: 1268px; font-size: 56px; font-weight: 800; color: var(--steel);
+        letter-spacing: 0.02em; text-transform: uppercase; }
+      .strike .bar { position: absolute; left: -4px; top: 50%; height: 5px; width: 0;
+        background: var(--alarm); }
+      #budget { left: 1268px; top: 470px; width: 600px; font-size: 40px; font-weight: 700;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.16; }
+      #budget b { color: var(--dope); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--dope); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-02"
+      data-start="0"
+      data-duration="82.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="82.7" data-track-index="9"
+             src="../assets/narration/seg-02.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="82.7" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="82.7" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <!-- whiteboard -->
+          <rect id="board" x="120" y="150" width="1080" height="788" rx="8" />
+          <rect id="boardTray" class="tray" x="120" y="938" width="1080" height="12" rx="3" />
+
+          <g id="grid">
+            <line class="gridline" x1="240" y1="320" x2="1080" y2="320" />
+            <line class="gridline" x1="240" y1="450" x2="1080" y2="450" />
+            <line class="gridline" x1="240" y1="580" x2="1080" y2="580" />
+            <line class="gridline" x1="240" y1="710" x2="1080" y2="710" />
+            <line class="gridline" x1="430" y1="260" x2="430" y2="820" />
+            <line class="gridline" x1="620" y1="260" x2="620" y2="820" />
+            <line class="gridline" x1="810" y1="260" x2="810" y2="820" />
+            <line class="gridline" x1="1000" y1="260" x2="1000" y2="820" />
+          </g>
+
+          <!-- axes -->
+          <path class="axis" id="axisY" d="M 240 260 L 240 820" />
+          <path class="axis" id="axisX" d="M 240 820 L 1080 820" />
+          <text class="axlab" id="axYlab" x="232" y="240" text-anchor="end" transform="rotate(-90 232 240)">REWARD / ENERGY</text>
+          <text class="axlab" id="axXlab" x="1080" y="860" text-anchor="end">EFFORT &#183; TIME &#8594;</text>
+
+          <!-- predicted (forecast) curve, blue, rises smoothly -->
+          <path id="predCurve" d="M 240 820 C 470 752, 700 470, 1080 320" />
+          <text id="predLab" x="1092" y="324">PREDICTED</text>
+
+          <!-- actual curve, flat, never rises -->
+          <path id="actCurve" d="M 240 818 C 470 812, 760 816, 1080 800" />
+          <text id="actLab" x="1092" y="804">ACTUAL</text>
+
+          <!-- the gap = prediction error -->
+          <path id="gapFill" d="M 240 820 C 470 752, 700 470, 1080 320
+                                 L 1080 800 C 760 816, 470 812, 240 818 Z" />
+          <ellipse id="gapRing" cx="1018" cy="560" rx="116" ry="178" transform="rotate(-12 1018 560)" />
+          <text id="gapLab" x="900" y="556" text-anchor="end">PREDICTION<tspan x="900" dy="34">ERROR</tspan></text>
+
+          <!-- flattened / inverted forecast (gear change) -->
+          <path id="predFlat" d="M 240 760 C 470 786, 760 812, 1080 836" />
+
+          <!-- clock -->
+          <g id="clock" transform="translate(330 268)">
+            <circle r="30" />
+            <line id="clockHand" x1="0" y1="0" x2="22" y2="0" />
+          </g>
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="82.7" data-track-index="2">
+        <div class="ktype cred" id="cred1" style="top:250px;">
+          <b>Karl Friston</b>, 2010<br><i>Nature Reviews Neuroscience</i></div>
+        <div class="ktype" id="term1">the brain<br>MINIMIZES<br><b>PREDICTION ERROR</b></div>
+
+        <div class="ktype cred" id="cred2" style="top:250px;">
+          <b>Barrett &amp; Simmons</b>, 2015<br><i>turned the forecast inward</i></div>
+        <div class="ktype intero" id="in1" style="top:330px;">&#183; heart rate</div>
+        <div class="ktype intero" id="in2" style="top:372px;">&#183; gut tension</div>
+        <div class="ktype intero" id="in3" style="top:414px;">&#183; energy reserves</div>
+        <div class="ktype intero" id="in4" style="top:456px;">&#183; inflammation</div>
+        <div class="ktype" id="term2"><b>INTERO&shy;CEPTION</b></div>
+        <div class="ktype" id="moodEq"><b>mood</b> = the brain&rsquo;s forecast:<br>can the <u>body&rsquo;s resources</u><br>meet the <u>world&rsquo;s demands?</u></div>
+
+        <div class="ktype cred" id="cred3" style="top:250px;">
+          <b>Stephan et al.</b>, 2016<br><i>Lancet Psychiatry</i></div>
+        <div class="ktype" id="term3">ALLOSTATIC<br>DYSREGULATION</div>
+
+        <div class="ktype strike" id="st1" style="top:430px;">MOTIVATION<span class="bar"></span></div>
+        <div class="ktype strike" id="st2" style="top:520px;">MOVEMENT<span class="bar"></span></div>
+        <div class="ktype strike" id="st3" style="top:610px;">EFFORT<span class="bar"></span></div>
+
+        <div class="ktype" id="budget">an <b>energy budget</b> drawn by a brain<br>that stopped expecting the world<br>to refund the deposit.</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="82.7" data-track-index="3">
+        <div id="kicker">THE PREDICTIVE BRAIN &nbsp;&#183;&nbsp; <span class="num">PART 03</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="82.7" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798002);
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<44;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- captions ----------
+      const WORDS = window.seg02 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 82.7;
+
+      // bg in
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.4,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:30,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:380,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // whiteboard + axes in (0.3–2.4): "Here's the frame that's quietly replacing it"
+      tl.from("#board",{opacity:0,y:18,duration:1.1,stagger:0.0,ease:"power3.out"},0.3)
+        .from(".gridline",{opacity:0,duration:0.8},0.9)
+        .to([".axis"],{opacity:1,duration:0.7},1.0)
+        .to([".axlab"],{opacity:1,duration:0.7},1.3);
+
+      // clock ticks continuously while the gap exists (one slow sweep)
+      tl.to("#clockHand",{rotation:360,duration:46,ease:"none",svgOrigin:"330 268"},6.0);
+
+      // Friston 2010 (2.74) + free-energy / minimize prediction error (6.2–8.4)
+      tl.fromTo("#cred1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},2.8);
+
+      // predicted curve draws (6.2–8.4) as "forecast" concept arrives
+      tl.to("#predCurve",{strokeDashoffset:0,duration:2.0,ease:"power1.inOut"},6.0)
+        .to("#predLab",{opacity:1,duration:0.5},7.8)
+        .fromTo("#term1",{opacity:0,y:18},{opacity:1,y:0,duration:0.7,ease:"power3.out"},8.4);
+
+      // "Everything it does... management of a forecast" (12.2–18.4): actual flat line draws
+      tl.to("#actCurve",{strokeDashoffset:0,duration:2.2,ease:"power1.inOut"},12.4)
+        .to("#actLab",{opacity:1,duration:0.5},14.4);
+
+      // the GAP appears + circled red — "prediction error" lands (term1 already named it)
+      tl.to("#gapFill",{opacity:1,duration:1.0,ease:"power2.out"},15.2)
+        .fromTo("#gapRing",{opacity:0,scale:1.25,transformOrigin:"1018px 560px"},
+                {opacity:1,scale:1,duration:0.7,ease:"back.out(1.6)"},16.0)
+        .to("#gapLab",{opacity:1,duration:0.6},16.4);
+
+      // Barrett & Simmons 2015 — "turned it inward" (19.2–26.8)
+      tl.to("#term1",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},18.8)
+        .fromTo("#cred2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},19.3)
+        .to("#cred1",{opacity:0,duration:0.5},19.3);
+
+      // interoception list (31.5–34.8) then collapses to INTEROCEPTION (35.4)
+      tl.fromTo(["#in1","#in2","#in3","#in4"],{opacity:0,x:16},
+                {opacity:1,x:0,duration:0.4,stagger:0.42,ease:"power2.out"},31.4)
+        .to(["#in1","#in2","#in3","#in4"],{opacity:0,y:-8,duration:0.4,stagger:0.05},35.0)
+        .fromTo("#term2",{opacity:0,scale:1.18,transformOrigin:"0% 50%"},
+                {opacity:1,scale:1,duration:0.6,ease:"back.out(1.5)"},35.4);
+
+      // "mood = brain's forecast: resources vs demands" (41.4–45.5)
+      tl.to("#term2",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},40.6)
+        .to("#cred2",{opacity:0,duration:0.5},40.6)
+        .fromTo("#moodEq",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},41.4);
+
+      // Stephan 2016 — fitted depression in (46.0–52.3)
+      tl.to("#moodEq",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},45.6)
+        .fromTo("#cred3",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},46.1)
+        .fromTo("#term3",{opacity:0,y:18},{opacity:1,y:0,duration:0.7,ease:"power3.out"},52.3);
+
+      // GEAR-CHANGE: "flattened or inverted" (55.4–59.5) — the forecast collapses
+      tl.to("#predCurve",{opacity:0.18,duration:0.8,ease:"power2.inOut"},55.4)
+        .to("#predLab",{opacity:0.2,duration:0.6},55.4)
+        .to("#predFlat",{opacity:1,strokeDashoffset:0,duration:1.6,ease:"power2.inOut"},55.6)
+        .to("#gapFill",{opacity:0.5,duration:0.8},56.0);
+
+      // "Whatever you do... won't be worth the energy" (60.2) — term3 dims, strikes prep
+      tl.to("#term3",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},59.6);
+
+      // "motivation stops. movement stops. effort stops." (63.3–66.7) — three strikes
+      tl.fromTo("#st1",{opacity:0,x:16},{opacity:1,x:0,duration:0.4,ease:"power2.out"},63.3)
+        .to("#st1 .bar",{width:430,duration:0.35,ease:"power3.in"},63.9)
+        .to("#st1",{color:"#5b6472",duration:0.3},63.9)
+        .fromTo("#st2",{opacity:0,x:16},{opacity:1,x:0,duration:0.4,ease:"power2.out"},64.9)
+        .to("#st2 .bar",{width:360,duration:0.35,ease:"power3.in"},65.4)
+        .to("#st2",{color:"#5b6472",duration:0.3},65.4)
+        .fromTo("#st3",{opacity:0,x:16},{opacity:1,x:0,duration:0.4,ease:"power2.out"},66.1)
+        .to("#st3 .bar",{width:230,duration:0.35,ease:"power3.in"},66.5)
+        .to("#st3",{color:"#5b6472",duration:0.3},66.5);
+
+      // "Depression isn't low mood." (75.1) — strikes clear, budget statement (76.8)
+      tl.to(["#st1","#st2","#st3"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},74.4)
+        .fromTo("#budget",{opacity:0,y:16},{opacity:1,y:0,duration:0.8,ease:"power2.out"},76.8);
+
+      // gentle close: gap pulses once under the budget line
+      tl.to("#gapRing",{opacity:0.5,strokeWidth:4,duration:0.8,yoyo:true,repeat:1,ease:"sine.inOut"},78.0);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-02"] = tl;
+    </script>
+  </body>
+</html>
