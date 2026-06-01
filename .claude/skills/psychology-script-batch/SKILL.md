@@ -1,6 +1,6 @@
 ---
 name: psychology-script-batch
-description: moyo channel の psychology long-form 動画を demand 分析 → 台本 → bespoke HTML composition → 音声/caption → render まで一気通貫で作る end-to-end pipeline。「需要リサーチして台本書いて」「demand分析から台本batch生成」「psychology動画をまとめて作って」で起動。
+description: moyo channel の psychology long-form 動画を demand 分析 → 台本 → scaffold/design → 音声/caption(words.js) → bespoke HTML composition → render まで一気通貫で作る end-to-end pipeline。「需要リサーチして台本書いて」「demand分析から台本batch生成」「psychology動画をまとめて作って」で起動。
 origin: custom
 ---
 
@@ -23,10 +23,18 @@ origin: custom
 | 担当 | 工程 | 理由 |
 |------|------|------|
 | **Claude(高価値・委譲不可)** | 台本spec → 描画設計 → seg毎bespoke HTML composition + render/concat の background実行 | 「HTMLさえ正しければ render は失敗しようがない」。意味の符号化は人にしか判断できない |
-| **codex(機械的・委譲可)** | 台本本文生成(Phase 3)**のみ** | 1700語の推論を Claude context 外で消費させるのが旨味。**render/concatは委譲しない**(推論ゼロの単一commandで、Claudeが `run_in_background` すればtoken消費ほぼ無し。codex経由は hang/sandbox-bypass のriskを足すだけで割に合わない) |
+| **codex(機械的・委譲可)** | 台本本文生成(Phase 3)**のみ** | 1700語の推論を Claude context 外で消費させるのが旨味。**render/concatは委譲しない**(推論0の単一commandで、Claudeが `run_in_background` すればtoken消費ほぼ無し。codex経由は hang/sandbox-bypass のriskを足すだけで割に合わない) |
 | **npm script / CLI(機械的・非codex)** | Kokoro TTS / Whisper transcribe / `npx hyperframes render` / `ffmpeg concat` | 既存 `scripts/` ・CLI の実証済みcommand。Claudeが background で叩くだけ |
 
-> **最重要 anti-pattern**: 完成台本を「文脈を知らない汎用template-filler」に渡してはいけない。`mychannel/video/` の旧13本は、codexが**全動画同一の汎用index.html(CSS byte一致・意味のない折れ線graph・particle同seed)**に台本テキストを流し込んだだけで、台本ごとの `visual_note` が違うのに描画が全部同じになった。bespoke composition(`survivorship-v2` / `depression-is-a-prediction-error-v1`)が正解形。
+> **最重要 anti-pattern**: 完成台本を「文脈を知らない汎用template-filler」に渡してはいけない。`mychannel/video/` の旧13本は、codexが**全動画同一の汎用index.html(CSS byte一致・意味のない折れ線graph・particle同seed)**に台本textを流し込んだだけで、台本ごとの `visual_note` が違うのに描画が全部同じになった。bespoke composition(`survivorship-v2` / `depression-is-a-prediction-error-v1`)が正解形。
+
+## Shell context（重要）
+
+このskillの code block は2系統。**取り違えると動かない**:
+- **```bash``` block** = **Bash tool(git-bash)** で実行。`grep` / `</dev/null` / `node -e` / `ffmpeg` 等のPOSIX系。Win11でもgit-bash経由で動く。
+- **```powershell``` block** = **PowerShell tool** で実行。Health probe の `Get-Process` 等。`grep`はここでは使わない(`Where-Object`相当)。
+
+PowerShell tool で `grep` を含む bash block を流さない(逆も同様)。
 
 ## Pre-flight Checks (必須)
 
@@ -250,7 +258,7 @@ ffmpeg -ss <t> -i renders/seg-NN.mp4 -frames:v 1 -y renders/_frames/sNN-<t>.png 
 
 ## Phase 9 — Render concat (Claude直接 / background。codex委譲しない)
 
-全seg render後、stream-copy concat(全seg同一 stream params なので `-c copy` で lossless・高速)。render(Phase 8)もconcatも **Claude が `run_in_background` で叩く**。推論ゼロの単一commandなのでcodex委譲しない(待つだけでtoken消費ほぼ無し)。
+全seg render後、stream-copy concat(全seg同一 stream params なので `-c copy` で lossless・高速)。render(Phase 8)もconcatも **Claude が `run_in_background` で叩く**。推論0の単一commandなのでcodex委譲しない(待つだけでtoken消費ほぼ無し)。
 ```bash
 # renders/concat.txt は seg-00..NN を列挙(file 'seg-00-hook.mp4' 形式)
 ffmpeg -f concat -safe 0 -i renders/concat.txt -c copy -y renders/<slug>-v1-full.mp4
@@ -286,7 +294,7 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 | check gate | 最終確認は `npm run check`(lint && validate && inspect)。長尺で inspect timeout 時のみ lint+validate 直叩き+frame QA で代替。lint は project単位(単一file path禁止)・audio false-positive を grep除外 |
 | frame検証 | re-render後は必ず取り直す。`renders/_frames/` に出す。preview MCP不可 |
 | Commit | script/seg 単位で push まで完了 |
-| カタカナ禁止 | 日本語散文(design.md/comment/SKILL.md等)。英語由来術語は英単語のまま(render, composition)。画面内英語・caption・台本英文は対象外 |
+| カタカナ禁止 | 日本語散文(design.md/comment/SKILL.md本文等)で英語由来術語は英単語のまま(render, composition)。**対象外**: 画面内英語・caption・台本英文(元々英語) / 「」内の活性化trigger例(需要リサーチ等 = userの実発話の引用) / Phase 4 grep NG-list(検査対象語そのもの)。この skill 本文自体も grep `リサーチ|コンテキスト|エビデンス|コスト|ストーリー|フレームワーク` で確認し、上記対象外を除き 0 hit を保つ |
 
 ## Anti-patterns (絶対やらない)
 
@@ -297,7 +305,7 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 - re-render後に古い `_frames` PNG を信用する(stale)
 - mock dataのdemand resultでtopic選定 / token失効を握りつぶしてmock progress
 - `expiry_date` 過去だけを理由に STOP(refresh_token validなら auto-refresh。probeで実証)
-- **render/concat を codex に委譲する**(推論ゼロの単一commandでtoken節約にならず、hang/sandbox-bypassのriskだけ増える。codexはPhase 3台本生成のみ)
+- **render/concat を codex に委譲する**(推論0の単一commandでtoken節約にならず、hang/sandbox-bypassのriskだけ増える。codexはPhase 3台本生成のみ)
 - codexにfull diff返却させる / 委譲後にClaudeで同file再Read
 - citation捏造(spec list外を勝手に追加)
 - script/動画をpushせずsession終了
