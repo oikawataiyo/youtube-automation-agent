@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-05-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 36% 46% at 34% 46%, rgba(40,48,62,0.55) 0%, transparent 64%),
+          linear-gradient(180deg, var(--bg) 0%, var(--dawn) 50%, var(--bg) 100%); }
+      /* pale-blue recovery grade — fades in across the segment */
+      #bluewash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 48% 56% at 34% 42%, rgba(79,123,181,0.22) 0%, transparent 66%),
+          linear-gradient(180deg, transparent 0%, rgba(127,168,201,0.10) 52%, transparent 100%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 80% 76% at 38% 46%, transparent 38%, rgba(0,0,0,0.64) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* ----- forecast graph ----- */
+      .axis { stroke: rgba(154,166,178,0.34); stroke-width: 1.6; opacity: 0; }
+      .glab { fill: var(--steel); font-size: 22px; letter-spacing: 0.14em;
+        text-transform: uppercase; opacity: 0; }
+      #flatForecast { stroke: var(--steel); stroke-width: 3; fill: none;
+        stroke-dasharray: 10 10; opacity: 0; }
+      #flatLab { fill: var(--mute); font-size: 22px; letter-spacing: 0.06em;
+        text-transform: uppercase; opacity: 0; }
+      #hopeCurve { stroke: var(--glass); stroke-width: 4; fill: none;
+        stroke-linecap: round; opacity: 0; }
+      #hopeLab { fill: var(--glass); font-size: 24px; font-weight: 700;
+        letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; }
+
+      /* ----- evidence ledger ----- */
+      #ledgerTitle { fill: var(--mute); font-size: 24px; letter-spacing: 0.18em;
+        text-transform: uppercase; opacity: 0; }
+      .cbx { fill: rgba(22,28,38,0.6); stroke: var(--steel); stroke-width: 2.4; opacity: 0; }
+      .chk { stroke: var(--glass); stroke-width: 4.4; fill: none;
+        stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+      .tlab { fill: var(--steel); font-size: 30px; font-weight: 600;
+        letter-spacing: 0.03em; text-transform: uppercase; opacity: 0; }
+      #pulse { fill: var(--glass); opacity: 0; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .sechead { left: 1270px; width: 600px; font-size: 44px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.08; }
+      .sechead .n { color: var(--glass); }
+      .cred { left: 1270px; width: 590px; font-size: 26px; font-weight: 300;
+        color: var(--steel); letter-spacing: 0.02em; line-height: 1.3;
+        border-left: 3px solid var(--glass); padding-left: 22px; }
+      .cred b { color: var(--ink); font-weight: 700; }
+      .cred i { color: var(--mute); font-style: normal; font-size: 21px; }
+      .stat { left: 1270px; width: 590px; font-size: 31px; font-weight: 400;
+        color: var(--steel); letter-spacing: 0.01em; line-height: 1.26; }
+      .stat b { color: var(--ink); font-weight: 800; }
+      .stat u { color: var(--glass); text-decoration: none; font-weight: 700; }
+      #instr { left: 1270px; top: 580px; width: 590px; font-size: 32px; font-weight: 600;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.24; }
+      #instr u { color: var(--glass); text-decoration: none; }
+      #fromBottom { left: 1270px; top: 720px; width: 590px; font-size: 40px; font-weight: 800;
+        color: var(--glass); letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.1; }
+      #nmda { left: 1270px; top: 680px; width: 590px; font-size: 34px; font-weight: 700;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.2; text-transform: uppercase; }
+      #nmda b { color: var(--glass); }
+      #closer { left: 1270px; top: 430px; width: 600px; font-size: 46px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.12; }
+      #closer2 { left: 1270px; top: 580px; width: 600px; font-size: 40px; font-weight: 800;
+        color: var(--glass); letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.14; }
+      #closer2 b { color: var(--ink); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--glass); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-05"
+      data-start="0"
+      data-duration="122.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="122.7" data-track-index="9"
+             src="../assets/narration/seg-05.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="122.7" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="bluewash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="122.7" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="graph">
+            <line id="axisY" class="axis" x1="240" y1="300" x2="240" y2="720" />
+            <line id="axisX" class="axis" x1="240" y1="720" x2="1020" y2="720" />
+            <text id="ylab" class="glab" x="196" y="512" transform="rotate(-90 196 512)" text-anchor="middle">expected reward</text>
+            <text id="xlab" class="glab" x="630" y="762" text-anchor="middle">effort &#183; time</text>
+            <path id="flatForecast" d="M 240 660 L 1020 660" />
+            <text id="flatLab" x="864" y="648">old forecast</text>
+            <path id="hopeCurve" d="M 240 660 C 470 652, 720 470, 1020 330" />
+            <text id="hopeLab" x="1024" y="340">re-trained</text>
+          </g>
+          <g id="ledger">
+            <text id="ledgerTitle" x="250" y="788">evidence, not affirmation</text>
+            <rect id="cb1" class="cbx" x="250" y="812" width="34" height="34" rx="5" />
+            <rect id="cb2" class="cbx" x="250" y="876" width="34" height="34" rx="5" />
+            <rect id="cb3" class="cbx" x="250" y="940" width="34" height="34" rx="5" />
+            <polyline id="chk1" class="chk" points="258,830 266,839 284,820" />
+            <polyline id="chk2" class="chk" points="258,894 266,903 284,884" />
+            <polyline id="chk3" class="chk" points="258,958 266,967 284,948" />
+            <text id="tk1" class="tlab" x="304" y="838">make the bed</text>
+            <text id="tk2" class="tlab" x="304" y="902">take the walk</text>
+            <text id="tk3" class="tlab" x="304" y="966">make the call</text>
+          </g>
+          <circle id="pulse" cx="267" cy="829" r="7" />
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="122.7" data-track-index="2">
+        <!-- Section 1: behavioral activation -->
+        <div class="ktype sechead" id="ba" style="top:210px;">behavioral<br>activation</div>
+        <div class="ktype cred" id="cred1" style="top:330px;">
+          <b>Lewinsohn</b> 1970s &#8594; <b>Dimidjian</b>, 2006<br><i>J. Consulting &amp; Clinical Psychology</i></div>
+        <div class="ktype stat" id="stat1" style="top:460px;">
+          randomized trial: <b>BA &#8805; CBT</b>,<br>and <u>&gt; medication</u> for severe depression</div>
+        <div class="ktype" id="instr">schedule small, specific,<br>low-risk actions &mdash;<br><u>let mood lag behind action</u></div>
+        <div class="ktype" id="fromBottom">the model updates<br>from the bottom</div>
+
+        <!-- Section 2: rapid-acting -->
+        <div class="ktype sechead" id="rapid" style="top:210px;">rapid-acting</div>
+        <div class="ktype cred" id="cred2" style="top:330px;">
+          <b>Berman</b>, 2000<br><i>Biological Psychiatry</i></div>
+        <div class="ktype stat" id="stat2" style="top:450px;">
+          one subanesthetic ketamine dose &mdash;<br>relief in <b>HOURS</b>, <u>not weeks</u></div>
+        <div class="ktype cred" id="cred3" style="top:580px;">
+          <b>Krystal</b>, 2019<br><i>Cell</i></div>
+        <div class="ktype" id="nmda">NMDA &#183; synaptic plasticity<br><b>resets the prediction substrate</b></div>
+
+        <!-- Section 3: sleep / light / movement -->
+        <div class="ktype sechead" id="slm" style="top:240px;">sleep &#183; light<br>&#183; movement</div>
+        <div class="ktype cred" id="cred4" style="top:400px;">
+          <b>Matthew Walker</b>, 2017<br><i>Why We Sleep</i></div>
+        <div class="ktype stat" id="stat3" style="top:530px;">
+          no offline consolidation &#8594;<br><u>no model update</u></div>
+
+        <!-- Section 4: therapy -->
+        <div class="ktype sechead" id="ther" style="top:240px;">therapy</div>
+        <div class="ktype cred" id="cred5" style="top:400px;">
+          <b>Aaron Beck</b> onward<br><i>cognitive behavioral lineage</i></div>
+        <div class="ktype stat" id="stat4" style="top:530px;">
+          always, implicitly, a<br><b>prediction-correction</b> enterprise</div>
+
+        <!-- closer -->
+        <div class="ktype" id="closer">you don&rsquo;t argue<br>with depression.</div>
+        <div class="ktype" id="closer2">you feed the model<br><b>evidence</b> it can no<br>longer ignore.</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="122.7" data-track-index="3">
+        <div id="kicker">WHAT ACTUALLY REACHES THE CIRCUIT &nbsp;&#183;&nbsp; <span class="num">PART 06</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="122.7" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798005);
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<36;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // hope-curve reveal geometry
+      const hc=document.getElementById("hopeCurve");
+      const HLEN=hc.getTotalLength();
+      hc.style.strokeDasharray=HLEN+" "+HLEN;
+      hc.style.strokeDashoffset=HLEN;
+
+      // ---------- captions ----------
+      const WORDS = window.seg05 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 122.7;
+
+      // bg in + slow pale-blue recovery grade
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.38,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3)
+        .to("#bluewash",{opacity:1,duration:90,ease:"sine.inOut"},8.0);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:40,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:620,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // graph axes + the OLD (flat) forecast established first (1.0–4)
+      tl.to(".axis",{opacity:1,duration:1.0,ease:"power2.out"},1.0)
+        .to(".glab",{opacity:1,duration:1.0,stagger:0.12},1.4)
+        .fromTo("#flatForecast",{opacity:0},{opacity:0.85,duration:1.0},2.2)
+        .fromTo("#flatLab",{opacity:0},{opacity:0.9,duration:0.8},3.0);
+
+      // ---- Section 1: behavioral activation ----
+      tl.fromTo("#ba",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},9.6)
+        .fromTo("#cred1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},12.0)
+        .fromTo("#stat1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},22.0);
+
+      // instruction + ledger appears (31.9–35)
+      tl.fromTo("#instr",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},31.9)
+        .fromTo("#ledgerTitle",{opacity:0},{opacity:0.9,duration:0.7},32.6)
+        .to(["#cb1","#cb2","#cb3"],{opacity:1,duration:0.6,stagger:0.18,ease:"power2.out"},33.0)
+        .to(["#tk1","#tk2","#tk3"],{opacity:0.92,duration:0.6,stagger:0.18},33.2);
+
+      // reveal hope curve as evidence lands; opacity on at first check
+      tl.set("#hopeCurve",{opacity:1},42.4);
+
+      // checks: bed (42.6), walk (43.9), call (45.1) — each fires a pulse from the bottom
+      const checks=[
+        {chk:"#chk1",box:"#cb1",lab:"#tk1",t:42.6,y:829,off:HLEN*0.62},
+        {chk:"#chk2",box:"#cb2",lab:"#tk2",t:43.9,y:893,off:HLEN*0.30},
+        {chk:"#chk3",box:"#cb3",lab:"#tk3",t:45.1,y:957,off:0}
+      ];
+      checks.forEach(c=>{
+        tl.to(c.box,{stroke:"#7fa8c9",duration:0.2},c.t)
+          .fromTo(c.chk,{opacity:0,scale:0.6,transformOrigin:"50% 50%"},
+                  {opacity:1,scale:1,duration:0.3,ease:"back.out(2)"},c.t)
+          .to(c.lab,{fill:"#e8e4d8",duration:0.3},c.t)
+          // pulse rises from the checkbox up toward the curve
+          .set("#pulse",{attr:{cx:267,cy:c.y},r:7},c.t)
+          .fromTo("#pulse",{opacity:0},{opacity:0.95,duration:0.1,overwrite:"auto"},c.t)
+          .to("#pulse",{attr:{cy:430},duration:0.5,ease:"power1.in"},c.t+0.05)
+          .to("#pulse",{opacity:0,r:3,duration:0.22},c.t+0.5)
+          // the curve climbs a third with each piece of evidence
+          .to("#hopeCurve",{strokeDashoffset:c.off,duration:0.5,ease:"power2.out"},c.t+0.1);
+      });
+
+      // "the model updates from the bottom" (52.6) + curve settles brighter
+      tl.fromTo("#fromBottom",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},52.6)
+        .to("#hopeCurve",{strokeWidth:5,duration:0.6},52.8)
+        .to("#flatForecast",{opacity:0.5,duration:0.8},52.8);
+
+      // clear Section 1 (keep graph + ledger + curve)
+      tl.to(["#ba","#cred1","#stat1","#instr","#fromBottom"],
+            {opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},53.0);
+
+      // ---- Section 2: rapid-acting ----
+      tl.fromTo("#rapid",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},53.7)
+        .fromTo("#cred2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},57.9)
+        .fromTo("#stat2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},62.4)
+        .fromTo("#cred3",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},68.8)
+        .fromTo("#nmda",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},74.5);
+      // "resets the substrate" — a brief shimmer-reset on the curve
+      tl.fromTo("#hopeCurve",{opacity:1},{opacity:0.4,duration:0.18,yoyo:true,repeat:1},75.2)
+        .to("#hopeCurve",{stroke:"#7fa8c9",duration:0.4},75.6);
+
+      tl.to(["#rapid","#cred2","#stat2","#cred3","#nmda"],
+            {opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},84.4);
+
+      // ---- Section 3: sleep / light / movement ----
+      tl.fromTo("#slm",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},85.4)
+        .fromTo("#cred4",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},88.6)
+        .fromTo("#stat3",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},92.0);
+
+      tl.to(["#slm","#cred4","#stat3"],
+            {opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},104.4);
+
+      // ---- Section 4: therapy ----
+      tl.fromTo("#ther",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},105.5)
+        .fromTo("#cred5",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},112.6)
+        .fromTo("#stat4",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},115.9);
+
+      // ---- closer (118.9) — forecast fully re-trained ----
+      tl.to(["#ther","#cred5","#stat4"],
+            {opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},117.9)
+        .fromTo("#closer",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},118.4)
+        .fromTo("#closer2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},119.9)
+        // hope curve blooms to full strength; old forecast fades out
+        .to("#hopeCurve",{strokeWidth:6,opacity:1,duration:1.0,ease:"power2.out"},119.6)
+        .fromTo("#hopeLab",{opacity:0,x:14},{opacity:1,x:0,duration:0.7,ease:"power2.out"},120.4)
+        .to("#flatForecast",{opacity:0.18,duration:1.0},119.8)
+        .to("#bluewash",{opacity:1.0,duration:2.0,ease:"power2.out"},119.6);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-05"] = tl;
+    </script>
+  </body>
+</html>
