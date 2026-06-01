@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/narration/seg-00-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      /* ----- background: gray dawn ----- */
+      #dawnwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 52% 78% at 14% 30%, rgba(40,52,70,0.55) 0%, transparent 60%),
+          linear-gradient(105deg, var(--dawn) 0%, var(--bg) 46%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 78% 70% at 42% 46%, transparent 38%, rgba(0,0,0,0.62) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      /* ----- bedside still life (line-art blueprint) ----- */
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+      #scene path, #scene line, #scene rect, #scene ellipse, #scene polyline {
+        fill: none; stroke: var(--bone); stroke-width: 2.4;
+        stroke-linejoin: round; stroke-linecap: round; }
+      #scene .soft { stroke: var(--steel); stroke-width: 2; opacity: 0.7; }
+      #scene .fill { fill: rgba(232,228,216,0.04); }
+      #water { fill: rgba(127,168,201,0.10); stroke: var(--glass); stroke-width: 2; }
+      #waterRim { stroke: var(--glass); stroke-width: 3.2; opacity: 0; }
+      #phoneScreen { fill: rgba(154,166,178,0.10); stroke: var(--steel); stroke-width: 1.6; }
+
+      /* ----- reward-pulse motif (effort -> reward that decays) ----- */
+      #rewardArc { stroke: var(--dope); stroke-width: 2.6; stroke-dasharray: 7 9;
+        fill: none; opacity: 0; }
+      #flatPred { stroke: var(--warn); stroke-width: 2.8; fill: none; opacity: 0; }
+      #pulse { fill: var(--dope); opacity: 0; }
+      .axisLab { font-size: 24px; font-weight: 700; letter-spacing: 0.18em;
+        text-transform: uppercase; fill: var(--steel); opacity: 0; }
+
+      /* ----- kinetic type ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      #sadness { left: 50%; top: 38%;
+        font-size: 150px; font-weight: 800; letter-spacing: 0.02em; color: var(--steel);
+        text-align: center; line-height: 0.95; }
+      #sadStrike { position: absolute; left: -8px; top: 52%; height: 4px; width: 0;
+        background: var(--alarm); }
+      #chem { left: 50%; top: 70%;
+        font-size: 44px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--steel); text-align: center; white-space: nowrap; }
+      #chemStrike { position: absolute; left: -8px; top: 52%; height: 3px; width: 0;
+        background: var(--alarm); }
+      #chemTag { display:block; font-size: 20px; font-weight: 400; letter-spacing: 0.3em;
+        color: var(--steel); margin-bottom: 10px; }
+      #wrong { left: 50%; top: 50%;
+        font-size: 132px; font-weight: 800; letter-spacing: 0.02em; color: var(--warn);
+        text-align: center; line-height: 0.95; text-shadow: 0 0 44px rgba(255,90,60,0.32); }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--dope); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 43px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="23.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="23.5" data-track-index="9"
+             src="assets/narration/seg-00-hook.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="23.5" data-track-index="0">
+        <div id="dawnwash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="23.5" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="scene">
+            <!-- duvet hill (body under the duvet) — soft low mound across the lower frame -->
+            <path class="fill" id="duvet"
+              d="M 0 1080 L 0 880 C 240 812, 520 786, 760 822 C 980 854, 1180 944, 1500 906
+                 C 1700 884, 1840 902, 1920 880 L 1920 1080 Z" />
+            <path class="soft"
+              d="M 250 868 C 420 838, 560 842, 690 864" />
+            <path class="soft"
+              d="M 980 884 C 1120 918, 1260 928, 1380 912" />
+
+            <!-- bedside table ledge (right) -->
+            <line x1="1300" y1="690" x2="1880" y2="690" />
+            <line x1="1340" y1="690" x2="1340" y2="900" class="soft" />
+            <line x1="1840" y1="690" x2="1840" y2="900" class="soft" />
+
+            <!-- dim phone lying flat on the ledge -->
+            <rect x="1396" y="636" width="150" height="62" rx="12" transform="rotate(-8 1471 667)" />
+            <rect id="phoneScreen" x="1408" y="646" width="126" height="42" rx="7"
+              transform="rotate(-8 1471 667)" />
+
+            <!-- half-glass of water — the one cool accent (half framing) -->
+            <path id="glassBody" class="fill"
+              d="M 1648 612 L 1664 690 L 1726 690 L 1742 612 Z" />
+            <!-- water filled to half -->
+            <path id="water" d="M 1656 651 L 1664 690 L 1726 690 L 1734 651 Z" />
+            <!-- pale rim highlight -->
+            <line id="waterRim" x1="1656" y1="651" x2="1734" y2="651" />
+
+            <!-- reward-prediction motif: EFFORT -> REWARD arc that should rise but the
+                 brain has flattened. Drawn faint over the duvet, surfaces at the reframe. -->
+            <text class="axisLab" id="labEffort" x="300" y="470">effort</text>
+            <text class="axisLab" id="labReward" x="980" y="320" text-anchor="end">reward</text>
+            <!-- the arc the system SHOULD predict (dashed, dopamine) -->
+            <path id="rewardArc" d="M 320 520 C 520 520, 720 420, 980 340" />
+            <!-- what the depressed circuit actually predicts: flat, no rise -->
+            <polyline id="flatPred" points="320,520 980,520" />
+            <circle id="pulse" cx="320" cy="520" r="9" />
+          </g>
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="23.5" data-track-index="2">
+        <div class="ktype" id="sadness">SADNESS<span id="sadStrike"></span></div>
+        <div class="ktype" id="chem"><span id="chemTag">FOR 60 YEARS</span>CHEMICAL IMBALANCE<span id="chemStrike"></span></div>
+        <div class="ktype" id="wrong">THE WRONG<br>SYSTEM</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="23.5" data-track-index="3">
+        <div id="kicker">DEPRESSION &nbsp;·&nbsp; <span class="num">A PREDICTION ERROR</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="23.5" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ---------- deterministic PRNG ----------
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798000);
+
+      // ---------- seeded ambient dust motes ----------
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<54;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.5)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- captions from word timings ----------
+      const WORDS = window.seg00 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 23.5;
+
+      gsap.set(["#sadness","#chem","#wrong"],{xPercent:-50,yPercent:-50});
+
+      // dawn wash + vignette in, dust motes surface
+      tl.to("#dawnwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.42,duration:2.4,stagger:{each:0.025,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:11.5,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.5)
+        .to("#kickerline",{width:360,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.6);
+
+      // still life draws in (the room exists before the words)
+      tl.from("#scene #duvet",{opacity:0,y:30,duration:1.6,ease:"power3.out"},0.2)
+        .from(["#scene line","#scene rect","#glassBody","#water"],
+              {opacity:0,duration:1.2,stagger:0.08,ease:"power2.out"},0.6);
+
+      // half-glass rim: slow pale shimmer (recurring hope motif) — breathes through the scene
+      tl.to("#waterRim",{opacity:0.9,duration:1.4,ease:"power2.out"},2.2)
+        .to("#waterRim",{opacity:0.32,duration:3.0,yoyo:true,repeat:3,ease:"sine.inOut"},3.6);
+
+      // ambient reward-pulse that DECAYS before it arrives — fires twice early (the
+      // body trying and getting nothing back), faint, under the narration.
+      function decayPulse(t0){
+        tl.set("#pulse",{opacity:0,attr:{cx:320,cy:520}},t0)
+          .to("#pulse",{opacity:0.7,duration:0.2,ease:"power1.out",overwrite:"auto"},t0)
+          .to("#pulse",{attr:{cx:560,cy:520},duration:1.1,ease:"power1.in"},t0)
+          .to("#pulse",{opacity:0,duration:0.9,ease:"power2.in"},t0+0.5);
+      }
+      decayPulse(3.4);
+      decayPulse(6.0);
+
+      // "...is sadness." (8.96) — the label everyone reaches for
+      tl.fromTo("#sadness",{opacity:0,scale:1.18},{opacity:1,scale:1,duration:0.7,ease:"power3.out"},8.7);
+
+      // "the story neuroscience has quietly rewritten" (9.94+) — discredit SADNESS
+      tl.to("#sadStrike",{width:560,duration:0.5,ease:"power4.in"},11.4)
+        .to("#sadness",{color:"#39424e",duration:0.6},11.6)
+        .to("#sadness",{opacity:0,y:-26,duration:0.7,ease:"power2.in"},12.6);
+
+      // reframe core: "a brain that has stopped expecting reward to follow effort" (13.88-16.78)
+      // EFFORT/REWARD axes surface; the dopamine arc tries to rise; the depressed circuit
+      // flatlines instead. The pulse fires from effort and dies on the flat line.
+      tl.to(["#labEffort","#labReward"],{opacity:1,duration:0.5,stagger:0.12,ease:"power2.out"},13.7)
+        .fromTo("#rewardArc",{opacity:0,strokeDashoffset:240},
+                {opacity:0.5,strokeDashoffset:0,duration:1.2,ease:"power2.out"},14.0)
+        .fromTo("#flatPred",{opacity:0,scaleX:0,transformOrigin:"0% 50%"},{opacity:0.95,scaleX:1,duration:0.9,ease:"power2.inOut"},14.9)
+        // the reward arc is the prediction the brain CANCELS — fade it as flat asserts
+        .to("#rewardArc",{opacity:0.14,duration:0.8,ease:"power2.in"},15.4);
+      // pulse fires on "reward...effort" and decays on the flat line (no rise)
+      tl.set("#pulse",{opacity:0,attr:{cx:320,cy:520}},15.4)
+        .to("#pulse",{opacity:0.9,duration:0.2},15.4)
+        .to("#pulse",{attr:{cx:980,cy:520},duration:1.4,ease:"power1.in"},15.4)
+        .to("#pulse",{opacity:0,duration:0.6,ease:"power2.in"},16.4);
+
+      // "for 60 years we called this a chemical imbalance" (17.24-19.7) — old label, then discredit
+      tl.fromTo("#chem",{opacity:0,y:18},{opacity:1,y:0,duration:0.6,ease:"power2.out"},18.6)
+        .to("#chemStrike",{width:520,duration:0.45,ease:"power4.in"},20.0)
+        .to("#chem",{color:"#39424e",duration:0.5},20.1);
+
+      // GEAR-CHANGE: "looking at the wrong system" (21.82-22.92)
+      tl.to(["#rewardArc","#flatPred","#labEffort","#labReward"],{opacity:0,duration:0.4,ease:"power2.in"},21.4)
+        .to("#chem",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},21.4)
+        .to("#sadness",{opacity:0,duration:0.3},21.4)
+        .fromTo("#wrong",{opacity:0,scale:1.5},{opacity:1,scale:1,duration:0.42,ease:"power4.in"},21.7)
+        .to("#wrong",{scale:1.03,duration:0.12,yoyo:true,repeat:1,ease:"power1.inOut",overwrite:"auto"},22.1)
+        // the discredited "serotonin" frame is gone; the reward circuit (phone/pulse path) flares
+        .to("#phoneScreen",{stroke:"#ff5a3c",duration:0.5,ease:"power2.out"},21.9)
+        .to("#flatPred",{opacity:0.5,stroke:"#ff5a3c",duration:0.5,ease:"power2.out"},21.9)
+        .to("#wrong",{opacity:0,scale:0.94,duration:0.6,ease:"power2.in"},END-0.1);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

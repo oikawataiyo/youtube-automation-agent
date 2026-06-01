@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "survivorship-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "mychannel/video/survivorship-v2",
+      "port": 3002
+    },
+    {
+      "name": "depression-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "mychannel/video/depression-is-a-prediction-error-v1",
+      "port": 3003,
+      "autoPort": true
+    }
+  ]
+}
