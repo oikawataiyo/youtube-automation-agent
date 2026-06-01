@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-04-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --dawn: #161b24; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --glass: #7fa8c9; --dope: #caa86a;
+        --warn: #ff5a3c; --alarm: #d8392e; --clinic: #4f7bb5;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #wallwash { position: absolute; inset: 0; opacity: 0;
+        background:
+          radial-gradient(ellipse 34% 44% at 38% 44%, rgba(40,48,62,0.55) 0%, transparent 64%),
+          linear-gradient(180deg, var(--bg) 0%, var(--dawn) 50%, var(--bg) 100%); }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 78% 74% at 40% 46%, transparent 36%, rgba(0,0,0,0.66) 100%); }
+      .mote { position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: #4a566a; opacity: 0; }
+
+      #stageSvg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+      /* hallway construction lines */
+      .hline { stroke: rgba(154,166,178,0.22); stroke-width: 1.4; fill: none; opacity: 0; }
+      .rung  { stroke: rgba(154,166,178,0.10); stroke-width: 1; fill: none; opacity: 0; }
+      #vp { fill: rgba(127,168,201,0.0); }
+
+      .mirror { fill: rgba(22,28,38,0.55); stroke: var(--steel); stroke-width: 1.6; opacity: 0; }
+      .mnum { fill: var(--steel); font-weight: 700; text-anchor: middle;
+        dominant-baseline: middle; opacity: 0; letter-spacing: 0.02em; }
+
+      #figure path, #figure ellipse { fill: #0c0f15; stroke: var(--steel); stroke-width: 2; }
+      #figure { opacity: 0; }
+
+      /* affirmation whisper that floats down the hall */
+      #affirm { fill: var(--glass); font-size: 40px; font-weight: 600; text-anchor: middle;
+        letter-spacing: 0.06em; opacity: 0; }
+
+      /* ----- kinetic type (right column) ----- */
+      #type { position: absolute; inset: 0; }
+      .ktype { position: absolute; opacity: 0; will-change: transform, opacity; }
+      .cred { left: 1270px; width: 580px; font-size: 26px; font-weight: 300;
+        color: var(--steel); letter-spacing: 0.02em; line-height: 1.3;
+        border-left: 3px solid var(--steel); padding-left: 22px; }
+      .cred b { color: var(--ink); font-weight: 700; }
+      .cred i { color: var(--mute); font-style: normal; font-size: 21px; }
+      .stat { left: 1270px; width: 580px; font-size: 30px; font-weight: 400;
+        color: var(--steel); letter-spacing: 0.01em; line-height: 1.26; }
+      .stat b { color: var(--ink); font-weight: 800; font-size: 38px; }
+      .stat u { color: var(--warn); text-decoration: none; font-weight: 700; }
+      #culture { left: 1270px; top: 360px; width: 580px; font-size: 46px; font-weight: 800;
+        color: var(--mute); letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.16; }
+      #ironic { left: 1270px; top: 420px; width: 590px; font-size: 32px; font-weight: 600;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.26; }
+      #ironic u { color: var(--warn); text-decoration: none; }
+      .drop { left: 1270px; font-size: 50px; font-weight: 800; color: var(--warn);
+        letter-spacing: 0.02em; text-transform: uppercase; }
+      #widens { left: 1270px; top: 430px; width: 590px; font-size: 40px; font-weight: 800;
+        color: var(--ink); letter-spacing: 0.01em; line-height: 1.14; text-transform: uppercase; }
+      #widens b { color: var(--warn); }
+      #antimed { left: 1270px; top: 640px; width: 590px; font-size: 44px; font-weight: 800;
+        color: var(--alarm); letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.1; }
+
+      /* ----- kicker ----- */
+      #kicker { position: absolute; left: 88px; top: 84px; opacity: 0;
+        font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      #kicker .num { color: var(--dope); }
+      #kickerline { position: absolute; left: 88px; top: 122px; height: 2px; width: 0;
+        background: var(--steel); opacity: 0.5; }
+
+      /* ----- captions ----- */
+      #caps { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%);
+        width: 1480px; text-align: center; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 42px; line-height: 1.4; letter-spacing: 0.01em; color: var(--mute); }
+      .phrase .w { color: var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-04"
+      data-start="0"
+      data-duration="95.0"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="95.0" data-track-index="9"
+             src="../assets/narration/seg-04.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="95.0" data-track-index="0">
+        <div id="wallwash"></div>
+        <div id="motes"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="95.0" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="hall"></g>
+          <g id="figure">
+            <ellipse cx="0" cy="-128" rx="26" ry="30" />
+            <path d="M -30 0 C -34 -86, -22 -120, 0 -120 C 22 -120, 34 -86, 30 0 Z" />
+          </g>
+          <text id="affirm" x="430" y="430">&ldquo;I am a lovable person&rdquo;</text>
+        </svg>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="95.0" data-track-index="2">
+        <div class="ktype cred" id="cred1" style="top:250px;">
+          <b>STAR*D</b> &#183; Rush, 2006<br><i>Am. J. Psychiatry &#183; thousands of patients</i></div>
+        <div class="ktype stat" id="stat1" style="top:380px;">
+          first medication:<br><b>1 in 3</b> fully remit</div>
+        <div class="ktype stat" id="stat2" style="top:520px;">
+          by step four: <b>~67%</b><br><u>a third the model never reached</u></div>
+
+        <div class="ktype" id="culture">&ldquo;try harder.<br>think differently.<br>be positive.&rdquo;</div>
+
+        <div class="ktype cred" id="cred2" style="top:250px;">
+          <b>Daniel Wegner</b>, 1994<br><i>ironic process theory</i></div>
+        <div class="ktype" id="ironic">suppress a thought and you<br><u>rehearse it louder</u> &mdash;<br>&ldquo;don&rsquo;t feel hopeless&rdquo; teaches hopelessness</div>
+
+        <div class="ktype cred" id="cred3" style="top:250px;">
+          <b>Wood et al.</b>, 2009<br><i>Psychological Science</i></div>
+        <div class="ktype drop" id="drop1" style="top:430px;">mood &#8595;</div>
+        <div class="ktype drop" id="drop2" style="top:520px;">self-esteem &#8595;</div>
+
+        <div class="ktype" id="widens">a forced prediction<br>the brain can&rsquo;t connect<br><b>WIDENS</b> the error</div>
+        <div class="ktype" id="antimed">mechanically,<br>anti-medicine</div>
+      </div>
+
+      <div id="kickwrap" class="clip" data-start="0" data-duration="95.0" data-track-index="3">
+        <div id="kicker">WHY &ldquo;JUST BE POSITIVE&rdquo; BACKFIRES &nbsp;&#183;&nbsp; <span class="num">PART 05</span></div>
+        <div id="kickerline"></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="95.0" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(17798004);
+      const SVGNS="http://www.w3.org/2000/svg";
+
+      (function(){
+        const host = document.getElementById("motes");
+        for (let i=0;i<36;i++){
+          const p=document.createElement("div"); p.className="mote";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*980)+"px";
+          p.style.transform="scale("+(0.5+rnd()*1.4)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // ---------- build one-point-perspective hallway ----------
+      const VP={x:740,y:470};
+      const TL={x:40,y:110}, TR={x:1180,y:110}, BL={x:40,y:1080}, BR={x:1180,y:1080};
+      const L=(a,b,t)=>({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t});
+      const hall=document.getElementById("hall");
+      function line(a,b,cls){const e=document.createElementNS(SVGNS,"line");
+        e.setAttribute("x1",a.x);e.setAttribute("y1",a.y);e.setAttribute("x2",b.x);e.setAttribute("y2",b.y);
+        e.setAttribute("class",cls); hall.appendChild(e); return e;}
+      // perimeter receding lines
+      ["hline"].forEach(()=>{ line(TL,VP,"hline"); line(TR,VP,"hline"); line(BL,VP,"hline"); line(BR,VP,"hline"); });
+      // floor + ceiling rungs at depths
+      [0.16,0.30,0.42,0.52,0.61,0.69].forEach(t=>{
+        line(L(BL,VP,t),L(BR,VP,t),"rung");
+        line(L(TL,VP,t),L(TR,VP,t),"rung");
+      });
+
+      // mirror panels + numbers, near->far (k=0 nearest)
+      const depths=[[0.08,0.22],[0.24,0.36],[0.38,0.48],[0.50,0.59],[0.61,0.69]];
+      const startVals=[66,64,62,60,58];
+      const endVals  =[58,52,46,40,34];
+      const mirsL=[], mirsR=[];
+      function wallMirror(side, t0, t1, k){
+        // side: 'L' uses TL/BL near corner; 'R' uses TR/BR
+        const nT = side==='L'?TL:TR, nB = side==='L'?BL:BR;
+        const topF=0.30, botF=0.74;
+        const p=(t,f)=>{ const top=L(nT,VP,t), bot=L(nB,VP,t); return L(top,bot,f); };
+        const A=p(t0,topF), B=p(t1,topF), C=p(t1,botF), D=p(t0,botF);
+        const poly=document.createElementNS(SVGNS,"polygon");
+        poly.setAttribute("points",[A,B,C,D].map(q=>q.x.toFixed(1)+","+q.y.toFixed(1)).join(" "));
+        poly.setAttribute("class","mirror"); hall.appendChild(poly);
+        const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
+        const h=Math.abs(((A.y+B.y)/2)-((C.y+D.y)/2));
+        const txt=document.createElementNS(SVGNS,"text");
+        txt.setAttribute("x",cx.toFixed(1)); txt.setAttribute("y",cy.toFixed(1));
+        txt.setAttribute("class","mnum");
+        txt.setAttribute("font-size",Math.min(56,Math.max(13,h*0.30)).toFixed(0));
+        txt.textContent=startVals[k];
+        hall.appendChild(txt);
+        return {poly,txt};
+      }
+      depths.forEach((d,k)=>{ mirsL[k]=wallMirror('L',d[0],d[1],k); mirsR[k]=wallMirror('R',d[0],d[1],k); });
+
+      // ---------- captions ----------
+      const WORDS = window.seg04 || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach(w=>{ cur.push(w); if(/[.!?]$/.test(w[0])){ phrases.push(cur); cur=[]; } });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w";
+          s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div, start:ph[0][1], end:ph[ph.length-1][2],
+                words:[...div.querySelectorAll(".w")], raw:ph};
+      });
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const END = 95.0;
+
+      // bg in
+      tl.to("#wallwash",{opacity:1,duration:2.0,ease:"power2.out"},0)
+        .to(".mote",{opacity:0.38,duration:2.4,stagger:{each:0.03,from:"random"},ease:"power1.out"},0.3);
+      gsap.utils.toArray(".mote").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"-="+(8+Math.abs(d)*22),x:"+="+(d*14),duration:32,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      // kicker
+      tl.fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1.0,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:560,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+
+      // hallway draws in (0.4–3): receding lines, then mirrors + baseline numbers
+      tl.to(".hline",{opacity:1,duration:1.2,stagger:0.08,ease:"power2.out"},0.5)
+        .to(".rung",{opacity:1,duration:1.0,stagger:0.05},1.0)
+        .to(".mirror",{opacity:1,duration:0.9,stagger:0.05,ease:"power2.out"},1.4)
+        .to(".mnum",{opacity:0.85,duration:0.8,stagger:0.04},1.8);
+
+      // STAR*D data (3.16–33): cred1 + stats
+      tl.fromTo("#cred1",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},3.2)
+        .fromTo("#stat1",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},13.8)
+        .fromTo("#stat2",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},20.4);
+
+      // figure appears near the hall mouth (early, dim), waiting
+      tl.fromTo("#figure",{opacity:0},{opacity:0.5,duration:1.0},2.4);
+      gsap.set("#figure",{x:600,y:1000,scale:1.1,transformOrigin:"50% 100%"});
+
+      // "try harder / think differently / be positive" (35.8) — data clears, culture in
+      tl.to(["#cred1","#stat1","#stat2"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},34.6)
+        .fromTo("#culture",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},35.8)
+        .fromTo("#affirm",{opacity:0},{opacity:0.9,duration:0.8},36.2);
+
+      // Wegner ironic process (39–53)
+      tl.to("#culture",{opacity:0,y:-12,duration:0.5,ease:"power2.in"},38.6)
+        .fromTo("#cred2",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},39.1)
+        .fromTo("#ironic",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},44.9);
+
+      // Wood 2009 (54.3) — the affirmation study
+      tl.to(["#cred2","#ironic"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},53.8)
+        .fromTo("#cred3",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},54.4);
+
+      // "I am a lovable person" affirmation brightens + floats down hall (64.1)
+      tl.to("#affirm",{opacity:1,fill:"#f4efe6",duration:0.6},64.0)
+        .fromTo("#affirm",{x:430,y:430,fontSize:40},
+                {x:700,y:474,fontSize:18,opacity:0.0,duration:8.0,ease:"power1.in",overwrite:"auto"},64.8);
+
+      // THE WALK + number drops: figure walks the hall, each mirror's rating falls (56–88)
+      tl.to("#figure",{opacity:0.85,duration:0.6},55.0)
+        .to("#figure",{x:735,y:476,scale:0.12,duration:32,ease:"none"},56.0);
+
+      // mood ↓ / self-esteem ↓ (66.7 / 68.1)
+      tl.fromTo("#drop1",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"power3.in"},66.7)
+        .fromTo("#drop2",{opacity:0,x:16},{opacity:1,x:0,duration:0.5,ease:"power3.in"},68.1);
+
+      // sequential mirror-number decrements (near->far) as the figure passes.
+      // Driven by an interpolated counter (onUpdate) so the change is seek-reversible
+      // during deterministic frame capture — a .call() mutation would stick permanently.
+      const dropTimes=[58,64,70,76,82];
+      depths.forEach((d,k)=>{
+        const t=dropTimes[k];
+        [mirsL[k],mirsR[k]].forEach(m=>{
+          const proxy={v:startVals[k]};
+          tl.to(m.txt,{fill:"#ff5a3c",duration:0.2},t)
+            .to(m.txt,{scale:1.18,transformOrigin:"50% 50%",duration:0.16,yoyo:true,repeat:1},t)
+            .to(proxy,{v:endVals[k],duration:0.5,ease:"power1.inOut",
+                       onUpdate:()=>{ m.txt.textContent=Math.round(proxy.v); }},t+0.16)
+            .to(m.txt,{fill:"#9aa6b2",duration:0.6},t+0.5);
+        });
+      });
+
+      // "widens the prediction error" (86.1) drops clear, widens in
+      tl.to(["#drop1","#drop2","#cred3"],{opacity:0,y:-12,duration:0.5,stagger:0.04,ease:"power2.in"},85.4)
+        .fromTo("#widens",{opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:"power2.out"},86.1);
+
+      // "anti-medicine" (93.7)
+      tl.fromTo("#antimed",{opacity:0,scale:1.12,transformOrigin:"0% 50%"},
+                {opacity:1,scale:1,duration:0.6,ease:"power4.in"},93.6)
+        .to("#figure",{opacity:0.3,duration:0.8},93.6);
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.18);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.12 : END-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.35,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.12,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.3,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.3);
+        }
+      });
+
+      window.__timelines["seg-04"] = tl;
+    </script>
+  </body>
+</html>
