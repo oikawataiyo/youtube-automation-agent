@@ -109,25 +109,22 @@ template: 既存 `tasks/script-spec-A.md` を参照し、以下を埋める:
 
 ## Phase 3 — Script Generation (Codex並列 x3)
 
-各specをcodexに**background並列**で委譲(token saving)。**EN JSON と JP MD の dual output** を生成。
+各specをcodexに**background並列**で委譲(token saving)。**EN JSON** を生成。
 
 ```bash
 codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "<<EOT
 読み込み:
   - tasks/script-spec-shared.md
   - tasks/script-spec-{X}.md
-  - tasks/script-jp-md-template.md (JP MD format + 翻訳 rule + カタカナ NG list)
   - data/scripts/1779639127625_survivorship-bias-is-ruining-your-decisions.json (EN reference)
 task:
   1. spec {X} の指示通り EN 台本 JSON を生成し、指定 OUTPUT PATH (data/scripts/{ts}_{slug}.json) に書き出せ。
-  2. 同じ {ts}_{slug} prefix で JP 意訳 MD を data/scripts/{ts}_{slug}.md に書き出せ (template に従う)。
 制約:
  - shared specのschema/voiceを厳守
  - citation listからのみ引用 (捏造禁止)
  - total_word_count 1625-1775 (EN)
  - 5 sections exact
- - JP MD: citation は原文ママ、カタカナ語禁止、narration 意訳
-報告: JSON path + MD path + total_word_count + estimated_duration_minutes の4行のみ。diff返却禁止。
+報告: JSON path + total_word_count + estimated_duration_minutes の3行のみ。diff返却禁止。
 EOT
 " </dev/null
 ```
@@ -142,7 +139,7 @@ EOT
     Select-Object Id, CPU, @{N='RAM_MB';E={[math]::Round($_.WorkingSet64/1MB,1)}}
   ```
 
-**Output**: 3 JSON + 3 MD in `data/scripts/` (合計 6 files)
+**Output**: 3 JSON in `data/scripts/`
 
 ## Phase 4 — Script Verification (Claude直接)
 
@@ -161,17 +158,12 @@ console.log('citations:', s.script.metadata.key_studies_referenced.length);
 ```
 - word count 1625-1775 / sections=5 / hook 35-65語 / outro 80-130語 / citation 2-3本をspec listと突合
 
-#### JP MD 検証
-- file 存在、`## Hook`/`## Section 1..5`/`## Outro`/`## 参考研究`/`## SEO` headings 全部存在
-- カタカナ NG grep で 0 hit: `Grep 'リサーチ|コンテキスト|エビデンス|コスト|ストーリー|フレームワーク'` glob `data/scripts/*.md`
-- citation block 英文行数 ≈ JSON `key_studies_referenced.length`
-
 失敗時は codex に修正委譲(同 spec + 失敗内容)。**Output**: 全 script PASS
 
 ## Phase 5 — Commit Scripts (Claude直接)
 
 ```bash
-git add tasks/script-spec-{X}.md ... data/scripts/{ts}_*.json data/scripts/{ts}_*.md
+git add tasks/script-spec-{X}.md ... data/scripts/{ts}_*.json
 git commit -m "feat: add round N psychology scripts ({topic-slugs})"
 git push
 ```
@@ -185,10 +177,9 @@ git push
 
 ## Phase 6 — Scaffold + design.md (Claude直接)
 
-1. **codex版/旧版があれば archive(削除でなく退避)**: 旧 `mychannel/video/<slug>-v1/` は `mychannel/video/_archive/<slug>-v1-codex/` へ通常move。source `data/scripts/{ts}_*.json|.md` は触らない。
-2. **project scaffold**: `mychannel/video/<slug>-v1/` を `survivorship-v2` 構造で作成 — `package.json`(hyperframes@0.6.63), `meta.json`, `hyperframes.json`, `assets/narration/`, `compositions/`, `CLAUDE.md`(survivorship規約copy)。
+1. **project scaffold**: `mychannel/video/<slug>-v1/` を `survivorship-v2` 構造で作成 — `package.json`(hyperframes@0.6.63), `meta.json`, `hyperframes.json`, `assets/narration/`, `compositions/`, `CLAUDE.md`(survivorship規約copy)。
    - narration txt を `assets/narration/00-hook.txt` … `NN-<slug>.txt` に segment分割して書き出す(source JSON の hook/sections/outro から)。
-3. **design.md 作成**: palette(動画topicに合わせ、回復系なら1段階grade)、type stack、motion grammar、Phase 2 描画設計blockを per-scene visual register に転記。
+2. **design.md 作成**: palette(動画topicに合わせ、回復系なら1段階grade)、type stack、motion grammar、Phase 2 描画設計blockを per-scene visual register に転記。
 
 **完了判定**: scaffold一式 + narration txt + design.md が存在し、CSSが旧13本とbyte非一致(汎用template由来でない)。
 
@@ -287,7 +278,6 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 | Codex呼び出し | `--dangerously-bypass-approvals-and-sandbox` 必須(Win11 sandbox) |
 | Codex stdin | background起動は `</dev/null` 必須。無いと無限 hang |
 | Codex output | path + word_count + duration の数行のみ返却。full diff 禁止 |
-| JP MD twin | EN JSON 1本につき JP 意訳 MD 1本(`{ts}_{slug}.md`)。citation原文ママ・カタカナ語禁止 |
 | 動画化の自動build | `video:produce` は **`--skip-build` 必須**。`build-wordlevel-video.js` の自動index.html再生成は使わない |
 | 描画核 | seg毎bespoke。7 seg全て相異なる。汎用折れ線graph/同一CSS/同一seed禁止 |
 | DOM mutation | timeline内のtextContent等は proxy+onUpdate。`.call()` での mutation 禁止(seek-unsafe) |
@@ -314,11 +304,10 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 
 ## Reference Files
 
-- `tasks/script-spec-shared.md` — voice/schema正本(EN JSON + JP MD dual output 要件)
+- `tasks/script-spec-shared.md` — voice/schema正本
 - `tasks/script-spec-A.md` — topic spec template(Libet)
-- `tasks/script-jp-md-template.md` — JP 意訳 MD format + 翻訳 rule + カタカナ NG list
 - `tasks/hyperframes-video-production-flow.md` — npm script flow(`video:produce` 等)の詳細
-- `data/scripts/1779639127625_survivorship-bias-is-ruining-your-decisions.json|.md` — schema/voice reference
+- `data/scripts/1779639127625_survivorship-bias-is-ruining-your-decisions.json` — schema/voice reference
 - `mychannel/video/survivorship-v2/` — bespoke composition の正本(描画 register / caption wiring / 構造)
 - `mychannel/video/depression-is-a-prediction-error-v1/` — 直近の worked example(seg毎bespoke, seek-safe counter, ffmpeg concat)
 - `mychannel/visual-methodology/` — 岡田式 PLAYBOOK(axis技法 / 原則)
