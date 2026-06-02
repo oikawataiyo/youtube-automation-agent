@@ -127,16 +127,19 @@
       thigh.position.set(0, -0.05, 0.22);
       thigh.castShadow = true;
       hip.add(thigh);
+      const knee = new THREE.Group();
+      knee.position.set(0, -0.36, 0.34);
+      hip.add(knee);
       const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.34, 4, 10), mat);
-      shin.position.set(0, -0.36, 0.34);
       shin.castShadow = true;
-      hip.add(shin);
+      knee.add(shin);
+      return { hip, knee };
     }
-    makeLeg(-1);
-    makeLeg(1);
+    const legL = makeLeg(-1);
+    const legR = makeLeg(1);
 
     group.scale.setScalar(scale);
-    return { group, pelvis, head, armL, armR, mat };
+    return { group, pelvis, head, armL, armR, legL, legR, mat };
   }
 
   // ---- simple wooden chair ----------------------------------------------
