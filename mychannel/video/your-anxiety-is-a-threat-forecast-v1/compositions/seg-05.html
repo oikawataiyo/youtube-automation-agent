@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-05-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #12161c;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 88% 82% at 50% 48%, transparent 46%, rgba(0,0,0,0.4) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg05" data-composition-id="seg05" data-width="1920" data-height="1080" data-start="0" data-duration="125">
+      <audio id="vo" data-start="0" data-duration="125" data-track-index="9"
+             src="../assets/narration/seg-05.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="125" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="125" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-05 — a hand turns a brass barometer from STORM toward CHANGEABLE
+      // (rough.js dial). The window is still cloudy (simplex) but a thin warm
+      // daylight line (bloom) appears — the first warmth. Teach a better estimate.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise, mulberry32 } from "../assets/lib/fx-kit.js";
+      import rough from "roughjs";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 125;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(14, 40);
+      scene.background = new THREE.Color(0x141a20);
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x39414e, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+      // ---- window + sky + warm daylight line ---------------------------------
+      const sky = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 4.4),
+        new THREE.MeshStandardMaterial({ color: 0x2a3645, roughness: 1 }));
+      sky.position.set(0, 2.6, -6); scene.add(sky);
+      const wallAround = new THREE.Mesh(new THREE.PlaneGeometry(24, 9),
+        new THREE.MeshStandardMaterial({ color: 0x252d36, roughness: 1 }));
+      wallAround.position.set(0, 3.0, -6.05); scene.add(wallAround);
+      // window frame
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x20262e, roughness: 0.9 });
+      for (const [w, h, x, y] of [[7.6, 0.18, 0, 4.8], [7.6, 0.18, 0, 0.4], [0.18, 4.4, -3.7, 2.6], [0.18, 4.4, 3.7, 2.6], [0.14, 4.4, 0, 2.6], [7.6, 0.14, 0, 2.6]]) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.16), frameMat);
+        m.position.set(x, y, -5.9); scene.add(m);
+      }
+      // thin warm daylight line on the horizon (bloom, first warmth)
+      const daylight = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 0.16),
+        new THREE.MeshBasicMaterial({ color: 0xf0c98a, transparent: true, opacity: 0 }));
+      daylight.position.set(0, 0.7, -5.92); scene.add(daylight);
+
+      // ---- simplex cloud particles drifting across the window ----------------
+      const N = 600, base = new Float32Array(N * 3), rng = mulberry32(31);
+      for (let i = 0; i < N; i++) {
+        base[i * 3] = -3.4 + rng() * 6.8;
+        base[i * 3 + 1] = 1.2 + rng() * 3.0;
+        base[i * 3 + 2] = -5.8 + rng() * 0.5;
+      }
+      const cpos = new Float32Array(base);
+      const cgeo = new THREE.BufferGeometry();
+      cgeo.setAttribute("position", new THREE.BufferAttribute(cpos, 3));
+      // soft round sprite so points read as cloud puffs
+      const sp = document.createElement("canvas"); sp.width = sp.height = 64;
+      const spx = sp.getContext("2d");
+      const grd = spx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grd.addColorStop(0, "rgba(255,255,255,0.9)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+      spx.fillStyle = grd; spx.fillRect(0, 0, 64, 64);
+      const spTex = new THREE.CanvasTexture(sp);
+      const cMat = new THREE.PointsMaterial({ color: 0x7f93ab, size: 0.7, map: spTex,
+        transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.NormalBlending });
+      const clouds = new THREE.Points(cgeo, cMat); scene.add(clouds);
+      const { noise2D } = makeNoise(13);
+
+      // ---- brass barometer ----------------------------------------------------
+      const brass = new THREE.MeshStandardMaterial({ color: 0xb8893f, roughness: 0.35, metalness: 0.8 });
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 0.3, 32), brass);
+      stand.position.set(0, 0.15, 0); scene.add(stand);
+      const housing = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.1, 16, 40), brass);
+      housing.position.set(0, 1.35, 0.02); scene.add(housing);
+      // dial face (rough.js)
+      const dc = document.createElement("canvas"); dc.width = dc.height = 700;
+      const dx = dc.getContext("2d");
+      dx.fillStyle = "#efe2c4"; dx.beginPath(); dx.arc(350, 350, 340, 0, Math.PI * 2); dx.fill();
+      const drc = rough.canvas(dc);
+      drc.circle(350, 350, 660, { seed: 4, stroke: "#5a4523", strokeWidth: 6, roughness: 1.8 });
+      drc.circle(350, 350, 560, { seed: 6, stroke: "#7a5f33", strokeWidth: 3, roughness: 2.2 });
+      // tick marks
+      for (let a = 0; a < 360; a += 15) {
+        const r = a * Math.PI / 180;
+        drc.line(350 + Math.cos(r) * 250, 350 + Math.sin(r) * 250,
+                 350 + Math.cos(r) * 285, 350 + Math.sin(r) * 285,
+                 { seed: a, stroke: "#5a4523", strokeWidth: 3, roughness: 1.5 });
+      }
+      function label(t, ang, size) {
+        dx.save(); dx.fillStyle = "#46351a";
+        dx.font = `bold ${size}px Georgia, serif`; dx.textAlign = "center"; dx.textBaseline = "middle";
+        const r = ang * Math.PI / 180;
+        dx.fillText(t, 350 + Math.cos(r) * 175, 350 + Math.sin(r) * 175);
+        dx.restore();
+      }
+      label("STORM", 200, 40);
+      label("CHANGEABLE", 270, 34);
+      label("FAIR", 340, 40);
+      const dialTex = new THREE.CanvasTexture(dc); dialTex.colorSpace = THREE.SRGBColorSpace;
+      const dial = new THREE.Mesh(new THREE.CircleGeometry(0.6, 48),
+        new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.6 }));
+      dial.position.set(0, 1.35, 0.09); scene.add(dial);
+      // needle
+      const needlePivot = new THREE.Group(); needlePivot.position.set(0, 1.35, 0.12); scene.add(needlePivot);
+      const needle = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.5, metalness: 0.3 }));
+      needle.position.set(0.18, 0, 0); needlePivot.add(needle);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16), brass);
+      hub.rotation.x = Math.PI / 2; hub.position.set(0, 1.35, 0.13); scene.add(hub);
+
+      // simple hand resting on the dial edge
+      const skin = new THREE.MeshStandardMaterial({ color: 0xe5c4a2, roughness: 0.8 });
+      const hand = new THREE.Group(); hand.position.set(0.5, 1.05, 0.35); scene.add(hand);
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), skin);
+      palm.scale.set(1.1, 0.6, 1.3); hand.add(palm);
+      for (let f = 0; f < 4; f++) {
+        const fin = new THREE.Mesh(new THREE.CapsuleGeometry(0.026, 0.16, 4, 8), skin);
+        fin.position.set(-0.08 + f * 0.05, 0.0, 0.16); fin.rotation.x = 0.5; hand.add(fin);
+      }
+
+      // ---- lights -------------------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-1.5, 4.0, 3.0); scene.add(key);
+      const ambient = new THREE.AmbientLight(0x4a586c, 1.0); scene.add(ambient);
+      scene.add(SK.makeFill(1.35));
+      const COLD = new THREE.Color("#8b9bb0"), WARM = new THREE.Color("#f0a35c");
+      const dawnLight = new THREE.PointLight(0xf0c98a, 0, 12, 2); dawnLight.position.set(0, 1.0, -4); scene.add(dawnLight);
+
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.0, 1.6, 3.3), posNear: new V(0.0, 1.55, 2.5), look: new V(0, 1.5, -3) },     // 0 barometer + window wide
+        { pos: new V(0.85, 1.55, 1.5), posNear: new V(0.6, 1.5, 1.1), look: new V(0.1, 1.3, 0.1) }, // 1 dial + hand
+        { pos: new V(0.1, 1.45, 1.0), posNear: new V(0.1, 1.42, 0.72), look: new V(0, 1.35, 0.05) },// 2 dial face macro
+        { pos: new V(0.0, 2.2, 1.4), posNear: new V(0.0, 2.2, 0.2), look: new V(0, 2.4, -6) },      // 3 window/clouds wide
+        { pos: new V(-0.9, 1.4, 1.2), look: new V(0.7, 1.2, -6) },                                   // 4 daylight line + barometer
+      ], 42);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.7, radius: 0.6, threshold: 0.45 });
+
+      // ---- drift clouds, turn needle, raise warmth ---------------------------
+      const proxy = { t: 0, dial: 0, warm: 0 };
+      const A0 = 2.25, A1 = 0.7; // needle angle STORM -> CHANGEABLE
+      function render() {
+        // simplex cloud drift (pure fn of t)
+        const tt = proxy.t * 0.12;
+        for (let i = 0; i < N; i++) {
+          const bx = base[i * 3], by = base[i * 3 + 1];
+          let x = bx + tt + noise2D(bx * 0.3, by * 0.3 + tt) * 0.6;
+          x = ((x + 3.4) % 6.8) - 3.4; // wrap across window
+          cpos[i * 3] = x;
+          cpos[i * 3 + 1] = by + noise2D(bx * 0.4 + tt, by * 0.4) * 0.25;
+        }
+        cgeo.attributes.position.needsUpdate = true;
+        cMat.color.setRGB(0.5 + proxy.warm * 0.4, 0.58 + proxy.warm * 0.25, 0.67); // warm the clouds slightly
+
+        needlePivot.rotation.z = A0 + (A1 - A0) * proxy.dial;
+        daylight.material.opacity = proxy.warm * 0.95;
+        dawnLight.intensity = proxy.warm * 5.0;
+        SK.warmLight(key, ambient, proxy.warm * 0.55, COLD, WARM);
+        bloom.strength = 0.6 + proxy.warm * 0.5;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg05 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // the hand turns the dial; warmth and daylight grow
+      tl.to(proxy, { dial: 1, duration: 40, ease: "power1.inOut" }, 36);
+      tl.to(proxy, { warm: 1, duration: 60, ease: "sine.inOut" }, 44);
+      tl.to(hand.position, { x: 0.22, y: 1.2, duration: 14, ease: "power2.inOut" }, 36); // hand moves to the dial
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 30, 3.8, [0, 3, 1], true);      // the instrument and the cloudy window
+      cut.auto(30, 72, 3.6, [1, 2, 0, 4], true);    // turning STORM toward CHANGEABLE
+      cut.auto(72, 104, 3.8, [3, 4, 0, 2], true);   // the thin daylight line
+      cut.auto(104, END, 4.0, [0, 4, 3], true);      // a better estimate, not silence
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg05"] = tl;
+    </script>
+  </body>
+</html>

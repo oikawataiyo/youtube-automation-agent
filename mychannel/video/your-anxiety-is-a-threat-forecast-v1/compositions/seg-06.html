@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-06-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #15171c;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 88% 82% at 48% 46%, transparent 48%, rgba(0,0,0,0.36) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg06" data-composition-id="seg06" data-width="1920" data-height="1080" data-start="0" data-duration="40">
+      <audio id="vo" data-start="0" data-duration="40" data-track-index="9"
+             src="../assets/narration/seg-06.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="40" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="40" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-06 Outro — the Hook's bedroom at dawn. Calm, warming. The alarm still
+      // glows but is now one soft input among many. Not a person without an alarm;
+      // a person who taught the alarm a better forecast. A repair callback.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise } from "../assets/lib/fx-kit.js";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 40;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.6; // dawn — a touch brighter than the Hook
+      const scene = SK.makeScene(7, 22);
+      scene.background = new THREE.Color(0x1a1d22);
+
+      const rig = SK.makeCameraRig([
+        { pos: new V(3.4, 2.7, 3.6), posNear: new V(3.0, 2.5, 3.2), look: new V(0.0, 0.95, 0) }, // 0 calm wide
+        { pos: new V(0.7, 1.7, 2.0), posNear: new V(0.2, 1.55, 1.6), look: new V(-0.35, 0.95, 0) }, // 1 figure/chest
+        { pos: new V(-1.0, 1.55, 1.7), look: new V(-1.9, 1.18, 0.4) },                              // 2 alarm soft (bedside)
+        { pos: new V(1.3, 2.0, 2.4), look: new V(2.0, 1.7, -2.4) },                                 // 3 window daylight
+        { pos: new V(2.6, 1.1, 3.0), look: new V(-0.5, 0.9, 0) },                                   // 4 settle wide
+      ], 38);
+      const camera = rig.camera;
+
+      // ---- lights: warming dawn ----------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(2.2, 4.0, 2.6); scene.add(key);
+      const ambient = new THREE.AmbientLight(0x55607a, 1.15); scene.add(ambient);
+      scene.add(SK.makeFill(1.5));
+      const COLD = new THREE.Color("#8b9bb0"), WARM = new THREE.Color("#f0a35c");
+      const dawn = new THREE.PointLight(0xf2c88c, 3.2, 9, 2); dawn.position.set(1.9, 1.9, -2.0); scene.add(dawn);
+
+      // ---- room (brighter/warmer than the Hook) ------------------------------
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(26, 26),
+        new THREE.MeshStandardMaterial({ color: 0x44474e, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(26, 12),
+        new THREE.MeshStandardMaterial({ color: 0x35353c, roughness: 1 }));
+      backWall.position.set(0, 6, -2.4); scene.add(backWall);
+      const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(26, 26),
+        new THREE.MeshStandardMaterial({ color: 0x2b2b31, roughness: 1 }));
+      ceiling.rotation.x = Math.PI / 2; ceiling.position.y = 3.1; scene.add(ceiling);
+
+      // warm dawn window
+      const windowPane = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.2),
+        new THREE.MeshBasicMaterial({ color: 0x6b5e62 }));
+      windowPane.position.set(1.7, 1.75, -2.36); scene.add(windowPane);
+      const dawnLine = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.3),
+        new THREE.MeshBasicMaterial({ color: 0xf2c88c, transparent: true, opacity: 0 }));
+      dawnLine.position.set(1.7, 1.32, -2.35); scene.add(dawnLine);
+      const mullMat = new THREE.MeshStandardMaterial({ color: 0x18171a, roughness: 1 });
+      const mV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.24, 0.05), mullMat); mV.position.set(1.7, 1.75, -2.34); scene.add(mV);
+      const mH = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.05, 0.05), mullMat); mH.position.set(1.7, 1.75, -2.34); scene.add(mH);
+
+      // ---- bed (same as the Hook) --------------------------------------------
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x4d4035, roughness: 0.85 });
+      const sheetMat = new THREE.MeshStandardMaterial({ color: 0x646f7e, roughness: 0.95 });
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.34, 1.7), woodMat);
+      frame.position.set(0, 0.3, 0); frame.castShadow = true; frame.receiveShadow = true; scene.add(frame);
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.26, 1.55), sheetMat);
+      mattress.position.set(0, 0.56, 0); mattress.receiveShadow = true; scene.add(mattress);
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 1.25), sheetMat);
+      pillow.position.set(-1.15, 0.78, 0); pillow.castShadow = true; scene.add(pillow);
+      const skin = new THREE.MeshStandardMaterial({ color: 0xeaccab, roughness: 0.85 });
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 26, 20), skin);
+      head.position.set(-1.05, 0.98, 0); head.castShadow = true; scene.add(head);
+      const duvetMat = new THREE.MeshStandardMaterial({ color: 0x5c6675, roughness: 0.96 });
+      const duvet = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.36, 1.5), duvetMat);
+      duvet.position.set(0.45, 0.8, 0); duvet.castShadow = true; duvet.receiveShadow = true; scene.add(duvet);
+      const chest = new THREE.Mesh(new THREE.SphereGeometry(0.5, 22, 16), duvetMat);
+      chest.position.set(-0.35, 0.86, 0); chest.scale.set(0.62, 0.34, 0.74); chest.castShadow = true; scene.add(chest);
+
+      // ---- bedside: phone, clock, and the alarm now a soft amber murmur ------
+      const table = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.8), woodMat);
+      table.position.set(-1.95, 0.5, 0.55); table.castShadow = true; scene.add(table);
+      const clock = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.06), woodMat);
+      clock.position.set(-1.95, 1.18, 0.3); scene.add(clock);
+      const clockFace = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.13),
+        new THREE.MeshBasicMaterial({ color: 0x86c2cf }));
+      clockFace.position.set(-1.95, 1.18, 0.335); scene.add(clockFace);
+      // the alarm — now a small, soft amber glow (one input among many)
+      const alarm = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0xe8743a }));
+      alarm.position.set(-1.78, 1.06, 0.66); scene.add(alarm);
+      const alarmGlow = new THREE.PointLight(0xe8743a, 1.0, 2.2, 2); alarmGlow.position.copy(alarm.position); scene.add(alarmGlow);
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.55, radius: 0.6, threshold: 0.35 });
+      const { noise2D } = makeNoise(11);
+
+      // ---- calm breath + warming dawn ----------------------------------------
+      const proxy = { t: 0, warm: 0 };
+      const chestBaseY = 0.86, chestBaseSy = 0.34;
+      function render() {
+        const b = 0.5 + 0.5 * noise2D(proxy.t * 2.0, 0); // slow, calm breath
+        chest.scale.y = chestBaseSy + 0.03 * b * 2.0;
+        chest.position.y = chestBaseY + 0.03 * b;
+        dawnLine.material.opacity = proxy.warm * 0.9;
+        SK.warmLight(key, ambient, 0.25 + proxy.warm * 0.5, COLD, WARM);
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg06 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      tl.to(proxy, { warm: 1, duration: 30, ease: "sine.inOut" }, 4);
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 14, 3.4, [0, 1, 2], true);     // the calmer room
+      cut.auto(14, 30, 3.6, [3, 1, 2, 0], true);   // the alarm, one input among many
+      cut.auto(30, END, 3.5, [0, 4, 3], true);     // a better forecast — settle on dawn
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg06"] = tl;
+    </script>
+  </body>
+</html>

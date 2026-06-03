@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-02-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #12161c;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 80% at 50% 48%, transparent 44%, rgba(0,0,0,0.44) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg02" data-composition-id="seg02" data-width="1920" data-height="1080" data-start="0" data-duration="118">
+      <audio id="vo" data-start="0" data-duration="118" data-track-index="9"
+             src="../assets/narration/seg-02.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="118" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="118" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-02 — a wall of closed doors, each marked only with a hand-drawn "?"
+      // (rough.js baked into a CanvasTexture). A cold light-slit (bloom) slides
+      // door to door but never opens one. Uncertainty is the fuel.
+      import * as THREE from "three";
+      import { makeBloomComposer } from "../assets/lib/fx-kit.js";
+      import rough from "roughjs";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 118;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(10, 30);
+      scene.background = new THREE.Color(0x12161c);
+
+      // ---- rough.js "?" door grid baked into a canvas texture (seeded, once) --
+      const tc = document.createElement("canvas"); tc.width = 2048; tc.height = 1152;
+      const tctx = tc.getContext("2d");
+      tctx.fillStyle = "#2a323d"; tctx.fillRect(0, 0, 2048, 1152);
+      const rc = rough.canvas(tc);
+      const STROKE = "#a9bbd1";
+      const cols = 4, rows = 3, mx = 120, my = 90;
+      const dw = (2048 - mx * (cols + 1)) / cols;
+      const dh = (1152 - my * (rows + 1)) / rows;
+      function drawQ(cx, cy, s, seed) {
+        rc.arc(cx, cy - s * 0.16, s * 0.62, s * 0.58, Math.PI * 1.22, Math.PI * 2.78, false,
+          { seed, stroke: STROKE, strokeWidth: 4, roughness: 1.7 });
+        rc.line(cx + s * 0.02, cy + s * 0.10, cx - s * 0.01, cy + s * 0.30,
+          { seed: seed + 1, stroke: STROKE, strokeWidth: 4, roughness: 1.8 });
+        rc.circle(cx, cy + s * 0.52, s * 0.13,
+          { seed: seed + 2, stroke: STROKE, strokeWidth: 3, fill: STROKE, fillStyle: "solid" });
+      }
+      let qi = 7;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = mx + c * (dw + mx), y = my + r * (dh + my);
+          rc.rectangle(x, y, dw, dh, { seed: qi, stroke: STROKE, strokeWidth: 3, roughness: 2.0 });
+          drawQ(x + dw / 2, y + dh / 2, Math.min(dw, dh) * 0.7, qi + 13);
+          qi += 31;
+        }
+      }
+      const wallTex = new THREE.CanvasTexture(tc);
+      wallTex.colorSpace = THREE.SRGBColorSpace;
+
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(9, 5.06),
+        new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.95 }));
+      wall.position.set(0, 2.5, -5); wall.receiveShadow = true; scene.add(wall);
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 16),
+        new THREE.MeshStandardMaterial({ color: 0x39414e, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+      // figure (back to camera), for scale before the wall
+      const fig = SK.makeChibi(0xd9c3a6, 1.0);
+      fig.group.position.set(0, 1.0, -2.2); fig.group.rotation.y = Math.PI; scene.add(fig.group);
+
+      // ---- cold light slit (bloom) that slides across the doors ---------------
+      const slit = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 4.2),
+        new THREE.MeshBasicMaterial({ color: 0xcfe6ff }));
+      slit.position.set(0, 2.5, -4.86); scene.add(slit);
+      const slitLight = new THREE.PointLight(0xbfe0ff, 5, 8, 2);
+      slitLight.position.set(0, 2.5, -3.8); scene.add(slitLight);
+
+      // ---- lights (cold) ------------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-1.5, 4.2, 2.0); key.intensity = 0.85; scene.add(key);
+      scene.add(new THREE.AmbientLight(0x4a586c, 1.0));
+      scene.add(SK.makeFill(1.35));
+
+      // ---- camera: 5 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.0, 2.5, 4.7), posNear: new V(0.0, 2.5, 3.4), look: new V(0, 2.4, -5) },      // 0 wall wide
+        { pos: new V(-3.4, 2.7, 1.6), look: new V(2.6, 2.3, -5) },                                   // 1 door-row pan
+        { pos: new V(0.3, 2.9, 0.6), posNear: new V(0.5, 2.95, -1.4), look: new V(0.9, 3.1, -5) },   // 2 single ? push (upper door)
+        { pos: new V(1.8, 2.3, 0.2), look: new V(-1.2, 2.4, -5) },                                   // 3 cold slit close
+        { pos: new V(0.0, 1.45, 0.9), posNear: new V(0.0, 1.4, -0.3), look: new V(0, 1.7, -5) },     // 4 figure back silhouette
+      ], 40);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.7, radius: 0.6, threshold: 0.35 });
+
+      // ---- slide the slit; render --------------------------------------------
+      const proxy = { t: 0, slit: 0 };
+      function render() {
+        const x = -3.4 + proxy.slit * 6.8; // sweep across the door wall
+        slit.position.x = x;
+        slitLight.position.x = x;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg02 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // the slit never settles — slides door to door, back and forth (finite for
+      // deterministic capture: 8 legs of 16s covers the 118s timeline)
+      tl.to(proxy, { slit: 1, duration: 16, ease: "sine.inOut", yoyo: true, repeat: 7 }, 0);
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 30, 3.8, [0, 4, 1], true);     // figure before the wall of ?
+      cut.auto(30, 72, 3.6, [1, 2, 3, 0], true);   // doors marked only with ?
+      cut.auto(72, 100, 3.8, [3, 2, 1], true);     // the cold slit slides, never opens one
+      cut.auto(100, END, 4.0, [0, 4, 2], true);    // reassurance answers content, not form
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg02"] = tl;
+    </script>
+  </body>
+</html>
