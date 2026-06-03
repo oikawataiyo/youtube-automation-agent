@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-04-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 84% 78% at 50% 50%, transparent 42%, rgba(0,0,0,0.55) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="161">
+      <audio id="vo" data-start="0" data-duration="161" data-track-index="9"
+             src="../assets/narration/seg-04.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="161" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="161" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-04 — S4 hallway door, shown as a cutaway so we see BOTH sides.
+      // Right (hallway): a person knocking, then slowly lowering the hand for
+      // good. Left (inside): another pressed against the wood, reaching the
+      // knob then turning away. The door never opens. Concept: both want in;
+      // the door between them is the avoidance. "one always knocking, the
+      // other always proving they do not need a door."
+      // ===================================================================
+      const SK = window.SceneKit;
+      const C = SK.COL;
+      const WARM = new THREE.Color(C.WARM);
+      const COLD = new THREE.Color(C.COLD);
+      const DOORGLOW = new THREE.Color(C.DOORGLOW);
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      const scene = SK.makeScene(7, 17);
+
+      const camera = new THREE.PerspectiveCamera(42, 1920 / 1080, 0.1, 100);
+      const camFar = new THREE.Vector3(0, 2.15, 5.4);
+      const camNear = new THREE.Vector3(0, 1.85, 4.4);
+      const lookTarget = new THREE.Vector3(0, 1.2, 0.3);
+
+      // ---- lights -------------------------------------------------------
+      const key = SK.makeKeyLight();
+      key.position.set(0, 4.2, 3.4);
+      scene.add(key);
+      const ambient = new THREE.AmbientLight(0x2c3744, 0.5);
+      scene.add(ambient);
+      // hallway side (+x): cool, sparse
+      const hallLight = new THREE.PointLight(0x8fa3bd, 2.2, 7, 2);
+      hallLight.position.set(2.2, 2.6, 1.2);
+      scene.add(hallLight);
+      // inside side (-x): a little home-warmth, still dim
+      const homeLight = new THREE.PointLight(0xd8a36a, 2.0, 7, 2);
+      homeLight.position.set(-2.2, 2.4, 1.0);
+      scene.add(homeLight);
+      // warm line leaking under the door
+      const underDoorMat = new THREE.MeshBasicMaterial({ color: DOORGLOW, transparent: true, opacity: 0.5 });
+
+      // ---- floor --------------------------------------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(30, 30),
+        new THREE.MeshStandardMaterial({ color: 0x161a1f, roughness: 0.97 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // ---- the wall + door (cutaway at x=0, extending in z) --------------
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x1b1f25, roughness: 1 });
+      // wall segments flanking the doorway (in z)
+      const wallL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.8, 1.5), wallMat);
+      wallL.position.set(0, 1.4, -1.05); wallL.castShadow = true; wallL.receiveShadow = true; scene.add(wallL);
+      const wallR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.8, 0.8), wallMat);
+      wallR.position.set(0, 1.4, 1.3); wallR.castShadow = true; wallR.receiveShadow = true; scene.add(wallR);
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.6, 1.1), wallMat);
+      lintel.position.set(0, 2.4, 0.4); scene.add(lintel);
+      // the closed door
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 2.06, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0x2c2622, roughness: 0.82 })
+      );
+      door.position.set(0, 1.05, 0.4);
+      door.castShadow = true; door.receiveShadow = true;
+      scene.add(door);
+      const knob = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 14, 12),
+        new THREE.MeshStandardMaterial({ color: 0xb9a07a, roughness: 0.5, metalness: 0.3 })
+      );
+      knob.position.set(0.09, 1.0, 0.02); // on the inside-ish face, near the front edge
+      scene.add(knob);
+      const underDoor = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.95), underDoorMat);
+      underDoor.rotation.z = Math.PI / 2;
+      underDoor.position.set(0, 0.04, 0.4);
+      underDoor.rotation.x = -Math.PI / 2;
+      scene.add(underDoor);
+
+      // ---- the two figures ----------------------------------------------
+      // outside / hallway (+x), faces -x toward the door
+      const out = SK.makeChibi(C.SKIN, 1.0);
+      out.group.position.set(1.18, 1.0, 0.45);
+      out.group.rotation.y = -Math.PI / 2;
+      scene.add(out.group);
+      // inside (-x), faces +x toward the door
+      const inside = SK.makeChibi(C.SKIN2, 1.0);
+      inside.group.position.set(-1.18, 1.0, 0.45);
+      inside.group.rotation.y = Math.PI / 2;
+      scene.add(inside.group);
+
+      // ---------------------------------------------------------------------
+      // pose proxy
+      // ---------------------------------------------------------------------
+      const proxy = {
+        knock: 0, tap: 0, inPress: 0, inReach: 0, inTurn: 0,
+        warm: 0.5, camPush: 0, breath: 0,
+      };
+      const IN_FACE = Math.PI / 2;
+
+      function applyPose(p) {
+        const bob = Math.sin(p.breath) * 0.02;
+        // outside: knocking arm raises toward the door; tap = quick jabs
+        out.armR.sh.rotation.x = -1.5 * p.knock;
+        out.armR.fore.rotation.x = 0.2 - 0.7 * p.knock - p.tap * 0.7;
+        out.armL.sh.rotation.x = -0.1 * p.knock;
+        out.pelvis.rotation.x = 0.05 * p.knock + bob;
+        out.head.rotation.x = -0.15 * p.knock + bob * 0.5;
+
+        // inside: presses a hand on the wood / reaches for the knob, then turns away
+        inside.armR.sh.rotation.x = -1.35 * Math.max(p.inPress, p.inReach);
+        inside.armR.fore.rotation.x = 0.2 - 0.55 * p.inPress - p.inReach * 0.2;
+        inside.group.rotation.y = IN_FACE + p.inTurn * 1.35;
+        inside.pelvis.rotation.x = 0.04 + bob;
+        inside.head.rotation.x = -0.12 * p.inPress + bob * 0.5;
+
+        underDoorMat.opacity = 0.14 + p.warm * 0.7;
+        hallLight.intensity = 1.4 + (1 - p.warm) * 1.2;
+        homeLight.intensity = 1.0 + p.warm * 2.2;
+        key.color.copy(COLD).lerp(WARM, 0.3 + p.warm * 0.4);
+        key.intensity = 0.5 + p.warm * 0.45;
+        ambient.intensity = 0.4 + p.warm * 0.16;
+
+        camera.position.lerpVectors(camFar, camNear, p.camPush);
+        camera.lookAt(lookTarget);
+      }
+      function render() { applyPose(proxy); renderer.render(scene, camera); }
+      render();
+
+      // ---------------------------------------------------------------------
+      // captions + timeline
+      // ---------------------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg04 || [], capHost);
+
+      const END = 161;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { breath: Math.PI * 2 * 33, duration: END, ease: "none" }, 0);
+
+      // a reusable knock burst — raise, three quick taps, hold
+      function knockBurst(t) {
+        tl.to(proxy, { knock: 1, duration: 1.0, ease: "power2.out" }, t);
+        tl.to(proxy, { tap: 1, duration: 0.22, ease: "power2.inOut", yoyo: true, repeat: 5 }, t + 1.0);
+      }
+
+      // 0–8 establish, slow push-in
+      tl.to(proxy, { camPush: 0.2, duration: 8, ease: "sine.inOut" }, 0);
+      // 31.6–35.2 "the person who loves you may reach" — outside knocks
+      knockBurst(31.6);
+      // 36.4–38.8 "your body may read that reach as demand" — inside braces, no answer
+      tl.to(proxy, { inPress: 0.5, duration: 2, ease: "sine.inOut" }, 36.4);
+      // 40.2–43.9 "you become flat, busy, unavailable" — inside stays still, warmth dips
+      tl.to(proxy, { warm: 0.3, duration: 3.5, ease: "power1.inOut" }, 40.2);
+      // 45.4–50.2 "they experience rejection / you experience pressure"
+      tl.to(proxy, { knock: 0.15, duration: 2.5, ease: "power2.in" }, 45.4); // hand half-drops
+      tl.to(proxy, { inPress: 0.85, duration: 2.5, ease: "sine.inOut" }, 48);
+      // 59.1–66.2 the two forecasts — outside knocks again, inside reaches the knob
+      knockBurst(59.1);
+      tl.to(proxy, { inReach: 0.9, duration: 2.4, ease: "power2.out" }, 63.2);
+      tl.to(proxy, { inReach: 0.1, duration: 2.0, ease: "power2.in" }, 66); // pulls back from the knob
+      // 67.9–88.9 Gross & Levinson — "stopped transmitting" — both go still, warmth low
+      tl.to(proxy, { knock: 0.1, warm: 0.22, duration: 5, ease: "power1.inOut" }, 70);
+      tl.to(proxy, { inPress: 0.4, duration: 4, ease: "sine.inOut" }, 80);
+      // 90.1–105.9 "inside the system is still working / heart still knows / muscles brace"
+      tl.to(proxy, { inPress: 0.9, duration: 2.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, 98); // a brace
+      // 107.1–112.5 "a face with no access"
+      tl.to(proxy, { warm: 0.16, duration: 4, ease: "power1.inOut" }, 107);
+      // 113.8–123.2 "one always knocking, the other proving they do not need a door"
+      knockBurst(114);
+      tl.to(proxy, { inTurn: 1, inPress: 0, duration: 4, ease: "power2.inOut" }, 117); // inside turns away
+      // 124.5–135.3 "the wall had a purpose" — hold, the warm line steadies faintly
+      tl.to(proxy, { warm: 0.26, duration: 5, ease: "sine.inOut" }, 125);
+      tl.to(proxy, { camPush: 0.42, duration: 9, ease: "sine.inOut" }, 126);
+      // 136.7–144.1 "adulthood changes the equation / a wall that prevented pain can prevent repair"
+      tl.to(proxy, { warm: 0.12, duration: 5, ease: "power1.inOut" }, 137);
+      // 145.4–151.7 "standing outside, slowly learning to stop knocking" — the hand lowers for good
+      tl.to(proxy, { knock: 0, duration: 4.5, ease: "power3.inOut" }, 145.4);
+      // 153.1–160.4 "the loss of evidence that closeness could have been different" — both apart, settle
+      tl.to(proxy, { inTurn: 0.78, duration: 4, ease: "sine.inOut" }, 153);
+      tl.to(proxy, { camPush: 0.16, duration: 7, ease: "sine.inOut" }, 153);
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
