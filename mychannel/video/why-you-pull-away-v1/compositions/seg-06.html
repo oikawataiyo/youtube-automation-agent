@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-06-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 82% 76% at 46% 48%, transparent 44%, rgba(0,0,0,0.5) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="64">
+      <audio id="vo" data-start="0" data-duration="64" data-track-index="9"
+             src="../assets/narration/seg-06.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="64" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="64" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-06 — outro, a callback to the Hook. Two cups on a table, a door
+      // at the back. It opens in the cold aftermath (figure turned away, chair
+      // pushed back, door barely cracked) and, on "choose the harder thing —
+      // staying present", the figure turns back, the chair slides in, warmth
+      // returns and the door swings open. Repair = the Hook's retreat reversed.
+      // ===================================================================
+      const SK = window.SceneKit;
+      const C = SK.COL;
+      const WARM = new THREE.Color(C.WARM);
+      const COLD = new THREE.Color(C.COLD);
+      const DOORGLOW = new THREE.Color(C.DOORGLOW);
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      const scene = SK.makeScene(6.5, 16);
+
+      const camera = new THREE.PerspectiveCamera(38, 1920 / 1080, 0.1, 100);
+      const camFar = new THREE.Vector3(4.7, 2.7, 1.1);
+      const camNear = new THREE.Vector3(3.95, 2.4, 0.8);
+      const lookTarget = new THREE.Vector3(0, 1.45, 0);
+
+      // ---- lights -------------------------------------------------------
+      const key = SK.makeKeyLight();
+      key.position.set(2.6, 4.2, 2.6);
+      scene.add(key);
+      const ambient = new THREE.AmbientLight(0x3a4658, 0.55);
+      scene.add(ambient);
+      const doorLight = new THREE.PointLight(DOORGLOW, 2, 8, 2);
+      doorLight.position.set(-1.5, 1.6, -2.0);
+      scene.add(doorLight);
+
+      // ---- room ---------------------------------------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 24),
+        new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.95 })
+      );
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 10),
+        new THREE.MeshStandardMaterial({ color: 0x14171c, roughness: 1 })
+      );
+      backWall.position.set(0, 5, -2.7); backWall.receiveShadow = true; scene.add(backWall);
+
+      // ---- door that can open: warm interior + hinged dark panel --------
+      const doorX = -1.6, doorZ = -2.62;
+      const interior = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.0, 2.5),
+        new THREE.MeshBasicMaterial({ color: DOORGLOW })
+      );
+      interior.position.set(doorX, 1.3, doorZ - 0.02);
+      scene.add(interior);
+      const doorFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(1.24, 2.7, 0.14),
+        new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 })
+      );
+      doorFrame.position.set(doorX, 1.35, doorZ - 0.05);
+      scene.add(doorFrame);
+      const doorPivot = new THREE.Group();
+      doorPivot.position.set(doorX - 0.5, 1.3, doorZ + 0.04); // hinge at left jamb
+      scene.add(doorPivot);
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(1.0, 2.5, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x191512, roughness: 0.9 })
+      );
+      panel.position.set(0.5, 0, 0);
+      panel.castShadow = true;
+      doorPivot.add(panel);
+
+      // ---- table + cups -------------------------------------------------
+      const woodMat = new THREE.MeshStandardMaterial({ color: C.WOOD, roughness: 0.8 });
+      const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 1.1), woodMat);
+      tableTop.position.y = 1.0; tableTop.castShadow = true; tableTop.receiveShadow = true; scene.add(tableTop);
+      for (const sx of [-0.95, 0.95]) for (const sz of [-0.42, 0.42]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.12), woodMat);
+        leg.position.set(sx, 0.5, sz); leg.castShadow = true; scene.add(leg);
+      }
+      const cupMat = new THREE.MeshStandardMaterial({ color: 0xcdbfa8, roughness: 0.6 });
+      function makeCup(x, z) {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.18, 16), cupMat);
+        c.position.set(x, 1.15, z); c.castShadow = true; scene.add(c);
+      }
+      makeCup(0.0, 0.42); makeCup(0.0, -0.42);
+
+      // ---- the two figures (A pulled away in the Hook; B waited) --------
+      const A = SK.makeChibi(C.SKIN, 1.0);
+      A.group.position.set(0, 1.0, 0.95);
+      A.group.rotation.y = Math.PI; // faces -z toward B
+      scene.add(A.group);
+      const B = SK.makeChibi(C.SKIN2, 1.0);
+      B.group.position.set(0, 1.0, -0.95);
+      B.armR.sh.rotation.x = -0.7; B.armR.fore.rotation.x = 0.5; // hand resting on table
+      scene.add(B.group);
+
+      function makeChairAt(z, flip) { const c = SK.makeChair(woodMat, 0, z, flip); scene.add(c); return c; }
+      const chairA = makeChairAt(1.35, 1);
+      makeChairAt(-1.35, -1);
+
+      // ---------------------------------------------------------------------
+      // pose proxy — starts in the Hook's cold end-state, then repairs
+      // ---------------------------------------------------------------------
+      const proxy = { reach: -0.1, lean: -0.15, headTurn: 1, warm: 0.15, chairBack: 1, doorOpen: 0.08, camPush: 0, breath: 0 };
+      const DOOR_SHUT = -0.12, DOOR_OPEN = 0.95; // pivot.y
+
+      function applyPose(p) {
+        const bob = Math.sin(p.breath) * 0.02;
+        A.armR.sh.rotation.x = -p.reach * 2.0;
+        A.armR.fore.rotation.x = 0.2 - p.reach * 0.25;
+        A.pelvis.rotation.x = p.lean * 0.42 + bob;
+        A.head.rotation.y = p.headTurn * 1.1;
+        const back = p.chairBack * 0.7;
+        A.group.position.z = 0.95 + back;
+        chairA.position.z = 1.35 + back;
+
+        key.color.copy(COLD).lerp(WARM, p.warm);
+        key.intensity = 0.5 + p.warm * 0.95;
+        ambient.intensity = 0.38 + p.warm * 0.25;
+        doorPivot.rotation.y = THREE.MathUtils.lerp(DOOR_SHUT, DOOR_OPEN, p.doorOpen);
+        doorLight.intensity = 1.0 + p.doorOpen * 4.5 + p.warm * 1.5;
+
+        camera.position.lerpVectors(camFar, camNear, p.camPush);
+        camera.lookAt(lookTarget);
+      }
+      function render() { applyPose(proxy); renderer.render(scene, camera); }
+      render();
+
+      // ---------------------------------------------------------------------
+      // captions + timeline
+      // ---------------------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg06 || [], capHost);
+
+      const END = 64;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { breath: Math.PI * 2 * 14, duration: END, ease: "none" }, 0);
+
+      // 0–15 the cold aftermath — "not coldness / it leaves first / the hurt is real"
+      tl.to(proxy, { camPush: 0.22, duration: 10, ease: "sine.inOut" }, 0);
+      // 15.8–19.5 "understandable enough to interrupt" — a first thaw
+      tl.to(proxy, { warm: 0.32, duration: 4, ease: "sine.inOut" }, 16);
+      // 20.8–29.6 "the strategy was smart once / read the room in a smaller life" — hold
+      tl.to(proxy, { camPush: 0.34, duration: 9, ease: "sine.inOut" }, 21);
+      // 31–38 "wrong decade now / the work is not to shame the part that pulls away"
+      tl.to(proxy, { warm: 0.45, duration: 6, ease: "sine.inOut" }, 31);
+      // 39.4–51 "notice when it starts driving ... choose the harder thing, staying present"
+      // THE REPAIR: turn back to B, chair slides in, hand returns, warmth + door open
+      tl.to(proxy, { headTurn: 0, duration: 4.5, ease: "power2.inOut" }, 40);
+      tl.to(proxy, { chairBack: 0, lean: 0.4, duration: 5, ease: "power2.inOut" }, 41);
+      tl.to(proxy, { reach: 0.42, duration: 4.5, ease: "power2.out" }, 44);
+      tl.to(proxy, { warm: 0.92, duration: 8, ease: "sine.inOut" }, 40);
+      tl.to(proxy, { doorOpen: 0.72, duration: 8, ease: "power2.inOut" }, 41);
+      tl.to(proxy, { camPush: 0.62, duration: 9, ease: "sine.inOut" }, 41);
+      // 52.3–59.4 CTA — warm settled, both at the table, door open
+      tl.to(proxy, { camPush: 0.5, duration: 6, ease: "sine.inOut" }, 53);
+      // 60.9–62.8 "see you in the next one" — gentle final warmth
+      tl.to(proxy, { warm: 1.0, doorOpen: 0.8, duration: 3, ease: "sine.inOut" }, 60);
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
