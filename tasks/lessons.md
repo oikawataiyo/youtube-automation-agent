@@ -39,3 +39,20 @@
 ### L7: `cmd 2>&1 | tail -N` は完了まで何も出ない (進捗が見えない)
 - **何が起きたか**: render 出力を `| tail -4` に通したため、tail が EOF まで buffer して進捗 0 表示。hung と誤認しかけた。
 - **rule**: 進捗を見たいなら pipe せず `--output-last-message` 的手段か raw 出力にする。tail/head に通したら「完了まで沈黙」が正常。判断は task-notification を待つ。
+
+## 2026-06-04 anxiety-video (bloom/simplex/rough.js debut) から
+
+### L8: three の postprocessing(bloom) は UMD 不在。importmap + jsm が正解
+- **何が起きたか**: three r148 以降 `examples/js/`(UMD global) は廃止。0.160 では EffectComposer/UnrealBloomPass は `examples/jsm/`(ESM) のみ。v2 の UMD `<script src>` 方式では bloom を載せられない。
+- **rule**: bloom 等の addon が要る composition は **importmap 方式**にする。`<script type="importmap">` で `three`+`three/addons/`+`simplex-noise`+`roughjs` を map、`<script type="module">` で import。`gsap` は UMD global のまま、`scene-kit.js`(classic IIFE, THREE 参照は遅延) も併用可。module 内で **`window.THREE = THREE` を SceneKit 呼び出し前に**設定する。render は `composer.render()` を timeline onUpdate で。Phase 0 spike で headless render + 並列 worker(=seek 安全)を実証してから本番。
+- **適用場面**: hyperframes×three で公式 addon(postprocessing, controls 等)が要る時。
+
+### L9: GSAP `repeat: -1`(無限)は lint ERROR。有限回に必ず計算
+- **何が起きたか**: slit/door の yoyo に `repeat: -1` を使い `gsap_infinite_repeat` で lint error。決定論 capture(任意 frame seek)が壊れる。
+- **rule**: 周期 motion は有限 repeat。`repeat: Math.ceil(duration / cycle) - 1` 等で timeline 尺をカバーする回数を計算して渡す。render は通っても lint error なので必ず潰す。
+- **適用場面**: hyperframes composition で yoyo/repeat tween を書く時。
+
+### L10: bloom の白飛び対策 = threshold↑ + light/strength↓ + camera 引く
+- **何が起きたか**: 赤 alarm の macro framing で bloom strength・point light 過大 + 寄りすぎ → 画面全体が赤白に飽和。逆に暗い反射しない sphere に寄りすぎると真っ黒な blob に。
+- **rule**: bloom は `threshold ~0.4`(明部だけ光らせる) + 控えめ `strength`(~0.5-1.2) + 過大な point light を避ける。寄り画は camera を引いて発光体が画面を埋めないように。暗 object に寄る時は背後/縁から光源を当て rim/catchlight を作る(真っ黒 blob 回避)。frame 確認必須。
+- **適用場面**: bloom + 発光体/暗 object を扱う composition の framing 調整。
