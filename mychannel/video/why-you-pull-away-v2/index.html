@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="assets/lib/scene-kit.js"></script>
+    <script src="assets/narration/seg-00-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 80% at 46% 48%, transparent 46%, rgba(0,0,0,0.36) 100%); }
+
+      /* ----- captions (karaoke, read from window.seg00) ----- */
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="29.5">
+      <audio id="vo" data-start="0" data-duration="29.5" data-track-index="9"
+             src="assets/narration/seg-00.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="29.5" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="29.5" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------------------
+      // three.js scene — built synchronously (no async asset loading, no rAF).
+      // All motion is driven by the GSAP timeline; rendering happens inside
+      // the timeline's onUpdate so every seek produces a deterministic frame.
+      // ---------------------------------------------------------------------
+      const BG = 0x0e1116;
+      const WARM = new THREE.Color("#f0a35c");
+      const COLD = new THREE.Color("#6b7a8f");
+      const DOORGLOW = new THREE.Color("#ffcaa0");
+
+      const canvas = document.getElementById("stage");
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, preserveDrawingBuffer: true,
+      });
+      renderer.setPixelRatio(1);
+      renderer.setSize(1920, 1080, false);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping; // v2: brighter filmic curve
+      renderer.toneMappingExposure = 1.28;
+      const SK = window.SceneKit;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(BG);
+      scene.fog = new THREE.Fog(BG, 6.5, 16);
+
+      // v2 — five framings; <=4s cuts (same room as the seg-06 outro callback).
+      const V = THREE.Vector3;
+      const rig = SK.makeCameraRig([
+        { pos: new V(5.0, 2.9, 1.4), posNear: new V(4.2, 2.6, 1.0), look: new V(-0.2, 1.4, -0.2) }, // 0 WIDE
+        { pos: new V(4.2, 2.5, 0.9), posNear: new V(3.7, 2.3, 0.7), look: new V(0, 1.4, 0) },        // 1 MED table
+        { pos: new V(1.6, 1.9, 1.8), look: new V(-1.6, 1.4, -2.4) },                                  // 2 DOOR slit
+        { pos: new V(1.4, 1.7, 2.6), look: new V(0, 1.4, -0.5) },                                     // 3 A over-shoulder
+        { pos: new V(1.8, 1.35, 1.6), look: new V(0, 1.12, 0) },                                      // 4 CUPS low
+      ], 38);
+      const camera = rig.camera;
+
+      // ---- lights -------------------------------------------------------------
+      const key = new THREE.DirectionalLight(0xffffff, 1.2);
+      key.position.set(2.6, 4.2, 2.6);
+      key.castShadow = true;
+      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.camera.near = 1;
+      key.shadow.camera.far = 16;
+      key.shadow.camera.left = -5; key.shadow.camera.right = 5;
+      key.shadow.camera.top = 5; key.shadow.camera.bottom = -5;
+      key.shadow.bias = -0.0008;
+      scene.add(key);
+
+      const ambient = new THREE.AmbientLight(0x4a5a6b, 0.6); // v2: lighter fill floor
+      scene.add(ambient);
+      const fill = SK.makeFill(0.85); // v2: hemisphere baseline lift
+      scene.add(fill);
+
+      // warm spill from the door — the one warmth left when the figure cools
+      const doorLight = new THREE.PointLight(DOORGLOW, 6, 7, 2);
+      doorLight.position.set(-1.6, 1.7, -2.3);
+      scene.add(doorLight);
+
+      // ---- room ---------------------------------------------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 24),
+        new THREE.MeshStandardMaterial({ color: 0x363e49, roughness: 0.95 }) // v2: lifted
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 10),
+        new THREE.MeshStandardMaterial({ color: 0x242b34, roughness: 1 }) // v2: lifted
+      );
+      backWall.position.set(0, 5, -2.7);
+      backWall.receiveShadow = true;
+      scene.add(backWall);
+
+      // door left slightly ajar: dark frame + a thin emissive slit of warm light
+      const doorFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(1.0, 2.6, 0.12),
+        new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 })
+      );
+      doorFrame.position.set(-1.6, 1.3, -2.62);
+      scene.add(doorFrame);
+      const slit = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.18, 2.4),
+        new THREE.MeshBasicMaterial({ color: DOORGLOW })
+      );
+      slit.position.set(-1.18, 1.3, -2.55);
+      scene.add(slit);
+
+      // ---- table + cups -------------------------------------------------------
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 0.8 });
+      const table = new THREE.Group();
+      const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 1.1), woodMat);
+      tableTop.position.y = 1.0; tableTop.castShadow = true; tableTop.receiveShadow = true;
+      table.add(tableTop);
+      for (const sx of [-0.95, 0.95]) {
+        for (const sz of [-0.42, 0.42]) {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.12), woodMat);
+          leg.position.set(sx, 0.5, sz); leg.castShadow = true;
+          table.add(leg);
+        }
+      }
+      scene.add(table);
+
+      const cupMat = new THREE.MeshStandardMaterial({ color: 0xcdbfa8, roughness: 0.6 });
+      function makeCup(x, z) {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.18, 16), cupMat);
+        c.position.set(x, 1.15, z); c.castShadow = true;
+        scene.add(c);
+      }
+      makeCup(0.0, 0.42);  // near A
+      makeCup(0.0, -0.42); // near B
+
+      // ---- chibi builder (two-head-tall, primitives only) --------------------
+      function makeChibi(skinHex) {
+        const mat = new THREE.MeshStandardMaterial({ color: skinHex, roughness: 0.85 });
+        const group = new THREE.Group();
+        const pelvis = new THREE.Group();
+        group.add(pelvis);
+
+        const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.5, 6, 14), mat);
+        torso.position.y = 0.5; torso.castShadow = true;
+        pelvis.add(torso);
+
+        const head = new THREE.Group();
+        head.position.y = 1.18; pelvis.add(head);
+        const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 26, 20), mat);
+        headMesh.castShadow = true; head.add(headMesh);
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x2a2320, roughness: 0.5 });
+        const eyeGeo = new THREE.SphereGeometry(0.062, 12, 10);
+        const eL = new THREE.Mesh(eyeGeo, eyeMat); eL.position.set(-0.17, 0.04, 0.46); head.add(eL);
+        const eR = new THREE.Mesh(eyeGeo, eyeMat); eR.position.set(0.17, 0.04, 0.46); head.add(eR);
+
+        function makeArm(side) {
+          const sh = new THREE.Group();
+          sh.position.set(side * 0.42, 0.78, 0); pelvis.add(sh);
+          const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.34, 4, 10), mat);
+          upper.position.y = -0.22; upper.castShadow = true; sh.add(upper);
+          const fore = new THREE.Group(); fore.position.y = -0.44; sh.add(fore);
+          const foreMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.3, 4, 10), mat);
+          foreMesh.position.y = -0.2; foreMesh.castShadow = true; fore.add(foreMesh);
+          const hand = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 12), mat);
+          hand.position.y = -0.42; hand.castShadow = true; fore.add(hand);
+          fore.rotation.x = 0.2; // slight resting bend
+          return { sh, fore };
+        }
+        const armL = makeArm(-1);
+        const armR = makeArm(1);
+
+        function makeLeg(side) {
+          const hip = new THREE.Group();
+          hip.position.set(side * 0.2, 0.0, 0.0); pelvis.add(hip);
+          const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.3, 4, 10), mat);
+          thigh.rotation.x = Math.PI / 2 * 0.92; thigh.position.set(0, -0.05, 0.22);
+          thigh.castShadow = true; hip.add(thigh);
+          const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.34, 4, 10), mat);
+          shin.position.set(0, -0.36, 0.34); shin.castShadow = true; hip.add(shin);
+        }
+        makeLeg(-1); makeLeg(1);
+
+        return { group, pelvis, head, armL, armR };
+      }
+
+      // Figure A — the one who reaches then pulls away. Faces -z (toward B).
+      const A = makeChibi(0xe8c9a8);
+      A.group.position.set(0, 1.0, 0.95);
+      A.group.rotation.y = Math.PI;
+      scene.add(A.group);
+
+      // Figure B — the other, dimmer, static, one hand resting on the table.
+      const B = makeChibi(0xc9a98a);
+      B.group.position.set(0, 1.0, -0.95);
+      B.armR.sh.rotation.x = -0.7;   // reach forward onto table
+      B.armR.fore.rotation.x = 0.5;
+      scene.add(B.group);
+
+      // chairs (simple) behind each figure
+      function makeChair(z, flip) {
+        const c = new THREE.Group();
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), woodMat);
+        seat.position.y = 0.95; seat.castShadow = true; c.add(seat);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.1), woodMat);
+        back.position.set(0, 1.35, flip * 0.3); back.castShadow = true; c.add(back);
+        for (const sx of [-0.28, 0.28]) {
+          for (const sz of [-0.28, 0.28]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), woodMat);
+            leg.position.set(sx, 0.475, sz); c.add(leg);
+          }
+        }
+        c.position.z = z;
+        scene.add(c);
+        return c;
+      }
+      const chairA = makeChair(1.35, 1);
+      makeChair(-1.35, -1);
+
+      // ---------------------------------------------------------------------
+      // pose proxy — the single source of truth that GSAP animates
+      // ---------------------------------------------------------------------
+      const proxy = { reach: 0, lean: 0, headTurn: 0, warm: 1, chairBack: 0 };
+
+      function applyPose(p) {
+        A.armR.sh.rotation.x = -p.reach * 2.0;
+        A.armR.fore.rotation.x = 0.2 - p.reach * 0.25;
+        A.pelvis.rotation.x = p.lean * 0.42;
+        A.head.rotation.y = p.headTurn * 1.1;
+        const back = p.chairBack * 0.7;
+        A.group.position.z = 0.95 + back;
+        chairA.position.z = 1.35 + back;
+        SK.warmLight(key, ambient, p.warm, COLD, WARM); // v2: brighter key/ambient floors
+        rig.apply();
+      }
+
+      function render() {
+        applyPose(proxy);
+        renderer.render(scene, camera);
+      }
+      render(); // initial deterministic frame at t=0
+
+      // ---------------------------------------------------------------------
+      // captions from word timings (window.seg00, generated by _transcribe.py)
+      // ---------------------------------------------------------------------
+      const WORDS = window.seg00 || [];
+      const capHost = document.getElementById("caps");
+      const phrases = []; let cur = [];
+      WORDS.forEach(w => { cur.push(w); if (/[.!?]$/.test(w[0])) { phrases.push(cur); cur = []; } });
+      if (cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph => {
+        const div = document.createElement("div"); div.className = "phrase";
+        ph.forEach(w => {
+          const s = document.createElement("span"); s.className = "w";
+          s.textContent = w[0] + " "; s.dataset.start = w[1]; div.appendChild(s);
+        });
+        capHost.appendChild(div);
+        return { el: div, start: ph[0][1], end: ph[ph.length - 1][2],
+                 words: [...div.querySelectorAll(".w")] };
+      });
+
+      // ---------------------------------------------------------------------
+      // timeline — paused, render on every update (covers seek + playback)
+      // END is set from the audio duration once known; beats scale to it.
+      // ---------------------------------------------------------------------
+      const END = 29.5;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+
+      // ---- v2 camera cuts — hold no framing longer than 4s (auto-cut) ----
+      // framings: 0 WIDE · 1 MED table · 2 DOOR slit · 3 A over-shoulder · 4 CUPS low
+      const cutter = SK.makeCutter(tl, rig.state);
+      const AC = cutter.auto;
+      AC(0,  11,   3.6, [1, 3, 0], true);  // settle / reach + warmth toward B
+      AC(11, 21,   3.5, [1, 4, 2], true);  // goes cold / withdraw / turn away
+      AC(21, 29.5, 4,   [0, 2, 1], true);  // settle cold, the door glow holds
+
+      // beats synced to seg-00 narration word timings (see seg-00-words.js)
+      // 4.1–9.9  "the coffee is warm ... I really like you" — reach + lean toward B, warmth peak
+      tl.to(proxy, { reach: 0.6, lean: 1, duration: 5.8, ease: "power2.inOut" }, 4.1);
+      // 9.9–11.1 freeze — the hand stops midway (hold, no tween)
+      // 11.1–14.0 "instead of warmth, something in you goes cold" — key light cools to slate
+      tl.to(proxy, { warm: 0, duration: 3.2, ease: "power1.inOut" }, 11.1);
+      // 15.0–17.0 "you start noticing flaws" — the reach withdraws
+      tl.to(proxy, { reach: -0.15, lean: -0.2, duration: 2.4, ease: "power3.in" }, 15.0);
+      // 18.0–19.7 "you start needing space" — turn away, chair slides back
+      tl.to(proxy, { headTurn: 1, duration: 2.2, ease: "power2.inOut" }, 18.0);
+      tl.to(proxy, { chairBack: 1, duration: 3.0, ease: "power2.inOut" }, 18.4);
+      // 21.0–28.2 "a survival strategy you learned before you could speak" — settle cold, door glow holds
+
+      // ---------- caption karaoke ----------
+      phraseEls.forEach((p, i) => {
+        const showAt = Math.max(0, p.start - 0.18);
+        const hideAt = (i < phraseEls.length - 1) ? phraseEls[i + 1].start - 0.12 : END - 0.1;
+        tl.fromTo(p.el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, showAt);
+        p.words.forEach((wEl) => {
+          tl.to(wEl, { color: "#f4efe6", duration: 0.12, ease: "none" }, parseFloat(wEl.dataset.start));
+        });
+        if (i < phraseEls.length - 1) {
+          tl.to(p.el, { opacity: 0, y: -10, duration: 0.3, ease: "power2.in" }, hideAt);
+          tl.set(p.el, { opacity: 0, visibility: "hidden" }, hideAt + 0.3);
+        } else {
+          tl.to(p.el, { opacity: 0, duration: 0.6, ease: "power2.in" }, END - 0.7);
+        }
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

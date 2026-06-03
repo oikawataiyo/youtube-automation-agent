@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-02-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 80% at 50% 50%, transparent 46%, rgba(0,0,0,0.36) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="160">
+      <audio id="vo" data-start="0" data-duration="160" data-track-index="9"
+             src="../assets/narration/seg-02.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="160" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="160" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-02 — S2 bedroom dissolve. A grown bedroom whose childhood room
+      // (crib + toys) bleeds through as a ghost overlay; the SAME doorway in
+      // both. An adult holds a glowing phone, hovering, never sending. Later
+      // the door shuts while a warm glow presses against it from the far side
+      // (dismissing vs fearful). "The bedroom becomes the crib again."
+      // ===================================================================
+      const SK = window.SceneKit;
+      const C = SK.COL;
+      const WARM = new THREE.Color(C.WARM);
+      const COLD = new THREE.Color(C.COLD);
+      const DOORGLOW = new THREE.Color(C.DOORGLOW);
+      const PHONE = new THREE.Color("#acd2ff");
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      const scene = SK.makeScene(7, 18);
+
+      // v2 — five framings; hard-cut on a <=4s cadence. Front hemisphere only.
+      const V = THREE.Vector3;
+      // NOTE: the adult is a full-scale chibi raised to y=1.0 (tall, dead-center),
+      // so framings must keep more distance/headroom than the child-scale seg-01.
+      const rig = SK.makeCameraRig([
+        // 0 WIDE establishing — dolly in
+        { pos: new V(4.2, 2.8, 4.4), posNear: new V(3.6, 2.6, 3.8), look: new V(0.0, 1.1, -0.8) },
+        // 1 MED adult + glowing phone (full figure, head room) — dolly in
+        { pos: new V(3.8, 2.5, 3.6), posNear: new V(3.2, 2.3, 3.0), look: new V(0.1, 1.45, 0.0) },
+        // 2 upper-body / face + phone detail (not cropping the head)
+        { pos: new V(2.7, 2.0, 2.9), look: new V(0.2, 1.55, 0.3) },
+        // 3 BED/CRIB feature — front-right looking left-back so the ghost reads beside the adult
+        { pos: new V(3.4, 2.3, 2.8), posNear: new V(2.9, 2.1, 2.3), look: new V(-0.7, 0.95, -1.2) },
+        // 4 DOOR feature from the left — see the panel swing + far-side press glow
+        { pos: new V(-0.7, 1.8, 1.7), look: new V(1.45, 1.25, -2.4) },
+      ], 40);
+      const camera = rig.camera;
+
+      // ---- lights -------------------------------------------------------
+      const key = SK.makeKeyLight();
+      key.position.set(2.2, 4.0, 2.6);
+      scene.add(key);
+      const ambient = new THREE.AmbientLight(0x4a5a6b, 0.55); // v2: lighter, bluer fill floor
+      scene.add(ambient);
+      const fill = SK.makeFill(0.95); // v2: hemisphere baseline lift
+      scene.add(fill);
+      // v2: soft warm light on the bed/crib so the ghost overlay actually reads
+      const cribLight = new THREE.PointLight(0xffe9cf, 0, 5, 2);
+      cribLight.position.set(-1.2, 1.9, -1.0);
+      scene.add(cribLight);
+      // warm spill from the ajar doorway (the through-line motif)
+      const doorSpill = new THREE.PointLight(DOORGLOW, 3.5, 7, 2);
+      doorSpill.position.set(1.45, 1.6, -2.2);
+      scene.add(doorSpill);
+      // far-side "pressing" glow — someone on the other side of the door
+      const pressLight = new THREE.PointLight(WARM, 0, 6, 2);
+      pressLight.position.set(1.9, 1.4, -3.4);
+      scene.add(pressLight);
+      // phone screen glow on the face
+      const phoneLight = new THREE.PointLight(PHONE, 0, 3, 2);
+      phoneLight.position.set(0.25, 1.45, 0.7);
+      scene.add(phoneLight);
+
+      // ---- shell: floor + back wall + side wall -------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(26, 26),
+        new THREE.MeshStandardMaterial({ color: 0x363e49, roughness: 0.96 }) // v2: lifted
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(26, 11),
+        new THREE.MeshStandardMaterial({ color: 0x242b34, roughness: 1 }) // v2: lifted
+      );
+      backWall.position.set(0, 5.5, -2.72);
+      backWall.receiveShadow = true;
+      scene.add(backWall);
+
+      // ---- the shared doorway (present in both rooms) -------------------
+      const doorX = 1.45, doorZ = -2.62;
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 2.5, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 })
+      );
+      frame.position.set(doorX, 1.25, doorZ - 0.04);
+      scene.add(frame);
+      // hinged panel: pivot at the right jamb so it can swing shut
+      const doorPivot = new THREE.Group();
+      doorPivot.position.set(doorX + 0.55, 1.2, doorZ);
+      scene.add(doorPivot);
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(1.06, 2.3, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x2c2622, roughness: 0.82 })
+      );
+      panel.position.set(-0.53, 0, 0.06);
+      panel.castShadow = true;
+      doorPivot.add(panel);
+      const AJAR = -0.62, SHUT = 0.02; // pivot.y rotation
+
+      // ---- adult-room props (bed, nightstand, lamp) — fade with `era` ---
+      const adultMats = [];
+      function adultMat(hex, rough) {
+        const m = new THREE.MeshStandardMaterial({ color: hex, roughness: rough == null ? 0.85 : rough, transparent: true, opacity: 1 });
+        adultMats.push(m);
+        return m;
+      }
+      const bed = new THREE.Group();
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.32, 2.1), adultMat(0x2a2d34));
+      mattress.position.set(0, 0.62, 0); mattress.castShadow = true; mattress.receiveShadow = true; bed.add(mattress);
+      const headboard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.0, 0.16), adultMat(C.WOOD));
+      headboard.position.set(0, 0.85, -1.0); headboard.castShadow = true; bed.add(headboard);
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.5), adultMat(0x3a3f48, 0.95));
+      pillow.position.set(0, 0.86, -0.72); bed.add(pillow);
+      bed.position.set(-1.45, 0, -1.35);
+      scene.add(bed);
+      const nightstand = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.5), adultMat(C.WOOD));
+      nightstand.position.set(-0.35, 0.3, -2.2); nightstand.castShadow = true; scene.add(nightstand);
+      const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.45, 8), adultMat(0x555a63));
+      lampPost.position.set(-0.35, 0.82, -2.2); scene.add(lampPost);
+      const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.26, 16, 1, true), adultMat(0xc9a36a, 0.7));
+      lampShade.position.set(-0.35, 1.12, -2.2); scene.add(lampShade);
+
+      // ---- childhood-room props (crib + toy blocks) — ghost overlay -----
+      const childMats = [];
+      function childMat(hex, rough) {
+        const m = new THREE.MeshStandardMaterial({ color: hex, roughness: rough == null ? 0.85 : rough, transparent: true, opacity: 0 });
+        childMats.push(m);
+        return m;
+      }
+      const crib = new THREE.Group();
+      const cribBase = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.0), childMat(0x9a8a72));
+      cribBase.position.y = 0.55; crib.add(cribBase);
+      for (const ex of [-0.72, 0.72]) {
+        const railTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 1.0), childMat(0xb6a587));
+        railTop.position.set(ex, 0.95, 0); crib.add(railTop);
+      }
+      for (let i = 0; i < 9; i++) {
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.6, 8), childMat(0xb6a587));
+        bar.position.set(-0.66 + i * 0.165, 0.95, 0.48); crib.add(bar);
+      }
+      crib.position.set(-1.45, 0, -1.35);
+      scene.add(crib);
+      const childToyMat = childMat(0xc98f5a, 0.7);
+      for (let i = 0; i < 4; i++) {
+        const blk = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), childToyMat);
+        blk.position.set(-0.2 + i * 0.26, 0.12, 0.55); blk.rotation.y = Math.sin(i * 3.1) * 0.4; scene.add(blk);
+      }
+
+      // ---- the adult, holding a phone -----------------------------------
+      const adult = SK.makeChibi(C.SKIN, 1.0);
+      adult.group.position.set(0.1, 1.0, 0.35);
+      adult.group.rotation.y = 0.2; // faces roughly toward camera
+      scene.add(adult.group);
+      // glowing phone, held in front of the chest
+      const phone = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 0.3, 0.02),
+        new THREE.MeshBasicMaterial({ color: PHONE })
+      );
+      scene.add(phone);
+      const phoneBase = new THREE.Vector3(0.28, 1.32, 0.78);
+
+      // ---------------------------------------------------------------------
+      // pose proxy
+      // ---------------------------------------------------------------------
+      const proxy = {
+        warm: 0.85, era: 0, phone: 0, doorAng: 0, press: 0,
+        lean: 0, handDown: 0, breath: 0,
+      };
+
+      function applyPose(p) {
+        const bob = Math.sin(p.breath) * 0.02;
+        // adult holds phone: right arm up-forward, head tilted down to the screen
+        adult.armR.sh.rotation.x = -1.15 + p.handDown * 0.95;
+        adult.armR.sh.rotation.z = 0.25;
+        adult.armR.fore.rotation.x = -0.95 + p.handDown * 0.5;
+        adult.armL.sh.rotation.x = -0.15;
+        adult.head.rotation.x = -0.42 + p.handDown * 0.3 + bob * 0.5;
+        adult.pelvis.rotation.x = 0.06 + p.lean * 0.16 + bob;
+
+        // phone follows the hand, hovers, dims when "handDown" (never sent)
+        const hover = Math.sin(p.breath * 0.7) * 0.012;
+        phone.position.set(phoneBase.x, phoneBase.y + hover - p.handDown * 0.5, phoneBase.z - p.handDown * 0.18);
+        phone.rotation.set(-0.5 - p.handDown * 0.3, 0.2, 0);
+        phone.material.color.copy(PHONE).multiplyScalar(0.3 + p.phone * 0.9);
+        phoneLight.intensity = p.phone * 2.4;
+        phoneLight.position.set(phone.position.x, phone.position.y + 0.1, phone.position.z);
+
+        // room dissolve — adult solid fades as the crib ghost rises
+        const aOp = 1 - p.era * 0.55;
+        for (let i = 0; i < adultMats.length; i++) adultMats[i].opacity = aOp;
+        const cOp = p.era * 0.95;
+        for (let i = 0; i < childMats.length; i++) childMats[i].opacity = cOp;
+
+        // light grade + the doorway
+        SK.warmLight(key, ambient, p.warm, COLD, WARM); // v2: brighter key/ambient floors
+        doorSpill.intensity = 1.4 + p.warm * 3.0; // v2: brighter floor
+        cribLight.intensity = 0.5 + p.era * 1.8; // v2: lifts bed always, glows as ghost rises
+        doorPivot.rotation.y = THREE.MathUtils.lerp(AJAR, SHUT, p.doorAng);
+        pressLight.intensity = p.press * 4.0;
+
+        rig.apply();
+      }
+
+      function render() { applyPose(proxy); renderer.render(scene, camera); }
+      render();
+
+      // ---------------------------------------------------------------------
+      // captions + timeline
+      // ---------------------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg02 || [], capHost);
+
+      const END = 160;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { breath: Math.PI * 2 * 40, duration: END, ease: "none" }, 0);
+
+      // ---- v2 camera cuts — hold no framing longer than 4s (auto-cut) ----
+      // framings: 0 WIDE · 1 MED adult+phone · 2 PHONE close · 3 CRIB/BED · 4 DOOR
+      const cutter = SK.makeCutter(tl, rig.state);
+      const A = cutter.auto;
+      A(0,   28,  4,   [1, 2, 0, 1], true);  // establish — adult hovering on the phone
+      A(28,  55,  4,   [3, 0, 1, 3], true);  // the childhood room bleeds through (crib)
+      A(55,  69,  4,   [1, 3, 4, 1], true);  // dismissing — cool, numb
+      A(69,  97,  3.8, [4, 1, 4, 2], true);  // fearful — far-side pressure on the door
+      A(97,  112, 3.6, [2, 4, 2, 4], true);  // phone brightens / one shuts, one presses
+      A(112, 146, 4,   [3, 1, 4, 0], true);  // childhood bleeds back / intimacy mistaken for danger
+      A(146, 160, 4,   [1, 3, 0, 3], true);  // phone lowered unsent / bedroom becomes the crib again
+
+      // 0–4 establish; phone lights as the hand raises it
+      tl.to(proxy, { phone: 1, duration: 3, ease: "power2.out" }, 5);
+      // 28.2–35.5 "echo early bonds" — the childhood room bleeds through
+      tl.to(proxy, { era: 0.5, warm: 0.6, duration: 6, ease: "sine.inOut" }, 28.5);
+      // 37–47 citation — overlay lingers faint
+      tl.to(proxy, { era: 0.18, warm: 0.7, duration: 6, ease: "sine.inOut" }, 38);
+      // 55.5 "dismissing avoidance" / 57.6 "needing is weakness" — cool, numb
+      tl.to(proxy, { warm: 0.22, duration: 6, ease: "power1.inOut" }, 55 );
+      // 69.1 "fearful avoidance" / 71.3 "where I expect to get hurt" — wanting flickers
+      tl.to(proxy, { press: 0.5, duration: 1.4, ease: "sine.inOut", yoyo: true, repeat: 1 }, 70);
+      // 89.9 "fearful ... ashamed for wanting" — the far-side pressure rises
+      tl.to(proxy, { press: 0.7, duration: 5, ease: "sine.inOut" }, 90);
+      tl.to(proxy, { press: 0.15, duration: 4, ease: "power1.in" }, 96);
+      // 97.1–101.4 "the same text ... I just need space" — phone brightens
+      tl.to(proxy, { phone: 1.5, duration: 2, ease: "power2.out" }, 99);
+      // 103.4–109.3 "one shutting the door, the other pressing against it"
+      tl.to(proxy, { doorAng: 1, duration: 4, ease: "power2.inOut" }, 103.5);
+      tl.to(proxy, { press: 1, duration: 3, ease: "sine.inOut" }, 104);
+      tl.to(proxy, { press: 0.25, duration: 4, ease: "power1.in" }, 108);
+      tl.to(proxy, { phone: 0.9, duration: 2, ease: "sine.inOut" }, 108);
+      // 120.3 "protected a four-year-old" — childhood bleeds back
+      tl.to(proxy, { era: 0.42, duration: 5, ease: "sine.inOut" }, 120);
+      // 125–133 "mistakes intimacy for danger" — cold holds
+      tl.to(proxy, { warm: 0.14, era: 0.3, duration: 6, ease: "power1.inOut" }, 125);
+      // 143–150.8 "a mature-sounding conclusion ... I work better alone" — phone lowered, unsent
+      tl.to(proxy, { phone: 0.2, handDown: 1, duration: 3.2, ease: "power2.inOut" }, 146);
+      // 152–154.4 "the bedroom becomes the crib again" — pull WIDE so the crib
+      // ghost is fully in frame as it takes over the adult room
+      tl.to(proxy, { era: 0.94, duration: 4, ease: "power2.inOut" }, 152);
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-05-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #122436; /* v2: brighter blueprint navy */
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 88% 82% at 50% 46%, transparent 50%, rgba(0,0,0,0.32) 100%); }
+      .plan { fill: none; stroke: #d7ecf7; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+      .door { fill: none; stroke: #f5ad66; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+      #doorGroup { filter: drop-shadow(0 0 0px rgba(240,163,92,0)); }
+      .stamp { fill: #5b7c92; font-family: "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.18em; }
+      #caps { position: absolute; left: 50%; bottom: 88px; transform: translateX(-50%);
+        width: 1560px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b7c92;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b7c92; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="149">
+      <audio id="vo" data-start="0" data-duration="149" data-track-index="9"
+             src="../assets/narration/seg-05.wav" data-volume="1"></audio>
+
+      <svg id="stage" class="clip" data-start="0" data-duration="149" data-track-index="0" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+        <g id="grid"></g>
+        <g id="planGroup" class="plan">
+          <path id="wTop"    d="M560,250 L1360,250" />
+          <path id="wRight"  d="M1360,250 L1360,810" />
+          <path id="wBot"    d="M1360,810 L560,810" />
+          <path id="wLeft"   d="M560,810 L560,250" />
+          <path id="wDivTop" d="M960,250 L960,470" />
+          <path id="wDivMid" d="M960,470 L960,610" />
+          <path id="wDivBot" d="M960,610 L960,810" />
+        </g>
+        <g id="doorGroup" class="door">
+          <path id="dJambT" d="M942,470 L978,470" />
+          <path id="dJambB" d="M942,610 L978,610" />
+          <path id="dLeaf"  d="M960,470 L1100,470" />
+          <path id="dArc"   d="M1100,470 A140,140 0 0 1 960,610" />
+        </g>
+        <g id="pencil">
+          <polygon points="0,0 96,-26 104,-9 18,14" fill="#d9c08a" />
+          <polygon points="0,0 18,14 -2,12" fill="#3a3330" />
+          <polygon points="0,0 -2,12 -7,4" fill="#1a1a1a" />
+          <rect x="90" y="-26" width="14" height="22" rx="3" transform="rotate(15 97 -15)" fill="#c08a4a" />
+        </g>
+        <text class="stamp" x="566" y="218" font-size="22">FLOOR PLAN — REVISION</text>
+        <text class="stamp" x="1208" y="852" font-size="20">ADD: DOORWAY</text>
+      </svg>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="149" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-05 — S5 blueprint (2D SVG). A floor plan is drawn in blueprint
+      // lines; then a pencil adds a NEW doorway into the dividing wall. The
+      // old wall line is not erased — it fades to faint, and a warm door
+      // symbol is drawn through it. Concept: the reframe — you don't delete
+      // the wall, you draw a door.
+      // ===================================================================
+      const SK = window.SceneKit;
+
+      // faint blueprint grid (generated, not animated)
+      (function () {
+        const g = document.getElementById("grid");
+        const NS = "http://www.w3.org/2000/svg";
+        for (let x = 0; x <= 1920; x += 80) {
+          const l = document.createElementNS(NS, "line");
+          l.setAttribute("x1", x); l.setAttribute("y1", 0);
+          l.setAttribute("x2", x); l.setAttribute("y2", 1080);
+          l.setAttribute("stroke", "#24405a"); l.setAttribute("stroke-width", 1);
+          g.appendChild(l);
+        }
+        for (let y = 0; y <= 1080; y += 80) {
+          const l = document.createElementNS(NS, "line");
+          l.setAttribute("x1", 0); l.setAttribute("y1", y);
+          l.setAttribute("x2", 1920); l.setAttribute("y2", y);
+          l.setAttribute("stroke", "#24405a"); l.setAttribute("stroke-width", 1);
+          g.appendChild(l);
+        }
+      })();
+
+      // prep a path for "drawing" via stroke-dashoffset; returns its length
+      function prep(id) {
+        const el = document.getElementById(id);
+        const L = el.getTotalLength();
+        el.style.strokeDasharray = L;
+        el.style.strokeDashoffset = L;
+        return { el, L };
+      }
+      const planIds = ["wTop", "wRight", "wBot", "wLeft", "wDivTop", "wDivMid", "wDivBot"];
+      const doorIds = ["dJambT", "dJambB", "dLeaf", "dArc"];
+      const P = {};
+      [...planIds, ...doorIds].forEach((id) => (P[id] = prep(id)));
+      const pencil = document.getElementById("pencil");
+      const wDivMid = document.getElementById("wDivMid");
+      const doorGroup = document.getElementById("doorGroup");
+      gsap.set(pencil, { x: 600, y: 235 }); // initial pencil position
+
+      // ---------------------------------------------------------------------
+      // captions — chunk by word-count / time-gap (seg-05 transcript collapses
+      // into two ~60s blobs, so sentence punctuation can't be used)
+      // ---------------------------------------------------------------------
+      function chunk(words) {
+        const out = [];
+        let cur = [], lastEnd = null;
+        for (const w of words) {
+          if (cur.length && (cur.length >= 8 || (lastEnd != null && w[1] - lastEnd > 0.7))) {
+            out.push(cur); cur = [];
+          }
+          cur.push(w); lastEnd = w[2];
+          if (/[.!?]$/.test(w[0]) && cur.length >= 4) { out.push(cur); cur = []; }
+        }
+        if (cur.length) out.push(cur);
+        return out;
+      }
+      const capHost = document.getElementById("caps");
+      const phraseEls = chunk(window.seg05 || []).map((ph) => {
+        const div = document.createElement("div");
+        div.className = "phrase";
+        ph.forEach((w) => {
+          const s = document.createElement("span");
+          s.className = "w"; s.textContent = w[0] + " "; s.dataset.start = w[1];
+          div.appendChild(s);
+        });
+        capHost.appendChild(div);
+        return { el: div, start: ph[0][1], end: ph[ph.length - 1][2], words: [...div.querySelectorAll(".w")] };
+      });
+
+      // ---------------------------------------------------------------------
+      // timeline
+      // ---------------------------------------------------------------------
+      const END = 149;
+
+      // v2 — animate the SVG viewBox so the "camera" follows the drawing with
+      // zoom (constant motion + bolder lines). Hard cuts would jump away from
+      // the live pencil, so these are quick eased pushes that track the action.
+      const svg = document.getElementById("stage");
+      const vb = { x: 0, y: 0, w: 1920, h: 1080 };
+      function applyVB() {
+        svg.setAttribute("viewBox", vb.x.toFixed(1) + " " + vb.y.toFixed(1) + " " + vb.w.toFixed(1) + " " + vb.h.toFixed(1));
+      }
+      applyVB();
+      const tl = gsap.timeline({ paused: true, onUpdate: applyVB });
+
+      // viewBox follow (16:9 regions). dur ~1.5–3s = quick push; tracks each beat.
+      function vbTo(x, y, w, h, dur, t, ease) {
+        tl.to(vb, { x: x, y: y, w: w, h: h, duration: dur, ease: ease || "power2.inOut" }, t);
+      }
+      vbTo(220, 124, 1480, 832, 6, 7);    // ease in toward the plan as outer walls start
+      vbTo(640, 300, 680, 383, 2.5, 33);  // push to the dividing wall
+      vbTo(720, 360, 540, 304, 2.5, 50);  // tighter on the wall (the hesitation)
+      vbTo(760, 388, 540, 304, 10, 58);   // slow drift while it hovers
+      vbTo(800, 392, 600, 338, 2, 80);    // snap to the new-doorway region
+      vbTo(820, 412, 540, 304, 2, 96);    // follow the leaf/arc being drawn
+      vbTo(880, 452, 540, 304, 9, 104);   // drift across the swing arc
+      vbTo(600, 300, 820, 461, 3, 121);   // pull back to see the door glow in context
+      vbTo(100, 60, 1720, 968, 6, 140);   // settle on the finished plan
+
+      function drawLine(id, dur, t, ease) {
+        tl.to(P[id].el, { strokeDashoffset: 0, duration: dur, ease: ease || "none" }, t);
+      }
+      function movePencil(x, y, dur, t, ease) {
+        tl.to(pencil, { x: x, y: y, duration: dur, ease: ease || "power1.inOut" }, t);
+      }
+
+      // ---- draw the existing plan ("the old blueprint") ----
+      // 8–33 outer walls trace, pencil following
+      drawLine("wTop", 6, 8); movePencil(1360, 235, 6, 8);
+      drawLine("wRight", 5, 14.5); movePencil(1345, 810, 5, 14.5);
+      drawLine("wBot", 5, 20); movePencil(560, 825, 5, 20);
+      drawLine("wLeft", 5, 25.5); movePencil(560, 235, 5, 25.5);
+      // 33–46 the dividing wall — "the wall that used to be"
+      movePencil(960, 235, 2.5, 33);
+      drawLine("wDivTop", 4, 35.5);
+      drawLine("wDivMid", 3.5, 39.5);
+      drawLine("wDivBot", 4.5, 43); movePencil(960, 810, 6.5, 39.5);
+      // 50–67 hold near the wall — "repeated experiences... slowly... the tiny pause"
+      movePencil(990, 540, 4, 52);
+      // 67–80 "I want to disappear / looking for flaws / deactivation not truth" —
+      // the pencil hesitates at the wall (a small drift, no new line yet)
+      movePencil(1010, 520, 2, 68, "sine.inOut");
+      movePencil(990, 560, 3, 73, "sine.inOut");
+
+      // ---- the reframe: add a doorway (don't erase the wall) ----
+      // 80–95 "ask for space without making the other the enemy / I am coming back"
+      // the old wall middle fades to faint; the first jamb marks are drawn warm
+      movePencil(975, 470, 3, 82);
+      tl.to(wDivMid, { opacity: 0.22, duration: 3, ease: "power1.inOut" }, 84);
+      drawLine("dJambT", 1.2, 85);
+      drawLine("dJambB", 1.2, 88); movePencil(975, 610, 2.5, 87);
+      // 95–120 "you overwrite it by giving a new record, then another, then another"
+      // the door leaf, then the swing arc — drawn in stages
+      movePencil(1100, 470, 3, 96);
+      drawLine("dLeaf", 3.5, 98, "power2.out"); movePencil(1100, 470, 3.5, 98);
+      drawLine("dArc", 7, 104, "power1.inOut"); movePencil(960, 610, 7, 104);
+      // 120–140 "you stay a little longer / you leave the door open / you come back"
+      // the new door warms and glows; pencil lifts away
+      tl.to(doorGroup, { filter: "drop-shadow(0 0 16px rgba(240,163,92,0.85))", duration: 4, ease: "sine.inOut" }, 121);
+      tl.to("#dArc,#dLeaf", { stroke: "#ffcaa0", duration: 4, ease: "sine.inOut" }, 122);
+      movePencil(1320, 250, 5, 124, "power2.inOut");
+      tl.to(doorGroup, { filter: "drop-shadow(0 0 26px rgba(255,202,160,0.95))", duration: 3, yoyo: true, repeat: 1, ease: "sine.inOut" }, 132);
+      // 140–149 settle on the finished plan with its warm doorway
+      tl.to("#planGroup", { opacity: 0.85, duration: 6, ease: "sine.inOut" }, 140);
+
+      // captions (karaoke fill toward the blueprint ink tone)
+      phraseEls.forEach((p, i) => {
+        const showAt = Math.max(0, p.start - 0.18);
+        const hideAt = i < phraseEls.length - 1 ? phraseEls[i + 1].start - 0.1 : END - 0.1;
+        tl.fromTo(p.el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, showAt);
+        p.words.forEach((wEl) => {
+          tl.to(wEl, { color: "#eaf4fb", duration: 0.1, ease: "none" }, parseFloat(wEl.dataset.start));
+        });
+        if (i < phraseEls.length - 1) {
+          tl.to(p.el, { opacity: 0, y: -10, duration: 0.28, ease: "power2.in" }, hideAt);
+          tl.set(p.el, { opacity: 0, visibility: "hidden" }, hideAt + 0.28);
+        } else {
+          tl.to(p.el, { opacity: 0, duration: 0.6, ease: "power2.in" }, END - 0.7);
+        }
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-01-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 80% at 48% 50%, transparent 46%, rgba(0,0,0,0.36) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="147">
+      <audio id="vo" data-start="0" data-duration="147" data-track-index="9"
+             src="../assets/narration/seg-01.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="147" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="147" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-01 — S1 nursery at dusk. A small child beside a CLOSED bedroom
+      // door, toys in perfect rows, a pulse of light under the floorboards.
+      // Concept: the early learning — closeness met a closed door; the need
+      // goes underground; order becomes self-soothing. (approach→freeze→retreat)
+      // ===================================================================
+      const SK = window.SceneKit;
+      const C = SK.COL;
+      const WARM = new THREE.Color(C.WARM);
+      const COLD = new THREE.Color(C.COLD);
+      const DOORGLOW = new THREE.Color(C.DOORGLOW);
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      const scene = SK.makeScene(7, 17);
+
+      // v2 — five framings of the same room, hard-cut on beats (no angle held >~8s).
+      // All cameras sit in the front hemisphere (z > -2.6) so we never clip the back wall.
+      const V = THREE.Vector3;
+      const rig = SK.makeCameraRig([
+        // 0 WIDE establishing (high & back) — slow dolly in
+        { pos: new V(4.2, 3.0, 4.4), posNear: new V(3.6, 2.7, 3.7), look: new V(-0.5, 0.7, -1.3) },
+        // 1 MED child + closed door (the v1 framing, tightened) — dolly in
+        { pos: new V(3.0, 2.1, 2.5), posNear: new V(2.35, 1.85, 1.95), look: new V(-0.25, 0.85, -1.6) },
+        // 2 DOOR low/close — under-door glow + floorboard seams
+        { pos: new V(1.4, 0.85, 0.6), look: new V(-0.2, 0.7, -2.5) },
+        // 3 TOYS top-down detail — dolly in
+        { pos: new V(-0.2, 2.4, 1.7), posNear: new V(-0.55, 2.0, 1.15), look: new V(-1.0, 0.15, 0.25) },
+        // 4 CHILD 3/4 profile from the left
+        { pos: new V(-1.9, 1.5, 1.9), look: new V(0.2, 0.8, -1.3) },
+      ]);
+      const camera = rig.camera;
+
+      // ---- lights -------------------------------------------------------
+      const key = SK.makeKeyLight();
+      key.position.set(1.8, 4.0, 2.4);
+      scene.add(key);
+      const ambient = new THREE.AmbientLight(0x4a5a6b, 0.55); // v2: lighter, bluer fill floor
+      scene.add(ambient);
+      const fill = SK.makeFill(0.95); // v2: hemisphere baseline lift (floor/walls never go black)
+      scene.add(fill);
+      // warm spill leaking from under the closed door
+      const doorSpill = new THREE.PointLight(DOORGLOW, 3.0, 6, 2);
+      doorSpill.position.set(-0.2, 0.2, -2.1);
+      scene.add(doorSpill);
+
+      // ---- room ---------------------------------------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(26, 26),
+        new THREE.MeshStandardMaterial({ color: 0x363e49, roughness: 0.96 }) // v2: lifted from 0x161a1f
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(26, 11),
+        new THREE.MeshStandardMaterial({ color: 0x242b34, roughness: 1 }) // v2: lifted from 0x12151a
+      );
+      backWall.position.set(0, 5.5, -2.72);
+      backWall.receiveShadow = true;
+      scene.add(backWall);
+
+      // ---- floorboards + the buried pulse -------------------------------
+      // planks running toward camera, with thin emissive seams between them
+      // that glow with proxy.pulse — "a pulse of light under the floorboards".
+      const plankMat = new THREE.MeshStandardMaterial({ color: 0x4a4036, roughness: 0.9 }); // v2: lifted from 0x241f1c
+      const seamMat = new THREE.MeshBasicMaterial({ color: DOORGLOW, transparent: true, opacity: 0 });
+      const plankW = 0.62, gap = 0.05, plankCount = 10;
+      const totalW = plankCount * (plankW + gap);
+      for (let i = 0; i < plankCount; i++) {
+        const cx = -totalW / 2 + i * (plankW + gap) + plankW / 2;
+        const plank = new THREE.Mesh(new THREE.BoxGeometry(plankW, 0.05, 9), plankMat);
+        plank.position.set(cx, 0.026, 0.8);
+        plank.receiveShadow = true;
+        scene.add(plank);
+        if (i < plankCount - 1) {
+          const seam = new THREE.Mesh(new THREE.PlaneGeometry(gap + 0.02, 9), seamMat);
+          seam.rotation.x = -Math.PI / 2;
+          seam.position.set(cx + plankW / 2 + gap / 2, 0.05, 0.8);
+          scene.add(seam);
+        }
+      }
+
+      // ---- closed bedroom door ------------------------------------------
+      const doorX = -0.2, doorZ = -2.62;
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(1.26, 2.28, 0.14),
+        new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 })
+      );
+      frame.position.set(doorX, 1.14, doorZ - 0.04);
+      scene.add(frame);
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(1.08, 2.1, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x2c2622, roughness: 0.82 })
+      );
+      panel.position.set(doorX, 1.06, doorZ);
+      panel.castShadow = true;
+      scene.add(panel);
+      const knob = new THREE.Mesh(
+        new THREE.SphereGeometry(0.05, 14, 12),
+        new THREE.MeshStandardMaterial({ color: 0xb9a07a, roughness: 0.5, metalness: 0.3 })
+      );
+      knob.position.set(doorX + 0.42, 1.02, doorZ + 0.06);
+      scene.add(knob);
+      // warm light leaking under the closed door (caregiver warmth out of reach)
+      const underDoorMat = new THREE.MeshBasicMaterial({ color: DOORGLOW, transparent: true, opacity: 0.5 });
+      const underDoor = new THREE.Mesh(new THREE.PlaneGeometry(1.04, 0.5), underDoorMat);
+      underDoor.rotation.x = -Math.PI / 2;
+      underDoor.position.set(doorX, 0.055, doorZ + 0.34);
+      scene.add(underDoor);
+
+      // ---- toys in perfect rows -----------------------------------------
+      // a small 3x3 grid of blocks. They begin nearly ordered (self-soothing)
+      // and snap into a perfect, glowing grid during the "hands stay busy" beat.
+      const toyMat = new THREE.MeshStandardMaterial({
+        color: 0xc98f5a, roughness: 0.7, emissive: new THREE.Color(C.WARM), emissiveIntensity: 0,
+      });
+      const toys = [];
+      const gx0 = -1.45, gz0 = -0.15, stepX = 0.42, stepZ = 0.42;
+      let ti = 0;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), toyMat);
+          mesh.castShadow = true;
+          const grid = new THREE.Vector3(gx0 + c * stepX, 0.13, gz0 + r * stepZ);
+          // deterministic scatter offset (no Math.random)
+          const sx = Math.sin(ti * 12.9) * 0.13;
+          const sz = Math.sin(ti * 7.31 + 1.7) * 0.13;
+          const sr = Math.sin(ti * 4.13) * 0.55;
+          const scatter = { x: grid.x + sx, z: grid.z + sz, r: sr };
+          mesh.position.copy(grid);
+          scene.add(mesh);
+          toys.push({ mesh, grid, scatter });
+          ti++;
+        }
+      }
+
+      // ---- the child ----------------------------------------------------
+      const CHILD_FACE = Math.PI + 0.26; // face the door (-z), angled toward it
+      const CHILD_Y = 0.46;
+      const child = SK.makeChibi(C.SKIN, 0.62);
+      child.group.position.set(0.55, CHILD_Y, -1.5);
+      child.group.rotation.y = CHILD_FACE;
+      scene.add(child.group);
+
+      // ---------------------------------------------------------------------
+      // pose proxy — single source of truth animated by GSAP
+      // ---------------------------------------------------------------------
+      const proxy = {
+        reach: 0, lean: 0, turn: 0, warm: 0.5, pulse: 0.06,
+        crouch: 0, toyOrder: 0.72, toyGlow: 0.12, busy: 0, breath: 0,
+      };
+
+      function applyPose(p) {
+        const bob = Math.sin(p.breath) * 0.02;
+        child.armR.sh.rotation.x = -p.reach * 1.8 - p.busy * 0.5;
+        child.armR.fore.rotation.x = 0.2 - p.reach * 0.3 + p.busy * 0.2;
+        child.armL.sh.rotation.x = -p.reach * 0.5 - p.busy * 0.3;
+        child.pelvis.rotation.x = p.lean * 0.32 + p.crouch * 0.55 + bob;
+        child.head.rotation.x = -p.crouch * 0.34 + bob * 0.5;
+        child.group.rotation.y = CHILD_FACE + p.turn * 1.45;
+        child.group.position.y = CHILD_Y - p.crouch * 0.2 + bob * 0.6;
+
+        underDoorMat.opacity = 0.22 + p.warm * 0.7;
+        doorSpill.intensity = 1.1 + p.warm * 3.2; // v2: brighter floor so the spill always reads
+        doorSpill.color.copy(COLD).lerp(DOORGLOW, p.warm);
+        SK.warmLight(key, ambient, p.warm, COLD, WARM); // v2: brighter key/ambient floors
+
+        seamMat.opacity = p.pulse * 0.9;
+
+        for (let i = 0; i < toys.length; i++) {
+          const t = toys[i];
+          t.mesh.position.x = THREE.MathUtils.lerp(t.scatter.x, t.grid.x, p.toyOrder);
+          t.mesh.position.z = THREE.MathUtils.lerp(t.scatter.z, t.grid.z, p.toyOrder);
+          t.mesh.rotation.y = THREE.MathUtils.lerp(t.scatter.r, 0, p.toyOrder);
+        }
+        toyMat.emissiveIntensity = p.toyGlow * 0.65;
+
+        rig.apply();
+      }
+
+      function render() {
+        applyPose(proxy);
+        renderer.render(scene, camera);
+      }
+      render();
+
+      // ---------------------------------------------------------------------
+      // captions
+      // ---------------------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg01 || [], capHost);
+
+      // ---------------------------------------------------------------------
+      // timeline — paused, render every update; beats synced to seg-01-words.js
+      // ---------------------------------------------------------------------
+      const END = 147;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+
+      // continuous subtle breathing for the whole shot (deterministic, no rAF)
+      tl.to(proxy, { breath: Math.PI * 2 * 37, duration: END, ease: "none" }, 0);
+
+      // ---- v2 camera cuts — hold no framing longer than 4s (auto-cut) ----
+      // framings: 0 WIDE · 1 MED child+door · 2 DOOR low · 3 TOYS top · 4 CHILD profile
+      const cutter = SK.makeCutter(tl, rig.state);
+      const A = cutter.auto;
+      A(0,   20,  4,   [0, 1, 2, 4], true);  // establish / Bowlby — room, child, door
+      A(20,  43,  3.8, [1, 4, 2, 1], true);  // reach toward the door
+      A(43,  59,  4,   [1, 4, 0, 2], true);  // Ainsworth — warmth cools, reach withdraws
+      A(59,  80,  4,   [3, 2, 3, 0], true);  // turn to toys / buried pulse / underground
+      A(80,  92,  4,   [1, 4, 2],    true);  // "first blueprint" — door goes cold
+      A(92,  109, 3.8, [3, 4, 3, 2], true);  // crouch to the toys / hands stay busy
+      A(109, 133, 4,   [0, 1, 4, 2], true);  // settle / flicker / small unease
+      A(133, 147, 3.6, [1, 2, 4, 0], true);  // slow push / one last warm flicker
+
+      // 8–19 Bowlby citation — faint pulse wakes under the floor
+      tl.to(proxy, { pulse: 0.12, duration: 8, ease: "sine.inOut" }, 9);
+      // 20.4–30.5 "attachment behavioral system ... moves the child toward a caregiver"
+      tl.to(proxy, { reach: 0.72, lean: 1, warm: 0.95, duration: 9, ease: "power2.inOut" }, 20.4);
+      // 31.9–37 "Hunger, fear, pain ... find the person" — reach harder, need rises
+      tl.to(proxy, { reach: 0.86, duration: 4, ease: "power2.out" }, 31.9);
+      tl.to(proxy, { pulse: 0.4, duration: 5, ease: "sine.inOut" }, 31.9);
+      // 38.2–42.5 "children also learn what happens when they do" — hesitation
+      tl.to(proxy, { lean: 0.6, duration: 2.2, ease: "power1.inOut" }, 39.4);
+      // 43.6–58.2 Ainsworth + "strangely calm" — door warmth cools, reach withdraws
+      tl.to(proxy, { warm: 0.24, duration: 10, ease: "power1.inOut" }, 46);
+      tl.to(proxy, { reach: 0.18, lean: 0.15, duration: 8, ease: "power2.in" }, 50);
+      // 59.8–66.6 "They looked away. They did not reach" — turn to the toys
+      tl.to(proxy, { turn: 1, duration: 5, ease: "power2.inOut" }, 59.8);
+      tl.to(proxy, { reach: -0.04, duration: 3, ease: "power2.in" }, 59.8);
+      // 67.9–72.9 "bodies were still distressed" — the buried pulse surges
+      tl.to(proxy, { pulse: 0.78, duration: 4, ease: "sine.inOut" }, 68);
+      // 74.1–78.9 "the need ... had gone underground" — pulse peaks, then sinks under
+      tl.to(proxy, { pulse: 0.96, duration: 2, ease: "power2.out" }, 74);
+      tl.to(proxy, { pulse: 0.16, duration: 4, ease: "power2.in" }, 76.5);
+      // 82.9–90.4 "not reaching becomes intelligent" — door goes cold (v2: floored, not black)
+      tl.to(proxy, { warm: 0.26, duration: 6, ease: "power1.inOut" }, 83);
+      // 91.8–99.5 "showing need does not pay" — the child crouches to the toys
+      tl.to(proxy, { crouch: 1, duration: 5, ease: "power2.inOut" }, 92.5);
+      // 100.7–108.6 "hands stay busy ... the room becomes safer than the person"
+      tl.to(proxy, { toyOrder: 1, duration: 4, ease: "power2.inOut" }, 101);
+      tl.to(proxy, { toyGlow: 0.72, duration: 6, ease: "sine.inOut" }, 101);
+      tl.to(proxy, { busy: 1, duration: 0.85, ease: "sine.inOut", yoyo: true, repeat: 5 }, 103);
+      // 119.5–124.7 "trained to arrive wearing another costume" — a single flicker
+      tl.to(proxy, { pulse: 0.5, duration: 1.2, ease: "power2.out" }, 120);
+      tl.to(proxy, { pulse: 0.14, duration: 2.2, ease: "power2.in" }, 121.5);
+      // 127.2–133 "the sudden feeling this person is too much" — small unease
+      tl.to(proxy, { crouch: 0.86, duration: 2, ease: "sine.inOut", yoyo: true, repeat: 1 }, 128);
+      // 142.3–145.9 "the blueprint follows you into adult love" — one last warm flicker
+      tl.to(proxy, { warm: 0.4, duration: 2, ease: "sine.inOut" }, 142);
+      tl.to(proxy, { warm: 0.26, duration: 2.4, ease: "power1.in" }, 144);
+
+      // captions
+      SK.wireCaptions(tl, phraseEls, END);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -23,3 +23,19 @@
 - `codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox --output-last-message <file> "$(cat prompt.txt)" </dev/null`
 - `</dev/null` 必須 (background hang 防止)、bypass flag 必須 (Win11 Home は Sandbox 非対応)。
 - 詳細は auto-memory: codex_windows_sandbox / codex_background_stdin 参照。
+
+## 2026-06-03 pullaway-v2 (hyperframes render) から
+
+### L5: hyperframes render は同一 GPU を奪い合うので「絶対に1本ずつ」直列
+- **何が起きたか**: seg-02 を background で複数回 launch してしまい、3本が同じ `renders/seg-02.mp4` に同時 render → GPU 競合で各々が異常に遅く (数分→十数分)、かつ同一 file への並行書き込みで破損リスク。
+- **rule**: render は 1 本完了 (task-notification) を待ってから次を launch。並行 render しない。誤って複数 launch したら TaskStop で止め、出力 file を rm して単独で render し直す。
+- **適用場面**: hyperframes/ffmpeg など GPU/重 IO を使う job。「並列で速くなる」は誤り、むしろ遅く+壊れる。
+
+### L6: background bash は repo root で起動する (foreground の cwd を継承しない)
+- **何が起きたか**: foreground で `pwd`=v2 でも、`run_in_background:true` の render が repo root で動き "No index.html / No composition" で失敗。
+- **rule**: background command は primary working dir (repo root) 起点とみなす。project subdir で動かす必要があるなら command 内に `cd <abs path> &&` を明示するか、絶対パスで全引数を渡す。foreground の cwd 継承を当てにしない。
+- **適用場面**: subdir の project で render/build を background 実行する時。
+
+### L7: `cmd 2>&1 | tail -N` は完了まで何も出ない (進捗が見えない)
+- **何が起きたか**: render 出力を `| tail -4` に通したため、tail が EOF まで buffer して進捗 0 表示。hung と誤認しかけた。
+- **rule**: 進捗を見たいなら pipe せず `--output-last-message` 的手段か raw 出力にする。tail/head に通したら「完了まで沈黙」が正常。判断は task-notification を待つ。
