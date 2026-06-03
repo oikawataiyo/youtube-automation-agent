@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-03-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e1116;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #main { position: absolute; inset: 0; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 80% 74% at 50% 46%, transparent 40%, rgba(0,0,0,0.6) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400;
+        font-size: 46px; line-height: 1.4; letter-spacing: 0.01em; color: #5b6472;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.8); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="177">
+      <audio id="vo" data-start="0" data-duration="177" data-track-index="9"
+             src="../assets/narration/seg-03.wav" data-volume="1"></audio>
+
+      <canvas id="stage" class="clip" data-start="0" data-duration="177" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="177" data-track-index="4"></div>
+    </div>
+
+    <script>
+      // ===================================================================
+      // seg-03 — S3 photo desk. A warm-lit desk of framed photos of two
+      // people. A hand sweeps in and turns each one face-down, in sequence,
+      // until the tabletop is blank and cold. Concept: deactivation — editing
+      // memory, downplaying good moments, erasing closeness before it can hurt.
+      // ===================================================================
+      const SK = window.SceneKit;
+      const C = SK.COL;
+      const WARM = new THREE.Color(C.WARM);
+      const COLD = new THREE.Color(C.COLD);
+      const PHOTOWARM = new THREE.Color("#ffb877");
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      const scene = SK.makeScene(6, 15);
+
+      const camera = new THREE.PerspectiveCamera(40, 1920 / 1080, 0.1, 100);
+      const camFar = new THREE.Vector3(0, 2.85, 3.5);
+      const camNear = new THREE.Vector3(0, 2.5, 2.75);
+      const lookTarget = new THREE.Vector3(0, 1.02, -0.05);
+
+      // ---- lights -------------------------------------------------------
+      const key = SK.makeKeyLight();
+      key.position.set(1.4, 4.2, 2.4);
+      scene.add(key);
+      const ambient = new THREE.AmbientLight(0x2f3a47, 0.45);
+      scene.add(ambient);
+      // warm desk lamp pooling on the photos
+      const deskLight = new THREE.PointLight(PHOTOWARM, 5, 6, 2);
+      deskLight.position.set(0, 2.0, 0.6);
+      scene.add(deskLight);
+
+      // ---- desk + floor -------------------------------------------------
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(28, 28),
+        new THREE.MeshStandardMaterial({ color: 0x141519, roughness: 1 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+      const desk = new THREE.Mesh(
+        new THREE.BoxGeometry(4.4, 0.16, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 0.78 })
+      );
+      desk.position.set(0, 0.92, 0.05);
+      desk.castShadow = true; desk.receiveShadow = true;
+      scene.add(desk);
+      const deskY = 1.0;
+
+      // ---- photos of two people -----------------------------------------
+      const N = 7;
+      const photos = [];
+      const x0 = -1.62, stepX = 0.54, pz = 0.02;
+      for (let i = 0; i < N; i++) {
+        const px = x0 + i * stepX;
+        const pivot = new THREE.Group();
+        pivot.position.set(px, deskY, pz); // hinge at the photo's base
+        scene.add(pivot);
+        // dark frame (its back is what shows once turned over)
+        const frame = new THREE.Mesh(
+          new THREE.BoxGeometry(0.44, 0.52, 0.03),
+          new THREE.MeshStandardMaterial({ color: 0x241f1c, roughness: 0.7 })
+        );
+        frame.position.set(0, 0.27, 0);
+        frame.castShadow = true;
+        pivot.add(frame);
+        // warm photo face
+        const faceMat = new THREE.MeshStandardMaterial({
+          color: 0x6b4a30, roughness: 0.6,
+          emissive: PHOTOWARM, emissiveIntensity: 0.9,
+        });
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.44), faceMat);
+        face.position.set(0, 0.27, 0.017);
+        pivot.add(face);
+        // two little heads — "two people"
+        const hMat = new THREE.MeshStandardMaterial({ color: 0x3a2c20, roughness: 0.6 });
+        for (const hx of [-0.075, 0.075]) {
+          const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), hMat);
+          hd.position.set(hx, 0.27, 0.025);
+          pivot.add(hd);
+        }
+        photos.push({ pivot, faceMat });
+      }
+
+      // ---- the turning hand (forearm + hand) ----------------------------
+      const skinMat = new THREE.MeshStandardMaterial({ color: C.SKIN, roughness: 0.85 });
+      const hand = new THREE.Group();
+      const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.62, 6, 12), skinMat);
+      forearm.rotation.z = Math.PI / 2;
+      forearm.position.set(0.42, 0, 0);
+      forearm.castShadow = true;
+      hand.add(forearm);
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 14), skinMat);
+      palm.scale.set(1, 0.7, 1.1);
+      palm.castShadow = true;
+      hand.add(palm);
+      hand.position.set(2.5, 1.5, 0.35); // starts off to the right, above the desk
+      hand.rotation.y = -0.2;
+      scene.add(hand);
+
+      // ---------------------------------------------------------------------
+      // global proxy (lights + camera + breath)
+      // ---------------------------------------------------------------------
+      const proxy = { warm: 0.95, camPush: 0, breath: 0 };
+      function applyPose(p) {
+        const flick = 1 + Math.sin(p.breath) * 0.015;
+        key.color.copy(COLD).lerp(WARM, p.warm);
+        key.intensity = 0.45 + p.warm * 0.7;
+        ambient.intensity = 0.3 + p.warm * 0.18;
+        deskLight.intensity = (1.2 + p.warm * 4.0) * flick;
+        deskLight.color.copy(COLD).lerp(PHOTOWARM, 0.35 + p.warm * 0.65);
+        camera.position.lerpVectors(camFar, camNear, p.camPush);
+        camera.lookAt(lookTarget);
+      }
+      function render() { applyPose(proxy); renderer.render(scene, camera); }
+      render();
+
+      // ---------------------------------------------------------------------
+      // captions + timeline
+      // ---------------------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg03 || [], capHost);
+
+      const END = 177;
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { breath: Math.PI * 2 * 30, duration: END, ease: "none" }, 0);
+
+      // helper — turn photo i face-down at time t: hand slides over it, dips,
+      // the photo flips, the warm face goes dark, the desk loses a little warmth.
+      function turnDown(i, t, warmAfter) {
+        const px = photos[i].pivot.position.x;
+        tl.to(hand.position, { x: px, y: 1.46, duration: 0.7, ease: "power2.inOut" }, t - 0.7);
+        tl.to(hand.position, { y: 1.16, duration: 0.32, ease: "power2.in" }, t);
+        tl.to(photos[i].pivot.rotation, { x: Math.PI / 2, duration: 0.55, ease: "power2.in" }, t + 0.12);
+        tl.to(photos[i].faceMat, { emissiveIntensity: 0, duration: 0.45, ease: "power2.in" }, t + 0.12);
+        tl.to(hand.position, { y: 1.46, duration: 0.4, ease: "power2.out" }, t + 0.5);
+        if (warmAfter != null) tl.to(proxy, { warm: warmAfter, duration: 1.4, ease: "sine.inOut" }, t);
+      }
+
+      // 0–8 establish — warm desk of photos, slow push-in
+      tl.to(proxy, { camPush: 0.2, duration: 8, ease: "sine.inOut" }, 0);
+      // hand enters from the right as the "case against them" begins (~38)
+      tl.to(hand.position, { x: 1.9, y: 1.5, duration: 2.2, ease: "power2.out" }, 36);
+      // 42 "their laugh is annoying" / 45 "kindness invasive" / 48.5 "needy" — first three
+      turnDown(6, 42.3, 0.82);
+      turnDown(5, 45.3, 0.72);
+      turnDown(4, 48.6, 0.62);
+      // 52–56 "you are not lying, you are selecting" — hand hovers over the next,
+      // reaches, then pulls back (the hesitation of selecting)
+      tl.to(hand.position, { x: photos[3].pivot.position.x, y: 1.4, duration: 1.2, ease: "power2.inOut" }, 54);
+      tl.to(hand.position, { y: 1.22, duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, 55.4);
+      tl.to(hand.position, { y: 1.55, duration: 1.0, ease: "power2.out" }, 57);
+      tl.to(proxy, { camPush: 0.34, duration: 10, ease: "sine.inOut" }, 60);
+      // 79.2 "moves the problem from fear to preference" — the 4th turns down
+      turnDown(3, 79.5, 0.5);
+      // 99–107 "some may be true ... genuinely value autonomy" — hold, gentle drift
+      tl.to(proxy, { camPush: 0.46, duration: 8, ease: "sine.inOut" }, 100);
+      // 111.9 "edits memory" / 114.7 "downplays good moments" / 121.4 "tender → threat"
+      turnDown(2, 111.7, 0.36);
+      turnDown(1, 115.0, 0.24);
+      turnDown(0, 121.5, 0.12);
+      // 126–145 "the story feels clean ... right after a bid for closeness" —
+      // hand lingers over the now-blank desk, the warmth nearly gone
+      tl.to(hand.position, { x: 0, y: 1.5, duration: 2.0, ease: "power2.inOut" }, 126);
+      tl.to(hand.position, { y: 1.3, duration: 1.0, ease: "sine.inOut", yoyo: true, repeat: 1 }, 134);
+      // 146–160 "pulling away is not the absence of feeling ... relief feels like proof"
+      tl.to(proxy, { warm: 0.06, duration: 8, ease: "power1.inOut" }, 146);
+      tl.to(hand.position, { x: 2.6, y: 1.6, duration: 3.0, ease: "power2.inOut" }, 150);
+      // 162–176 "your nervous system settles ... the tool works, which is why it is costly"
+      // pull back to the cold, blank tabletop
+      tl.to(proxy, { camPush: 0.05, duration: 10, ease: "sine.inOut" }, 162);
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
