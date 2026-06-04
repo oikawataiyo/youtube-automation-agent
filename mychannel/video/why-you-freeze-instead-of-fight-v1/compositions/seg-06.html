@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-06-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 90% 84% at 50% 52%, transparent 50%, rgba(0,0,0,0.36) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg06" data-composition-id="seg06" data-width="1920" data-height="1080" data-start="0" data-duration="64">
+      <audio id="vo" data-start="0" data-duration="64" data-track-index="9"
+             src="../assets/narration/seg-06.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="64" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="64" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-06 Outro — a calmer DAWN callback to the hook's field. The rabbit and
+      // a human figure can move now; warm low sun. A small ladder's marker rises
+      // ONE rung (the only reversal of the descent). My body chose the oldest
+      // option it had.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise, mulberry32 } from "../assets/lib/fx-kit.js";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 64;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.52;
+      const scene = SK.makeScene(11, 32);
+      scene.background = new THREE.Color(0x2a2922); // warm dawn dusk-blue/amber
+
+      // ---- field + warm dawn sun (brighter, warmer than the hook) ------------
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 44),
+        new THREE.MeshStandardMaterial({ color: 0x3a4334, roughness: 1 }));
+      ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+      const horizon = new THREE.Mesh(new THREE.PlaneGeometry(60, 8),
+        new THREE.MeshBasicMaterial({ color: 0xf0b25a, transparent: true, opacity: 0.9 }));
+      horizon.position.set(0, 2.8, -15); scene.add(horizon);
+      const sun = new THREE.Mesh(new THREE.CircleGeometry(1.8, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffd27a }));
+      sun.position.set(2.5, 2.6, -14.8); scene.add(sun);
+
+      // ---- grass (warm-lit, swaying — same field, new light) -----------------
+      const bladeGeo = new THREE.PlaneGeometry(0.05, 0.62);
+      bladeGeo.translate(0, 0.31, 0);
+      const grass = new THREE.InstancedMesh(bladeGeo,
+        new THREE.MeshStandardMaterial({ color: 0x4f5a3c, roughness: 1, side: THREE.DoubleSide }), 1100);
+      grass.castShadow = true;
+      const gb = new Float32Array(1100 * 3);
+      const grng = mulberry32(23);
+      for (let i = 0; i < 1100; i++) {
+        gb[i * 3] = (grng() * 2 - 1) * 11;
+        gb[i * 3 + 1] = -1 + (grng() * 2 - 1) * 6.5;
+        gb[i * 3 + 2] = 0.7 + grng() * 0.9;
+      }
+      scene.add(grass);
+      const dummy = new THREE.Object3D();
+      const { noise2D } = makeNoise(5);
+
+      // ---- the rabbit (able to move now — gentle hops) -----------------------
+      const furMat = new THREE.MeshStandardMaterial({ color: 0x8a7d6c, roughness: 0.9 });
+      const rabbit = new THREE.Group(); rabbit.position.set(0.6, 0, 1.4);
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.34, 8, 16), furMat);
+      body.rotation.z = Math.PI / 2; body.position.set(0, 0.28, 0); body.castShadow = true; rabbit.add(body);
+      const rhead = new THREE.Group(); rhead.position.set(0.42, 0.42, 0); rabbit.add(rhead);
+      rhead.add(new THREE.Mesh(new THREE.SphereGeometry(0.21, 20, 16), furMat));
+      function ear(side) {
+        const e = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.34, 6, 10), furMat);
+        e.position.set(-0.02, 0.32, side * 0.09); e.rotation.z = side * 0.12; rhead.add(e); return e;
+      }
+      const earL = ear(1), earR = ear(-1);
+      scene.add(rabbit);
+
+      // ---- human figure (the viewer — calm, alive) ---------------------------
+      const fig = SK.makeChibi(0xe2cbac, 1.0);
+      fig.group.position.set(-2.6, 1.0, 0.8); fig.group.rotation.y = 0.5; scene.add(fig.group);
+
+      // ---- small ladder callback — marker RISES one rung (the reversal) ------
+      const ladder = new THREE.Group(); ladder.position.set(5.2, 0, -1.5); ladder.rotation.y = -0.5;
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x5a5347, roughness: 0.9 });
+      for (const sx of [-0.5, 0.5]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.08), railMat);
+        rail.position.set(sx, 1.7, 0); ladder.add(rail);
+      }
+      const rungCols = [0x6fae8e, 0xe0a23a, 0xff3a2a, 0x5a6276, 0x4a4f5c]; // arousal..collapse
+      rungCols.forEach((col, i) => {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.1),
+          new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.5, roughness: 0.6 }));
+        bar.position.set(0, 3.0 - i * 0.6, 0); ladder.add(bar);
+      });
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 14),
+        new THREE.MeshStandardMaterial({ color: 0xff7a4a, emissive: 0xff5a2a, emissiveIntensity: 1.0, roughness: 0.4 }));
+      marker.position.set(0.5, 0.6, 0); ladder.add(marker); // starts low (collapse)
+      scene.add(ladder);
+
+      // ---- lights (warm dawn) -------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(3.0, 2.8, -2.0);
+      key.color.set(0xffc27a); key.intensity = 1.7; scene.add(key);
+      const ambient = new THREE.AmbientLight(0x6a6450, 1.05); scene.add(ambient);
+      scene.add(SK.makeFill(1.5));
+
+      // ---- camera: 5 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(-3.4, 1.0, 5.4), posNear: new V(-2.2, 0.95, 4.6), look: new V(0.4, 0.6, 0.6) }, // 0 dawn field wide
+        { pos: new V(-1.4, 1.5, 3.0), posNear: new V(-1.7, 1.45, 2.4), look: new V(-2.4, 1.2, 0.8) },// 1 figure/rabbit able-to-move med
+        { pos: new V(4.0, 1.8, 2.2), posNear: new V(4.4, 1.7, 1.2), look: new V(5.0, 1.6, -1.5) },   // 2 ladder marker-rises insert
+        { pos: new V(0.5, 1.6, 3.4), look: new V(0.5, 2.6, -14) },                                    // 3 warm horizon line
+        { pos: new V(2.6, 2.6, 6.0), posNear: new V(2.2, 2.2, 5.0), look: new V(-0.2, 0.6, 0.6) },    // 4 settle wide pull-back
+      ], 42);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.6, radius: 0.6, threshold: 0.45 });
+
+      // ---- proxy-driven render -----------------------------------------------
+      const proxy = { t: 0, rise: 0 };
+      function render() {
+        for (let i = 0; i < 1100; i++) {
+          const x = gb[i * 3], z = gb[i * 3 + 1], h = gb[i * 3 + 2];
+          dummy.position.set(x, 0, z);
+          dummy.rotation.set(0, 0, 0.45 * noise2D(x * 0.28 + proxy.t * 0.5, z * 0.28));
+          dummy.scale.set(1, h, 1); dummy.updateMatrix();
+          grass.setMatrixAt(i, dummy.matrix);
+        }
+        grass.instanceMatrix.needsUpdate = true;
+        // rabbit gently hops (able to move) — bob + forward drift + ear flick
+        const hop = Math.abs(Math.sin(proxy.t * 1.6));
+        rabbit.position.y = hop * 0.16;
+        rabbit.position.x = 0.6 + Math.sin(proxy.t * 0.4) * 0.5;
+        earL.rotation.z = 0.12 + Math.sin(proxy.t * 2.2) * 0.12;
+        earR.rotation.z = -0.12 - Math.sin(proxy.t * 2.2) * 0.12;
+        // the marker rises ONE rung (collapse -> tonic immobility), the reversal
+        marker.position.y = 0.6 + proxy.rise * 0.6;
+        bloom.strength = 0.55 + proxy.rise * 0.25;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg06 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // gear-change: the marker rises one rung (the descent reverses, once) —
+      // timed to land inside a ladder framing so the reversal is actually seen
+      tl.to(proxy, { rise: 1, duration: 5, ease: "power2.out" }, 21);
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 16, 3.6, [0, 4, 1], true);       // it could keep you alive better than your conscious self
+      cut.auto(16, 40, 3.0, [1, 2, 3, 2], true);     // stillness can be organized (ladder: marker rises one rung)
+      cut.auto(40, END, 3.8, [4, 0, 1, 3], true);    // my body chose the oldest option it had
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg06"] = tl;
+    </script>
+  </body>
+</html>
