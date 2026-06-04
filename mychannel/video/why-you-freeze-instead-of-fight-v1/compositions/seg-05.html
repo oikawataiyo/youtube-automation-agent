@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-05-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 88% 82% at 50% 50%, transparent 48%, rgba(0,0,0,0.4) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg05" data-composition-id="seg05" data-width="1920" data-height="1080" data-start="0" data-duration="158">
+      <audio id="vo" data-start="0" data-duration="158" data-track-index="9"
+             src="../assets/narration/seg-05.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="158" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="158" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-05 — How to Work With a Reflex You Cannot Outvote. A bottom-up arrow
+      // rises from a still body toward a dim brain; a slow exhale waveform crosses
+      // the frame; the cold palette warms around a returning catchlight as the
+      // figure thaws. You signal safety; you don't outvote it.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise, mulberry32 } from "../assets/lib/fx-kit.js";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 158;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(11, 32);
+      const BG_COLD = new THREE.Color(0x101620), BG_WARM = new THREE.Color(0x241d18);
+      scene.background = BG_COLD.clone();
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x303a46, roughness: 0.97 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 14),
+        new THREE.MeshStandardMaterial({ color: 0x262f3a, roughness: 1 }));
+      wall.position.set(0, 6, -4); scene.add(wall);
+
+      // ---- still figure (thaws / releases) -----------------------------------
+      const fig = SK.makeChibi(0xd9c3a6, 0.98);
+      fig.group.position.set(0, 1.0, 0.2); scene.add(fig.group);
+      function poseRelease(f, a) { // a=1 braced -> a=0 released
+        f.armL.sh.rotation.set(-a * 1.2, 0, a * 0.2);
+        f.armR.sh.rotation.set(-a * 1.2, 0, -a * 0.2);
+        f.armL.fore.rotation.x = -a * 1.1;
+        f.armR.fore.rotation.x = -a * 1.1;
+        f.head.rotation.x = a * 0.4;
+      }
+
+      // ---- bottom-up arrow (body -> brain) -----------------------------------
+      const arrowMat = new THREE.MeshStandardMaterial({ color: 0x7fc6a0, emissive: 0x3f8f6a, emissiveIntensity: 0.2 });
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.7, 10), arrowMat);
+      shaft.position.set(0, 1.55, 0.55); scene.add(shaft);
+      const headCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 14), arrowMat);
+      headCone.position.set(0, 2.55, 0.55); scene.add(headCone);
+      // dim brain node the arrow rises toward
+      const brainNode = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 16),
+        new THREE.MeshStandardMaterial({ color: 0x9fb4cf, emissive: 0x46566c, emissiveIntensity: 0.25, roughness: 0.5 }));
+      brainNode.position.set(0, 3.0, 0.2); scene.add(brainNode);
+
+      // rising particles along the arrow (bottom-up flow, pure function of t)
+      const N = 420;
+      const seed = mulberry32(63);
+      const pa = new Float32Array(N * 3);
+      const off = new Float32Array(N); // phase offset per particle
+      for (let i = 0; i < N; i++) { off[i] = seed(); pa[i * 3] = 0; pa[i * 3 + 1] = 0; pa[i * 3 + 2] = 0; }
+      const pgeo = new THREE.BufferGeometry();
+      pgeo.setAttribute("position", new THREE.BufferAttribute(pa, 3));
+      const pts = new THREE.Points(pgeo, new THREE.PointsMaterial({
+        color: 0x9fe0c0, size: 0.07, sizeAttenuation: true,
+        transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+      scene.add(pts);
+      const { noise2D } = makeNoise(23);
+
+      // ---- slow exhale waveform across the frame -----------------------------
+      const wC = document.createElement("canvas"); wC.width = 2048; wC.height = 256;
+      const wX = wC.getContext("2d");
+      const wTex = new THREE.CanvasTexture(wC); wTex.colorSpace = THREE.SRGBColorSpace;
+      const wPlane = new THREE.Mesh(new THREE.PlaneGeometry(9.0, 1.12),
+        new THREE.MeshBasicMaterial({ map: wTex, transparent: true, depthWrite: false }));
+      wPlane.position.set(0, 0.7, -2.2); scene.add(wPlane);
+      function drawWave(t, warm) {
+        wX.clearRect(0, 0, 2048, 256);
+        const col = new THREE.Color(0x6f9fd0).lerp(new THREE.Color(0xf0c98a), warm);
+        wX.strokeStyle = "#" + col.getHexString(); wX.lineWidth = 5; wX.lineJoin = "round";
+        wX.shadowColor = wX.strokeStyle; wX.shadowBlur = 14; wX.beginPath();
+        const breath = 0.5 - 0.5 * Math.cos(t * 0.5); // slow inhale/exhale swell
+        for (let px = 0; px <= 2048; px += 4) {
+          const u = px / 2048;
+          const y = 128 - Math.sin(u * Math.PI * 3 - t * 0.4) * (26 + breath * 56);
+          if (px === 0) wX.moveTo(px, y); else wX.lineTo(px, y);
+        }
+        wX.stroke(); wTex.needsUpdate = true;
+      }
+
+      // ---- warm catchlight (born here — the first warmth) --------------------
+      const catch_ = new THREE.PointLight(0xffcaa0, 0.0, 7, 2);
+      catch_.position.set(0.6, 1.5, 1.2); scene.add(catch_);
+      const ember = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 14),
+        new THREE.MeshBasicMaterial({ color: 0xffd9a8, transparent: true, opacity: 0 }));
+      ember.position.copy(catch_.position); scene.add(ember);
+
+      // ---- lights (cold floor that warms) ------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-2.0, 4.6, 3.0); scene.add(key);
+      const ambient = new THREE.AmbientLight(0x46566c, 0.95); scene.add(ambient);
+      scene.add(SK.makeFill(1.36));
+      const COLD = new THREE.Color("#8b9bb0"), WARM = new THREE.Color("#f0c98a");
+
+      // ---- camera: 6 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.3, 1.7, 5.0), posNear: new V(0.2, 1.6, 4.0), look: new V(0, 1.4, 0.1) },       // 0 still body wide
+        { pos: new V(1.3, 1.9, 2.8), posNear: new V(0.9, 1.85, 2.1), look: new V(0, 2.0, 0.4) },      // 1 bottom-up arrow med
+        { pos: new V(0.0, 0.95, 2.6), posNear: new V(0.0, 0.9, 1.8), look: new V(0, 0.8, -2) },       // 2 exhale waveform across
+        { pos: new V(1.2, 1.5, 1.6), posNear: new V(0.8, 1.5, 1.0), look: new V(0.6, 1.5, 1.2) },     // 3 catchlight birth close
+        { pos: new V(0.7, 1.9, 1.5), posNear: new V(0.3, 1.85, 0.9), look: new V(0, 1.7, 0.2) },      // 4 figure thaws macro
+        { pos: new V(2.8, 1.6, 4.4), posNear: new V(2.3, 1.55, 3.4), look: new V(0, 1.5, 0.1) },      // 5 warm pull-back
+      ], 40);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.6, radius: 0.62, threshold: 0.42 });
+
+      // ---- proxy-driven render -----------------------------------------------
+      const proxy = { t: 0, warm: 0, rise: 0, brace: 1 };
+      function render() {
+        // bottom-up flow: particles climb from base (0.4) to brain (3.0), recycle
+        for (let i = 0; i < N; i++) {
+          const ph = (proxy.t * 0.16 + off[i]) % 1;
+          const y = 0.4 + ph * 2.6;
+          const jx = noise2D(off[i] * 20, proxy.t * 0.3 + i) * 0.12;
+          pa[i * 3] = jx; pa[i * 3 + 1] = y; pa[i * 3 + 2] = 0.55 + jx * 0.4;
+        }
+        pgeo.attributes.position.needsUpdate = true;
+        const ai = 0.2 + proxy.rise * 1.2;
+        arrowMat.emissiveIntensity = ai;
+        brainNode.material.emissiveIntensity = 0.25 + proxy.rise * 0.6;
+        // figure releases the brace
+        poseRelease(fig, proxy.brace);
+        // warmth grade (the first warmth) — light, bg, catchlight all warm together
+        SK.warmLight(key, ambient, proxy.warm, COLD, WARM);
+        scene.background.copy(BG_COLD).lerp(BG_WARM, proxy.warm);
+        catch_.intensity = proxy.warm * 2.6;
+        ember.material.opacity = proxy.warm;
+        drawWave(proxy.t, proxy.warm);
+        bloom.strength = 0.55 + proxy.warm * 0.4;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg05 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // bottom-up before top-down: the arrow/flow strengthens first
+      tl.to(proxy, { rise: 1, duration: 26, ease: "sine.inOut" }, 28);
+      // cues of safety: the figure slowly releases the brace
+      tl.to(proxy, { brace: 0.35, duration: 40, ease: "sine.inOut" }, 60);
+      // gear-change: the first warmth is born and the palette grades warm
+      tl.to(proxy, { warm: 1, duration: 34, ease: "sine.inOut" }, 104);
+      tl.to(proxy, { brace: 0.12, duration: 24, ease: "sine.inOut" }, 120);
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 32, 3.8, [0, 5, 1], true);      // humility: you work from the body upward
+      cut.auto(32, 72, 3.6, [1, 2, 0, 4], true);    // bottom-up before top-down
+      cut.auto(72, 116, 3.6, [2, 4, 3, 1], true);   // cues of safety, a slower exhale
+      cut.auto(116, END, 3.8, [3, 4, 5, 0], true);  // make your body believe the danger is gone
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg05"] = tl;
+    </script>
+  </body>
+</html>
