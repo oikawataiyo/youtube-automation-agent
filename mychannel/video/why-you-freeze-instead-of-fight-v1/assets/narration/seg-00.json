@@ -1,0 +1,9 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-00.txt",
+  "duration_seconds": 21.93,
+  "generated_at": "2026-06-04T22:32:31.455445+00:00",
+  "engine": "kokoro-82M",
+  "sample_rate": 24000
+}
