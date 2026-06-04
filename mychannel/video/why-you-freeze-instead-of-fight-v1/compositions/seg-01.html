@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-01-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 82% at 50% 46%, transparent 44%, rgba(0,0,0,0.5) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg01" data-composition-id="seg01" data-width="1920" data-height="1080" data-start="0" data-duration="150">
+      <audio id="vo" data-start="0" data-duration="150" data-track-index="9"
+             src="../assets/narration/seg-01.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="150" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="150" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-01 — The Defense Cascade. A literal descending ladder: AROUSAL ·
+      // FIGHT/FLIGHT · FREEZE · TONIC IMMOBILITY · COLLAPSE (chalk labels). A red
+      // marker bead drops past the bright amber middle rung into the unlit lower
+      // rungs. Fight-or-flight is only the middle rung.
+      import * as THREE from "three";
+      import { makeBloomComposer, mulberry32 } from "../assets/lib/fx-kit.js";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 150;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(12, 34);
+      scene.background = new THREE.Color(0x0f131a);
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2b323d, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+      // ---- chalk label helper (seeded jitter → CanvasTexture) ----------------
+      function chalkLabel(text, hex, seed) {
+        const c = document.createElement("canvas"); c.width = 1024; c.height = 192;
+        const x = c.getContext("2d");
+        const rnd = mulberry32(seed);
+        x.font = '700 104px "Helvetica Neue", Arial, sans-serif';
+        x.textAlign = "center"; x.textBaseline = "middle";
+        x.fillStyle = hex;
+        for (let p = 0; p < 3; p++) {
+          x.globalAlpha = p === 0 ? 1 : 0.3;
+          x.fillText(text, 512 + (rnd() * 2 - 1) * 3, 96 + (rnd() * 2 - 1) * 3);
+        }
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+
+      // ---- the ladder: two rails + 5 rungs, top→bottom cascade ---------------
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x4a5360, roughness: 0.9 });
+      for (const sx of [-1.15, 1.15]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 5.4, 0.12), railMat);
+        rail.position.set(sx, 3.1, -1.0); rail.castShadow = true; scene.add(rail);
+      }
+
+      // rungs: { y, label, color, lit }  (lit rungs glow + bloom; lower rungs dark)
+      const rungs = [
+        { y: 5.0, label: "AROUSAL",          col: 0x6fae8e, lit: 0.9 },
+        { y: 4.0, label: "FIGHT / FLIGHT",   col: 0xe0a23a, lit: 1.0 }, // the bright middle
+        { y: 3.0, label: "FREEZE",           col: 0xff3a2a, lit: 0.85 },
+        { y: 2.0, label: "TONIC IMMOBILITY", col: 0x3f4f68, lit: 0.18 },
+        { y: 1.0, label: "COLLAPSE",         col: 0x313847, lit: 0.10 },
+      ];
+      const rungMeshes = [];
+      rungs.forEach((r, i) => {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.16, 0.16),
+          new THREE.MeshStandardMaterial({ color: r.col, emissive: r.col,
+            emissiveIntensity: r.lit, roughness: 0.6 }));
+        bar.position.set(0, r.y, -1.0); bar.castShadow = true; scene.add(bar);
+        rungMeshes.push(bar);
+        // chalk label floating just behind+right of the rung
+        const lab = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.56),
+          new THREE.MeshBasicMaterial({ map: chalkLabel(r.label, "#cdd7e2", 40 + i * 7),
+            transparent: true, depthWrite: false, opacity: r.lit > 0.4 ? 0.96 : 0.4 }));
+        lab.position.set(0, r.y + 0.42, -1.35); scene.add(lab);
+      });
+
+      // red marker bead that drops down the rail
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 16),
+        new THREE.MeshStandardMaterial({ color: 0xff3a2a, emissive: 0xff2a1a,
+          emissiveIntensity: 1.2, roughness: 0.4 }));
+      marker.position.set(1.15, 5.2, -0.9); scene.add(marker);
+      const markerLight = new THREE.PointLight(0xff4a30, 2.2, 5, 2);
+      markerLight.position.copy(marker.position); scene.add(markerLight);
+
+      // figure (chibi) at the foot of the ladder, looking up
+      const fig = SK.makeChibi(0xd9c3a6, 0.92);
+      fig.group.position.set(0, 1.0, 1.7); fig.group.rotation.y = Math.PI; scene.add(fig.group);
+      fig.head.rotation.x = -0.32; // gaze up the ladder
+
+      // ---- lights (cold) ------------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-2.0, 5.4, 2.6); key.intensity = 0.85; scene.add(key);
+      const ambient = new THREE.AmbientLight(0x46566c, 0.95); scene.add(ambient);
+      scene.add(SK.makeFill(1.3));
+
+      // ---- camera: 5 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.2, 3.0, 7.4), posNear: new V(0.15, 3.0, 6.0), look: new V(0, 3.0, -1) },     // 0 ladder full wide
+        { pos: new V(-2.4, 4.6, 3.6), look: new V(0.6, 4.4, -1) },                                   // 1 top rungs (arousal/amber)
+        { pos: new V(1.9, 3.1, 2.2), posNear: new V(1.4, 3.05, 1.5), look: new V(0.2, 3.0, -1) },    // 2 marker macro on FREEZE
+        { pos: new V(-1.8, 1.7, 3.0), look: new V(0.4, 1.4, -1) },                                   // 3 tilt-down into lower rungs
+        { pos: new V(2.6, 1.5, 4.4), posNear: new V(2.1, 1.4, 3.4), look: new V(0, 2.4, -0.4) },     // 4 figure at foot pull-back
+      ], 42);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.85, radius: 0.62, threshold: 0.4 });
+
+      // ---- marker descent (pure function of t via proxy) ---------------------
+      const proxy = { t: 0, drop: 0 }; // drop 0..1 maps marker y 5.2 -> 1.05
+      function render() {
+        const y = 5.2 - proxy.drop * 4.15;
+        marker.position.y = y; markerLight.position.y = y;
+        // freeze rung pulses red once the marker reaches it
+        const atFreeze = Math.max(0, 1 - Math.abs(y - 3.0) / 1.2);
+        rungMeshes[2].material.emissiveIntensity = 0.85 + atFreeze * 0.9;
+        bloom.strength = 0.8 + atFreeze * 0.4;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg01 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // the marker steps down the cascade across the segment (arousal→below)
+      tl.to(proxy, { drop: 0.20, duration: 22, ease: "power1.in" }, 18);   // past arousal
+      tl.to(proxy, { drop: 0.48, duration: 26, ease: "sine.inOut" }, 52);  // past the amber middle
+      tl.to(proxy, { drop: 0.74, duration: 24, ease: "power2.in" }, 92);   // into freeze
+      tl.to(proxy, { drop: 1.0,  duration: 22, ease: "sine.inOut" }, 122); // into the unlit lower rungs
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 30, 3.8, [0, 4, 1], true);     // the wrong map: two clean options
+      cut.auto(30, 72, 3.6, [1, 0, 2, 4], true);   // an ordered sequence of survival states
+      cut.auto(72, 112, 3.6, [2, 3, 0, 1], true);  // freeze is below fight-or-flight
+      cut.auto(112, END, 3.8, [3, 4, 0], true);    // states your willpower does not vote on
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg01"] = tl;
+    </script>
+  </body>
+</html>
