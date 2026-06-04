@@ -6,11 +6,23 @@ origin: custom
 
 # Psychology Video Batch (Demand → Script → Bespoke Video)
 
-`scripts/analyze-psychology-demand.js` のdemand分析を起点に、未使用pillar/topicのlong-form psychology台本(9分前後 / 1700語前後)をbatch生成し、各台本を **survivorship-v2式の seg毎bespoke HTML composition** に起こして、Kokoro音声 + word-level caption付きで render するまでを通す。
+`scripts/analyze-psychology-demand.js` のdemand分析を起点に、未使用pillar/topicのlong-form psychology台本(9分前後 / 1700語前後)をbatch生成し、各台本を **seg毎bespoke HTML composition**(既定 = 3D importmap pipeline、構造/caption は survivorship-v2 式)に起こして、Kokoro音声 + word-level caption付きで render するまでを通す。
 
 **実際の工程順**: 台本生成 → scaffold/design → **音声 + word timing(words.js)生成** → **bespoke HTML composition(captionをwords.jsにwiring)** → render/concat。**音声がHTMLより先**なのは、caption の active-word emphasis に word-level timing(`seg-NN-words.js`)が必要だから(HTMLを先に組むと caption を後から差し込めない)。
 
 **前半(Phase 1-5)= 台本生成**、**後半(Phase 6-10)= 動画化**。台本だけ欲しい時はPhase 5で止めてよい。
+
+## 既定の映像方式（2026-06 以降の default）
+
+動画化の既定は **three.js + bloom / seeded simplex-noise / rough.js を importmap で載せた 3D composition**(正本 = `your-anxiety-is-a-threat-forecast-v1`)。各 seg は `scene-kit.js`(3D scene/chibi/camera/caption) + `fx-kit.js`(bloom/noise/rough) を**動画フォルダにコピー**して組む(per-video copy。完成動画を凍結し再 render で壊さないため。共有 lib 化は将来の別タスク)。
+
+**最重要の演出規律 = 退屈にしない**:
+- **同一 framing を 4 秒以上 hold しない**。`makeCameraRig` + `makeCutter.auto(from,to,dur,frames,dolly)` で `dur≤4` の hard cut を全 seg に敷く。**3D seg は framing を 5 種以上**用意する。
+- **同一 framing 中も静止させない**。dolly push / simplex displacement / motif animation で被写体を常時動かす。「動かない 4 秒」も禁止(=ほぼ同じ絵の継続を作らない)。
+- **暗くしない**。`warmLight` + `makeFill` の floor、exposure ~1.5、bloom `threshold~0.4`(明部だけ光らせ白飛び回避)。
+- 2D/SVG seg(例: `depression-is-a-prediction-error-v1` seg-05 blueprint)も**可**。ただし上記の ≤4s / 常時変化 / 明るさ ルールは 2D にも同じく適用する。
+
+詳細 recipe は Phase 8。新規 library を足す時は Phase 8 の **Phase-0 spike gate** を必ず通す。
 
 ## When to Activate
 
@@ -62,6 +74,7 @@ PowerShell tool で `grep` を含む bash block を流さない(逆も同様)。
 8. **ffmpeg**: `ffmpeg -version`(concatに必須)
 9. **Kokoro TTS toolchain**: `uv --version`(`generate-kokoro-narration.py` を `uv run --with kokoro==0.7.16` で起動するため)
 10. **Whisper**: `python -c "import whisper"`(`small.en` model使用)
+11. **3D importmap pipeline**: install不要(three 0.160 + addons + simplex-noise@4 + roughjs@4.6.6 は `<script type="importmap">` で CDN map)。正本 `your-anxiety-is-a-threat-forecast-v1` の `assets/lib/{scene-kit,fx-kit}.js` が存在し render 済(=過去に成功)を確認。**新規 library を足す時のみ** Phase 8 の Phase-0 spike gate を通す。
 
 欠落時は代替(手動wav配置等)をuserと合意してから次へ。
 
@@ -177,11 +190,16 @@ git push
 
 ## Phase 6 — Scaffold + design.md (Claude直接)
 
-1. **project scaffold**: `mychannel/video/<slug>-v1/` を `survivorship-v2` 構造で作成 — `package.json`(hyperframes@0.6.63), `meta.json`, `hyperframes.json`, `assets/narration/`, `compositions/`, `CLAUDE.md`(survivorship規約copy)。
+1. **project scaffold**: `mychannel/video/<slug>-v1/` を作成 — `package.json`(hyperframes@0.6.63), `meta.json`, `hyperframes.json`, `assets/narration/`, `compositions/`, `CLAUDE.md`(規約copy)。
+   - **3D kit をコピー**: 正本 `your-anxiety-is-a-threat-forecast-v1/assets/lib/{scene-kit.js,fx-kit.js}` を `assets/lib/` に**verbatim copy**(per-video copy)。
    - narration txt を `assets/narration/00-hook.txt` … `NN-<slug>.txt` に segment分割して書き出す(source JSON の hook/sections/outro から)。
-2. **design.md 作成**: palette(動画topicに合わせ、回復系なら1段階grade)、type stack、motion grammar、Phase 2 描画設計blockを per-scene visual register に転記。
+2. **design.md 作成**(正本 = anxiety-v1 の `design.md`)。以下を必ず含める:
+   - **unifying motif**(全seg共通の視覚through-line。例: weather/forecast)+ palette(cold baseline → seg後半で warm へ1段 grade。BG/COLD/accent/DAYLIGHT を hex で)。
+   - **global rules**: `composer.render()`(bloom)を `gsap.timeline({onUpdate})` 内で / `window.THREE=THREE` を SceneKit 呼出前 / 非決定論禁止(`Date.now`/`Math.random`/`rAF` 不可、seed固定 mulberry32) / 各 composition が importmap を宣言。
+   - **per-seg brief** に **framing register を明記**: 各 3D seg に **framing 5 種以上**を1行ずつ列挙し、`makeCutter.auto(...,dur≤4,...)` で回す前提を書く。各 seg に **gear-change**(画が一段変わる瞬間)1回以上、**反復motif**の再登場、**brightness floor**(exposure~1.5 / `warmLight` / `makeFill`)、**bloom threshold~0.4** を register に転記。
+   - Phase 2 の描画設計block(具象物 / PLAYBOOK axis / motif / gear-change)を per-seg visual register に落とす。
 
-**完了判定**: scaffold一式 + narration txt + design.md が存在し、CSSが旧13本とbyte非一致(汎用template由来でない)。
+**完了判定**: scaffold一式 + `assets/lib/{scene-kit,fx-kit}.js` + narration txt + design.md が存在し、design.md に各segの framing register(5種以上・≤4s明記)がある。CSSが旧13本とbyte非一致(汎用template由来でない)。
 
 ## Phase 7 — 音声 + word-level caption (npm script / Claude直接)
 
@@ -202,18 +220,43 @@ npm run video:produce -- mychannel/video/<slug>-v1 --skip-build
 
 ## Phase 8 — Bespoke Composition Build (Claude直接 / seg単位)
 
-各segを `compositions/seg-NN.html` で**手書き**。`survivorship-v2` と `depression-is-a-prediction-error-v1` を worked example として参照。**必ず `/hyperframes` `/gsap` skill を先に開く**(framework規約は generic web docs に無い)。
+各segを `compositions/seg-NN.html` で**手書き**。正本 = `your-anxiety-is-a-threat-forecast-v1`(3D importmap)。2D seg は `depression-is-a-prediction-error-v1` seg-05 を参照。**必ず `/hyperframes` `/gsap` `/three` skill を先に開く**(framework規約は generic web docs に無い)。
 
-各 seg の作り方:
-- design.md の visual register(Phase 2 描画設計block)を SVG/DOM + GSAP に翻訳。**描画核 = その seg の意味の符号化**(例: 「予測符号化への反転」= SEROTONIN poster を剥がすと予測式)。
-- caption は `seg-NN-words.js` を読み、active word を marker emphasis(survivorship `#caps` 方式)。`<audio data-track-index>` で seg-NN.wav を鳴らす。
-- hyperframes規約: 全timed要素に `data-start/data-duration/data-track-index` + `class="clip"`、timeline は `paused` で `window.__timelines["<id>"]` 登録、非決定論禁止(`Date.now`/`Math.random` 不可、seed固定 mulberry32)。
-- 制約: 固定hold>15s禁止、反復motif有り、gear-change 1回/seg、7 seg全て描画核が相異なる(使い回し禁止)。
+### 既定の 3D composition recipe（importmap + module）
+1. **head に importmap**(three は1 instanceに固定):
+   ```html
+   <script type="importmap">{ "imports": {
+     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+     "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+     "simplex-noise": "https://unpkg.com/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+     "roughjs": "https://unpkg.com/roughjs@4.6.6/bundled/rough.esm.js"
+   }}</script>
+   ```
+2. **`gsap` は UMD `<script src>`**、**`scene-kit.js` は classic IIFE `<script src>`**(THREE 参照は遅延)。**`fx-kit.js` は `<script type="module">` で import**。
+3. module 冒頭で **`import * as THREE from "three"; window.THREE = THREE;`** を **SceneKit 呼出前**に実行(L8)。
+4. **render は `composer.render()`**(`fx-kit` の `makeBloomComposer`)を `gsap.timeline({ paused:true, onUpdate(){ rig.apply(); /*proxy→scene*/ composer.render(); } })` 内で呼ぶ。`renderer.render` は使わない。
+5. caption は `seg-NN-words.js` を読み active word を marker emphasis。`<audio data-track-index>` で seg-NN.wav を鳴らす。timeline は `window.__timelines["<id>"]` 登録。
+
+### 退屈にしない hard rule（user 確定 / 最優先）
+- **同一 framing を 4 秒以上 hold しない**: `const rig = SK.makeCameraRig(presets/*5+*/); const cut = SK.makeCutter(tl, rig.state);` → `cut.auto(0, END, 4, [0,1,2,3,4], /*dolly*/true)` で seg 全尺を ≤4s の hard cut で割る。**3D seg は presets 5 種以上**。
+- **同一 framing 中も静止させない**: dolly push(`makeCutter` の dolly 引数)/ simplex displacement(`pos_i(t)`)/ motif animation のいずれかで被写体を常時動かす。「動かない 4 秒」も NG(=ほぼ同じ絵の継続禁止)。
+- **暗くしない**: `SK.warmLight(key, ambient, warm, COLD, WARM)` + `SK.makeFill(~1.3)` の floor、`renderer.toneMappingExposure ~1.5`、bloom `threshold~0.4` + 控えめ `strength`(0.5-1.2)で白飛び回避(L10)。寄り画は camera を引き発光体で画面を埋めない。暗 object は rim/catchlight を当てる。
+- 反復motif有り / gear-change 1回以上/seg / **全 seg 描画核が相異なる**(使い回し禁止)。**描画核 = その seg の意味の符号化**(例: 「予測への反転」= poster を剥がすと予測式)。
+
+### 再利用パターン（anxiety-v1 で実証 / 流用可）
+- **rough.js → CanvasTexture**: rough を `canvas` に**固定 seed で1回 bake** → `THREE.CanvasTexture` に貼る。3D camera に勝手に追従し決定論的(`?`-door / chalk DANGER·SAFE / brass dial)。
+- **simplex flow-field**: 粒子 i の位置を **`pos_i(t)=base+amp*noise3D(...)+storm*(base-center)`** の **t の純関数**にする(seek 安全。HERO 例 = seg-03 の透明 body から storm)。
+- **chalk text** = jittered `fillText`(seeded)で手描き感。**cold→warm** = `warmLight` の warm を 0→1 tween + emissive を上げる。
+
+### Phase-0 spike gate（新規 library を足す時のみ必須）
+新しい lib(別 addon 等)を導入する前に **使い捨て probe を headless render**し、**並列 worker(各自 seek)で同一 frame が出る=決定論/seek 安全**を実証してから本番 seg を作る。実証前に7 seg 量産しない。
 
 ### 描画の hard rules（過去に踏んだ地雷）
-- **DOM mutation は seek-safe にする**: timeline 内で `textContent` 等を変える時、GSAP `.call()` は**使わない**。deterministic render は非単調(後退)seek するが `.call` の副作用は後退で巻き戻らず固着する(seg-04でcounter末尾値が全時刻に出た)。**interpolated proxy object + `onUpdate` tween** を使う(これは seek-reversible)。build時に1回だけ設定する静的textContentはOK。
-- **`repeat:-1`(無限repeat)禁止** — lint error `gsap_infinite_repeat`。deterministic renderer が禁じる。
-- **DrawSVGPlugin は未load**(premium)。SVG path reveal は `stroke-dasharray` + `stroke-dashoffset` tween(`getTotalLength()`)で代替。
+- **非決定論禁止**: `Date.now`/`Math.random`/`performance.now`/`rAF` 不可。乱数は seed 固定 `mulberry32`(`fx-kit`)。noise/bloom は timeline proxy の `t`/値から駆動。
+- **DOM/値 mutation は seek-safe に**: timeline 内で `textContent` 等を変える時 GSAP `.call()` は**使わない**(後退 seek で副作用が固着。seg-04 で counter 末尾値が全時刻に出た)。**proxy object + `onUpdate` tween** を使う。build 時1回の静的 textContent は OK。
+- **`repeat:-1`(無限repeat)禁止** — lint error `gsap_infinite_repeat`。有限回 `repeat: Math.ceil(dur/cycle)-1` を計算して渡す(L9)。
+- **DrawSVGPlugin は未load**(premium)。SVG path reveal は `stroke-dasharray`+`stroke-dashoffset` tween(`getTotalLength()`)で代替。
+- 全 timed 要素に `data-start/data-duration/data-track-index` + `class="clip"`。
 
 ### seg完了ごとの check + render + commit
 
@@ -244,8 +287,9 @@ ffmpeg -ss <t> -i renders/seg-NN.mp4 -frames:v 1 -y renders/_frames/sNN-<t>.png 
 - **re-render後は必ず frame を取り直す**(古いPNGはstale。修正前の画を見て「直ってない」と誤判定した事故あり)。
 - preview MCP は使わない(port競合)。
 - 3時刻程度(序/中/終)で要素重なり無し・判読可能・citation on cue を確認。
+- **≤4s ルール検証**: 4 秒以内差の **近接2時刻**(例 t=10.0/13.5)を取り、**framing か被写体が明確に変化**していることを確認。同じ絵なら hold 過長 → `makeCutter.auto` の `dur` か intra-shot 動きを直す。
 
-**完了判定**: 7 seg(hook含む)全て lint error 0 + frame検証で描画核が相異なる。
+**完了判定**: 全 seg(hook含む)lint error 0 + frame検証で描画核が相異なる + ≤4s 検証で「動かない4秒」が無い。
 
 ## Phase 9 — Render concat (Claude直接 / background。codex委譲しない)
 
@@ -279,7 +323,11 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 | Codex stdin | background起動は `</dev/null` 必須。無いと無限 hang |
 | Codex output | path + word_count + duration の数行のみ返却。full diff 禁止 |
 | 動画化の自動build | `video:produce` は **`--skip-build` 必須**。`build-wordlevel-video.js` の自動index.html再生成は使わない |
-| 描画核 | seg毎bespoke。7 seg全て相異なる。汎用折れ線graph/同一CSS/同一seed禁止 |
+| 描画核 | seg毎bespoke。全 seg 相異なる。汎用折れ線graph/同一CSS/同一seed禁止 |
+| 退屈にしない(最優先) | 同一 framing hold **≤4s**(`makeCutter.auto` dur≤4)・**3D seg は framing 5種以上**・同一framing中も dolly/simplex/motif で常時変化(「動かない4秒」も禁止)・gear-change 1回以上/seg |
+| 3D loading | importmap で three 0.160+addons+simplex-noise+roughjs を map。`fx-kit` は module import、`gsap`/`scene-kit` は UMD/classic。`window.THREE=THREE` を SceneKit 呼出前。render は `composer.render()` を onUpdate 内 |
+| 明るさ/bloom | `warmLight`+`makeFill(~1.3)` floor・exposure~1.5・bloom `threshold~0.4`+控えめ strength(0.5-1.2)。寄り画は camera 引く・暗 object は rim/catchlight |
+| 新規 library | 導入前に Phase-0 spike(headless + 並列 worker seek)で決定論実証。未実証で量産禁止 |
 | DOM mutation | timeline内のtextContent等は proxy+onUpdate。`.call()` での mutation 禁止(seek-unsafe) |
 | check gate | 最終確認は `npm run check`(lint && validate && inspect)。長尺で inspect timeout 時のみ lint+validate 直叩き+frame QA で代替。lint は project単位(単一file path禁止)・audio false-positive を grep除外 |
 | frame検証 | re-render後は必ず取り直す。`renders/_frames/` に出す。preview MCP不可 |
@@ -290,6 +338,10 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 
 - **完成台本を文脈なしの汎用template-fillerに渡す**(旧13本が全部同じ描画になった root cause)
 - **`video:produce` を `--skip-build` 無しで実行**(自動motif再生成で template地獄に逆戻り)
+- **同一 framing/被写体を 4 秒以上 hold する**(退屈。≤4s で切るか intra-shot で動かす。user 確定の最優先 rule)
+- **three の addon(bloom 等)を UMD `<script src>` で載せようとする**(r149 以降 `examples/js/` 不在。importmap + module が正解。L8)
+- **bloom 白飛び**: 寄りすぎ+強 point light+高 bloom で画面飽和(threshold↑ strength↓ camera引く。L10)。暗 object に寄って真っ黒 blob
+- **新規 library を Phase-0 spike 無しで本番投入**(決定論/seek 未実証のまま7 seg 量産)
 - timeline内で `.call()` で DOM mutation(後退seekで固着する)
 - `npx hyperframes lint <single-file.html>`("Not a directory" error。pathを渡さず project全体をlint)
 - re-render後に古い `_frames` PNG を信用する(stale)
@@ -308,8 +360,10 @@ seg単位でcommit済みなら、残り(design.md / concat.txt / production-note
 - `tasks/script-spec-A.md` — topic spec template(Libet)
 - `tasks/hyperframes-video-production-flow.md` — npm script flow(`video:produce` 等)の詳細
 - `data/scripts/1779639127625_survivorship-bias-is-ruining-your-decisions.json` — schema/voice reference
-- `mychannel/video/survivorship-v2/` — bespoke composition の正本(描画 register / caption wiring / 構造)
-- `mychannel/video/depression-is-a-prediction-error-v1/` — 直近の worked example(seg毎bespoke, seek-safe counter, ffmpeg concat)
+- **`mychannel/video/your-anxiety-is-a-threat-forecast-v1/` — 3D importmap pipeline の正本**(`design.md` = framing register/motif の書き方、`assets/lib/fx-kit.js` = bloom/noise/rough helper、`assets/lib/scene-kit.js` = `makeCameraRig`/`makeCutter`/`warmLight`/`makeFill`)
+- `mychannel/video/survivorship-v2/` — caption wiring / 構造の正本
+- `mychannel/video/depression-is-a-prediction-error-v1/` — 2D/SVG seg の worked example(seek-safe counter, ffmpeg concat)
+- `tasks/lessons.md` L8(importmap/bloom)・L9(gsap 有限 repeat)・L10(bloom 白飛び)・L5-L7(render 直列/cwd/pipe)
 - `mychannel/visual-methodology/` — 岡田式 PLAYBOOK(axis技法 / 原則)
 - `scripts/analyze-psychology-demand.js` — demand pipeline entry
 - `scripts/produce-video-project.js` / `generate-kokoro-narration.py` / `transcribe-word-timings.py` — 音声/transcript の機械工程
