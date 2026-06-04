@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-03-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 82% at 50% 48%, transparent 46%, rgba(0,0,0,0.46) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg03" data-composition-id="seg03" data-width="1920" data-height="1080" data-start="0" data-duration="160">
+      <audio id="vo" data-start="0" data-duration="160" data-track-index="9"
+             src="../assets/narration/seg-03.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="160" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="160" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-03 — The Industry of Self-Blame. A glossy "JUST WALK AWAY" poster
+      // peels off a wall to reveal a brain where the fast amygdala low-road
+      // flares BEFORE the cortex lights. A still figure stands in a doorway.
+      import * as THREE from "three";
+      import { makeBloomComposer } from "../assets/lib/fx-kit.js";
+      import rough from "roughjs";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 160;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(12, 34);
+      scene.background = new THREE.Color(0x0f131a);
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(44, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2a313c, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(44, 16),
+        new THREE.MeshStandardMaterial({ color: 0x242c35, roughness: 1 }));
+      wall.position.set(0, 6, -4.0); wall.receiveShadow = true; scene.add(wall);
+
+      // ---- brain diagram behind the poster (rough.js) ------------------------
+      function brainTex() {
+        const c = document.createElement("canvas"); c.width = 1024; c.height = 768;
+        const x = c.getContext("2d"); const rc = rough.canvas(c);
+        x.fillStyle = "#1b222b"; x.fillRect(0, 0, 1024, 768);
+        // brain silhouette (lobed blob)
+        rc.path(
+          "M250 430 C200 300 330 200 470 220 C560 150 760 200 760 330 C840 380 800 520 700 540 C660 620 470 640 410 560 C300 560 270 500 250 430 Z",
+          { seed: 7, stroke: "#7f8da0", strokeWidth: 4, roughness: 1.8, fill: "#222b36", fillStyle: "solid" });
+        // cortex arc (top)
+        rc.arc(510, 360, 520, 300, Math.PI * 1.05, Math.PI * 1.95, false,
+          { seed: 9, stroke: "#9fb4cf", strokeWidth: 3, roughness: 1.6 });
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+      const brain = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.55),
+        new THREE.MeshBasicMaterial({ map: brainTex() }));
+      brain.position.set(-0.6, 3.2, -3.5); scene.add(brain);
+
+      // amygdala node (fast low-road, flares first) + sensory entry + low-road line
+      const amyg = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 16),
+        new THREE.MeshStandardMaterial({ color: 0xff3a2a, emissive: 0xff2a1a, emissiveIntensity: 0.0, roughness: 0.4 }));
+      amyg.position.set(-1.0, 2.85, -3.25); scene.add(amyg);
+      const amygLight = new THREE.PointLight(0xff4326, 0.0, 5, 2);
+      amygLight.position.copy(amyg.position); scene.add(amygLight);
+      const sensory = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 12),
+        new THREE.MeshStandardMaterial({ color: 0x9fc0ff, emissive: 0x6f9fd0, emissiveIntensity: 0.6 }));
+      sensory.position.set(-2.0, 2.4, -3.25); scene.add(sensory);
+      const lowRoad = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.0, 8),
+        new THREE.MeshStandardMaterial({ color: 0xff6a4a, emissive: 0xff3a2a, emissiveIntensity: 0.0 }));
+      // orient cylinder between sensory and amyg
+      {
+        const a = sensory.position, b = amyg.position;
+        const mid = a.clone().add(b).multiplyScalar(0.5); lowRoad.position.copy(mid);
+        const dir = b.clone().sub(a); lowRoad.scale.y = dir.length();
+        lowRoad.quaternion.setFromUnitVectors(new V(0, 1, 0), dir.clone().normalize());
+      }
+      scene.add(lowRoad);
+      // cortex node (slow, lights later, cooler)
+      const cortex = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 16),
+        new THREE.MeshStandardMaterial({ color: 0x9fc6ff, emissive: 0x6f9fd0, emissiveIntensity: 0.0, roughness: 0.5 }));
+      cortex.position.set(-0.2, 3.7, -3.25); scene.add(cortex);
+
+      // ---- glossy "JUST WALK AWAY" poster that peels off (pivot at top edge) --
+      function posterTex() {
+        const c = document.createElement("canvas"); c.width = 1024; c.height = 768;
+        const x = c.getContext("2d");
+        const g = x.createLinearGradient(0, 0, 0, 768);
+        g.addColorStop(0, "#eef2f6"); g.addColorStop(1, "#cdd6e0");
+        x.fillStyle = g; x.fillRect(0, 0, 1024, 768);
+        const rc = rough.canvas(c);
+        rc.rectangle(40, 40, 944, 688, { seed: 3, stroke: "#2b3a4d", strokeWidth: 6, roughness: 1.2 });
+        x.fillStyle = "#23303f"; x.textAlign = "center"; x.textBaseline = "middle";
+        x.font = '800 130px "Helvetica Neue", Arial, sans-serif';
+        x.fillText("JUST", 512, 250); x.fillText("WALK", 512, 390); x.fillText("AWAY", 512, 530);
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+      const posterPivot = new THREE.Group();
+      posterPivot.position.set(-0.6, 4.55, -2.9); scene.add(posterPivot); // top edge of poster
+      const poster = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2.7),
+        new THREE.MeshStandardMaterial({ map: posterTex(), roughness: 0.35, metalness: 0.1, side: THREE.DoubleSide }));
+      poster.position.set(0, -1.35, 0); posterPivot.add(poster);
+
+      // ---- doorway + still figure (the recurring motif) ----------------------
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 0.9 });
+      const doorway = new THREE.Group(); doorway.position.set(3.6, 0, -1.2);
+      for (const sx of [-0.95, 0.95]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 4.2, 0.3), frameMat);
+        post.position.set(sx, 2.1, 0); post.castShadow = true; doorway.add(post);
+      }
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.26, 0.3), frameMat);
+      lintel.position.set(0, 4.2, 0); doorway.add(lintel);
+      const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 4.0),
+        new THREE.MeshBasicMaterial({ color: 0x223043 }));
+      doorGlow.position.set(0, 2.1, -0.16); doorway.add(doorGlow);
+      scene.add(doorway);
+      const fig = SK.makeChibi(0xd9c3a6, 0.92);
+      fig.group.position.set(3.6, 1.0, -1.0); fig.group.rotation.y = Math.PI; scene.add(fig.group);
+
+      // ---- lights (cold) ------------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-2.2, 5.2, 2.8); key.intensity = 0.9; scene.add(key);
+      scene.add(new THREE.AmbientLight(0x46566c, 0.98));
+      scene.add(SK.makeFill(1.32));
+
+      // ---- camera: 6 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(4.0, 2.2, 5.6), posNear: new V(3.4, 2.1, 4.6), look: new V(1.4, 1.9, -1) },     // 0 figure-in-doorway wide
+        { pos: new V(-0.6, 3.2, 3.0), posNear: new V(-0.6, 3.2, 2.0), look: new V(-0.6, 3.2, -3) },  // 1 poster med (slogan)
+        { pos: new V(1.0, 4.0, 1.8), look: new V(-0.8, 3.4, -3) },                                    // 2 poster peel macro
+        { pos: new V(-1.6, 2.85, 1.4), posNear: new V(-1.5, 2.85, 0.4), look: new V(-1.0, 2.8, -3) }, // 3 amygdala flare close
+        { pos: new V(-0.2, 3.7, 1.6), look: new V(-0.5, 3.4, -3) },                                   // 4 cortex-lags reveal
+        { pos: new V(2.4, 2.6, 4.8), posNear: new V(2.0, 2.4, 3.8), look: new V(0.4, 2.6, -2) },      // 5 pull-back doorway
+      ], 42);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.78, radius: 0.62, threshold: 0.4 });
+
+      // ---- proxy-driven render -----------------------------------------------
+      const proxy = { t: 0, peel: 0, amyg: 0, cortex: 0 };
+      function render() {
+        posterPivot.rotation.x = proxy.peel * 1.95;   // poster curls forward off the wall
+        poster.material.opacity = 1; poster.visible = proxy.peel < 0.999;
+        amyg.material.emissiveIntensity = proxy.amyg * 1.6;
+        amygLight.intensity = proxy.amyg * 2.4;
+        lowRoad.material.emissiveIntensity = proxy.amyg * 1.4;
+        cortex.material.emissiveIntensity = proxy.cortex * 1.0;
+        bloom.strength = 0.7 + proxy.amyg * 0.5;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg03 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // poster peels off mid-segment
+      tl.to(proxy, { peel: 1, duration: 16, ease: "power2.in" }, 40);
+      // gear-change: amygdala fast-path flares BEFORE the cortex catches up
+      tl.to(proxy, { amyg: 1, duration: 2.0, ease: "power3.out" }, 60);
+      tl.to(proxy, { cortex: 1, duration: 8, ease: "sine.inOut" }, 64);
+      tl.to(proxy, { amyg: 0.55, duration: 30, ease: "sine.inOut" }, 96); // low-road keeps simmering
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 34, 3.8, [0, 5, 1], true);      // a language of self-command (doorway figure)
+      cut.auto(34, 64, 3.4, [1, 2, 3, 1], true);    // the poster peels (just walk away)
+      cut.auto(64, 104, 3.4, [3, 4, 3, 5], true);   // the fast path fires before the cortex
+      cut.auto(104, END, 3.8, [0, 5, 1, 4], true);  // shame attaches to the reflex
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg03"] = tl;
+    </script>
+  </body>
+</html>
