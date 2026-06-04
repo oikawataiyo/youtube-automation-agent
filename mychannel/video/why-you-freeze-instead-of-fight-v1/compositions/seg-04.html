@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-04-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 88% 82% at 50% 48%, transparent 46%, rgba(0,0,0,0.44) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg04" data-composition-id="seg04" data-width="1920" data-height="1080" data-start="0" data-duration="172">
+      <audio id="vo" data-start="0" data-duration="172" data-track-index="9"
+             src="../assets/narration/seg-04.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="172" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="172" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-04 HERO — a calm present-day room. A translucent body (plus a delayed
+      // ghost) braces on a loop while a simplex fog/time-slow overlay drifts. The
+      // gap between the passed threat and the still-bracing body.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise, mulberry32 } from "../assets/lib/fx-kit.js";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 172;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(11, 32);
+      scene.background = new THREE.Color(0x121822);
+
+      // ---- a calm room (present day) -----------------------------------------
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x33404e, roughness: 0.97 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 14),
+        new THREE.MeshStandardMaterial({ color: 0x2a3640, roughness: 1 }));
+      wall.position.set(0, 6, -4); scene.add(wall);
+      // a soft warm window — the world is calm now (a hint of normal life)
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.6),
+        new THREE.MeshBasicMaterial({ color: 0x6b7c8e }));
+      win.position.set(3.0, 2.6, -3.95); scene.add(win);
+
+      // ---- chibi pose helper (bracing) ---------------------------------------
+      function poseBrace(f, a) {
+        f.armL.sh.rotation.set(-a * 1.5, 0, a * 0.22);
+        f.armR.sh.rotation.set(-a * 1.5, 0, -a * 0.22);
+        f.armL.fore.rotation.x = -a * 1.35;
+        f.armR.fore.rotation.x = -a * 1.35;
+        f.head.rotation.x = a * 0.5;
+      }
+      function makeGhost(skin, opacity, colHex) {
+        const g = SK.makeChibi(skin, 0.95);
+        g.mat.transparent = true; g.mat.opacity = opacity; g.mat.color.set(colHex);
+        g.mat.emissive = new THREE.Color(colHex); g.mat.emissiveIntensity = 0.12;
+        return g;
+      }
+      // present, calm, solid figure (front)
+      const calm = SK.makeChibi(0xd9c3a6, 0.95);
+      calm.group.position.set(0, 1.0, 0.6); scene.add(calm.group);
+      // the nervous system still bracing (translucent, behind), + a delayed echo
+      const ghostA = makeGhost(0x9fc0e0, 0.40, "#9fc0e0");
+      ghostA.group.position.set(0.05, 1.0, -0.1); scene.add(ghostA.group);
+      const ghostB = makeGhost(0x6f86a0, 0.26, "#6f86a0");
+      ghostB.group.position.set(-0.7, 1.0, -0.6); scene.add(ghostB.group);
+
+      // ---- simplex fog / time-slow particles (the HERO overlay) --------------
+      const N = 900;
+      const base = new Float32Array(N * 3);
+      const rng = mulberry32(41);
+      for (let i = 0; i < N; i++) {
+        base[i * 3] = (rng() * 2 - 1) * 7;
+        base[i * 3 + 1] = 0.3 + rng() * 3.2;
+        base[i * 3 + 2] = -1 + (rng() * 2 - 1) * 3;
+      }
+      const pos = new Float32Array(base);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const points = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: 0xaec4d8, size: 0.06, sizeAttenuation: true,
+        transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+      scene.add(points);
+      const { noise3D } = makeNoise(17);
+
+      // ---- lights (cool, calm) ------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-2.0, 4.6, 3.0); key.intensity = 0.95; scene.add(key);
+      scene.add(new THREE.AmbientLight(0x48586c, 1.0));
+      scene.add(SK.makeFill(1.4));
+
+      // ---- camera: 6 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.4, 1.7, 5.2), posNear: new V(0.3, 1.6, 4.2), look: new V(0, 1.3, 0) },        // 0 calm room wide
+        { pos: new V(1.4, 1.6, 2.8), posNear: new V(1.0, 1.55, 2.1), look: new V(0, 1.5, 0.1) },     // 1 translucent body med
+        { pos: new V(1.1, 1.65, 2.7), posNear: new V(0.7, 1.6, 2.1), look: new V(0, 1.5, 0.1) },     // 2 fog drift through chest
+        { pos: new V(-2.6, 1.7, 3.4), look: new V(0.2, 1.4, -0.2) },                                  // 3 delayed-shadow loop wide
+        { pos: new V(0.95, 2.05, 2.5), posNear: new V(0.55, 2.0, 1.9), look: new V(0, 1.8, 0.1) },   // 4 brace macro (hands/head)
+        { pos: new V(2.8, 1.5, 4.4), posNear: new V(2.4, 1.45, 3.4), look: new V(0, 1.4, 0) },       // 5 silhouette pull-back
+      ], 40);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.55, radius: 0.6, threshold: 0.45 });
+
+      // ---- proxy-driven render (brace = pure function of t) ------------------
+      const proxy = { t: 0, grip: 0, flick: 0 };
+      function render() {
+        const oscA = 0.5 - 0.5 * Math.cos(proxy.t * 0.9);
+        const oscB = 0.5 - 0.5 * Math.cos(proxy.t * 0.9 - 1.4);
+        poseBrace(ghostA, proxy.grip * oscA);
+        poseBrace(ghostB, proxy.grip * oscB * 0.9);
+        // gear-change: the calm body itself flickers into the brace
+        poseBrace(calm, proxy.flick * oscA);
+        // fog drifts slowly (time-slow)
+        const tt = proxy.t * 0.28;
+        for (let i = 0; i < N; i++) {
+          const bx = base[i * 3], by = base[i * 3 + 1], bz = base[i * 3 + 2];
+          pos[i * 3]     = bx + 0.5 * noise3D(bx * 0.3 + tt, by * 0.3, bz * 0.3);
+          pos[i * 3 + 1] = by + 0.32 * noise3D(bx * 0.3, by * 0.3 + tt, bz * 0.3 + 4);
+          pos[i * 3 + 2] = bz + 0.5 * noise3D(bx * 0.3, by * 0.3, bz * 0.3 + tt + 9);
+        }
+        geo.attributes.position.needsUpdate = true;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg04 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // the brace creeps in and never fully resolves (still running in the background)
+      tl.to(proxy, { grip: 1, duration: 30, ease: "sine.inOut" }, 16);
+      // gear-change: present-day calm flickers back into the braced posture (~mid)
+      tl.to(proxy, { flick: 0.9, duration: 1.2, ease: "power2.in" }, 92);
+      tl.to(proxy, { flick: 0.0, duration: 6, ease: "sine.inOut" }, 100);
+      tl.to(proxy, { flick: 0.7, duration: 1.0, ease: "power2.in" }, 120);
+      tl.to(proxy, { flick: 0.0, duration: 7, ease: "sine.inOut" }, 126);
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 36, 3.8, [0, 5, 1], true);      // freeze is fog, the room getting far away
+      cut.auto(36, 78, 3.6, [1, 2, 3, 0], true);    // dissociation along a freeze-to-faint continuum
+      cut.auto(78, 124, 3.4, [3, 4, 2, 0], true);   // a body braced for an event no longer happening
+      cut.auto(124, END, 3.8, [4, 1, 5, 3], true);  // an unfinished survival reflex still running
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg04"] = tl;
+    </script>
+  </body>
+</html>
