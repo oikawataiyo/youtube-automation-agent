@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/lib/scene-kit.js"></script>
+    <script src="../assets/narration/seg-02-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1014;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 86% 82% at 50% 48%, transparent 44%, rgba(0,0,0,0.46) 100%); }
+      #caps { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: 1480px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 400; font-size: 46px; line-height: 1.4; letter-spacing: 0.01em;
+        color: #5b6472; text-shadow: 0 2px 24px rgba(0,0,0,0.85); }
+      .phrase .w { color: #5b6472; }
+    </style>
+  </head>
+  <body>
+    <div id="seg02" data-composition-id="seg02" data-width="1920" data-height="1080" data-start="0" data-duration="150">
+      <audio id="vo" data-start="0" data-duration="150" data-track-index="9"
+             src="../assets/narration/seg-02.wav" data-volume="1"></audio>
+      <canvas id="stage" class="clip" data-start="0" data-duration="150" data-track-index="0" width="1920" height="1080"></canvas>
+      <div id="vignette"></div>
+      <div id="caps" class="clip" data-start="0" data-duration="150" data-track-index="4"></div>
+    </div>
+
+    <script type="module">
+      // seg-02 — The Brake, Not the Gas. Gas + brake pedals crossfade into two
+      // branching vagal nerves (rough.js). A heart-rate trace plunges while the
+      // pupils dilate: freeze is braked high-alert, not low-energy collapse.
+      import * as THREE from "three";
+      import { makeBloomComposer, makeNoise } from "../assets/lib/fx-kit.js";
+      import rough from "roughjs";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+      const V = THREE.Vector3;
+      const END = 150;
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.toneMappingExposure = 1.5;
+      const scene = SK.makeScene(12, 32);
+      scene.background = new THREE.Color(0x0f131a);
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2a313c, roughness: 0.98 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 16),
+        new THREE.MeshStandardMaterial({ color: 0x222a33, roughness: 1 }));
+      backWall.position.set(0, 8, -6); scene.add(backWall);
+      const { noise2D } = makeNoise(13);
+
+      // ---- pedals (gas amber / brake cold) — fade out as the nerves grow ------
+      function pedal(x, hex) {
+        const g = new THREE.Group();
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.16),
+          new THREE.MeshStandardMaterial({ color: 0x4a525e, roughness: 0.7, transparent: true }));
+        arm.position.set(0, 0.5, 0); arm.rotation.x = -0.5; g.add(arm);
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.7),
+          new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 0.4,
+            roughness: 0.6, transparent: true }));
+        pad.position.set(0, 0.95, 0.32); pad.rotation.x = -0.5; g.add(pad);
+        g.position.set(x, 0.1, 0.4); g.userData.parts = [arm.material, pad.material];
+        scene.add(g); return g;
+      }
+      const gasPedal = pedal(-1.0, 0xe0a23a);
+      const brakePedal = pedal(1.0, 0x6f9fd0);
+
+      // ---- branching nerves (rough.js → CanvasTexture), grow in on morph ------
+      function nerveTex(hex, seed) {
+        const c = document.createElement("canvas"); c.width = 640; c.height = 1024;
+        const x = c.getContext("2d");
+        const rc = rough.canvas(c);
+        (function branch(px, py, ang, len, depth, sd) {
+          if (depth === 0 || len < 8) return;
+          const x2 = px + Math.cos(ang) * len, y2 = py + Math.sin(ang) * len;
+          rc.line(px, py, x2, y2,
+            { seed: sd, stroke: hex, strokeWidth: Math.max(2, depth * 1.5), roughness: 1.5 });
+          branch(x2, y2, ang - 0.42, len * 0.74, depth - 1, sd + 7);
+          branch(x2, y2, ang + 0.40, len * 0.74, depth - 1, sd + 19);
+        })(320, 1010, -Math.PI / 2, 300, 6, seed);
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+      function nervePlane(x, hex, seed) {
+        const m = new THREE.MeshBasicMaterial({ map: nerveTex(hex, seed),
+          transparent: true, depthWrite: false, opacity: 0 });
+        const p = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 4.16), m);
+        p.position.set(x, 2.1, -0.4); scene.add(p); return m;
+      }
+      const gasNerve = nervePlane(-1.0, "#e0a23a", 31);
+      const brakeNerve = nervePlane(1.0, "#7fb0e6", 53);
+
+      // ---- HR trace (cold) — canvas redrawn each frame; plunges on freeze -----
+      const hrC = document.createElement("canvas"); hrC.width = 2048; hrC.height = 320;
+      const hrX = hrC.getContext("2d");
+      const hrTex = new THREE.CanvasTexture(hrC); hrTex.colorSpace = THREE.SRGBColorSpace;
+      const hrPlane = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 1.33),
+        new THREE.MeshBasicMaterial({ map: hrTex, transparent: true, depthWrite: false }));
+      hrPlane.position.set(0, 4.5, -2.0); scene.add(hrPlane);
+      function drawHR(t, plunge) {
+        hrX.clearRect(0, 0, 2048, 320);
+        hrX.strokeStyle = "#9fc0ff"; hrX.lineWidth = 5; hrX.lineJoin = "round";
+        hrX.shadowColor = "#9fc0ff"; hrX.shadowBlur = 12;
+        hrX.beginPath();
+        const mid = 150;
+        for (let px = 0; px <= 2048; px += 4) {
+          const u = px / 2048;
+          const drop = Math.max(0, (u - 0.42) / 0.58);      // right side is "later in time"
+          const beat = (u * 15 - t * 1.1);
+          const fr = beat - Math.floor(beat);
+          let spike = 0;
+          if (fr < 0.04) spike = Math.sin((fr / 0.04) * Math.PI);          // R
+          else if (fr < 0.07) spike = -0.4 * Math.sin(((fr - 0.04) / 0.03) * Math.PI); // S
+          const amp = (1 - plunge * drop) * 85;
+          const baseline = mid + plunge * drop * 70;          // baseline sinks
+          const jit = noise2D(u * 9, t * 0.5) * 4;
+          const y = baseline - spike * amp + jit;
+          if (px === 0) hrX.moveTo(px, y); else hrX.lineTo(px, y);
+        }
+        hrX.stroke(); hrTex.needsUpdate = true;
+      }
+
+      // ---- the eye (almond; pupil dilates — still scanning) ------------------
+      // lit (not self-luminous) so it reads as an eye, not a blown-out white ring
+      const eyeGroup = new THREE.Group(); eyeGroup.position.set(-2.7, 2.1, -0.3);
+      const sclera = new THREE.Mesh(new THREE.CircleGeometry(0.62, 44),
+        new THREE.MeshStandardMaterial({ color: 0xdbe1e8, roughness: 0.6, emissive: 0x1d2329, emissiveIntensity: 0.3 }));
+      sclera.scale.set(1, 0.58, 1); eyeGroup.add(sclera);
+      const liner = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.04, 10, 48),
+        new THREE.MeshBasicMaterial({ color: 0x12161c }));
+      liner.scale.set(1, 0.58, 1); liner.position.z = 0.02; eyeGroup.add(liner);
+      const iris = new THREE.Mesh(new THREE.CircleGeometry(0.3, 40),
+        new THREE.MeshStandardMaterial({ color: 0x4f7196, roughness: 0.5, emissive: 0x22303d, emissiveIntensity: 0.4 }));
+      iris.position.z = 0.02; eyeGroup.add(iris);
+      const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.14, 32),
+        new THREE.MeshStandardMaterial({ color: 0x07090c, roughness: 0.4 }));
+      pupil.position.z = 0.03; eyeGroup.add(pupil);
+      scene.add(eyeGroup);
+
+      // ---- braked figure (flooded inside) ------------------------------------
+      const fig = SK.makeChibi(0xd9c3a6, 0.95);
+      fig.group.position.set(2.7, 1.0, 0.6); fig.group.rotation.y = -0.5; scene.add(fig.group);
+
+      // ---- lights (cold) ------------------------------------------------------
+      const key = SK.makeKeyLight(); key.position.set(-1.8, 4.6, 2.6); key.intensity = 0.85; scene.add(key);
+      scene.add(new THREE.AmbientLight(0x46566c, 0.98));
+      scene.add(SK.makeFill(1.32));
+
+      // ---- camera: 6 framings -------------------------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.0, 1.3, 4.4), posNear: new V(0.0, 1.2, 3.4), look: new V(0, 1.0, 0.3) },     // 0 pedals close
+        { pos: new V(-1.4, 2.3, 3.6), look: new V(0.2, 2.2, -0.4) },                                 // 1 pedals->nerve morph
+        { pos: new V(0.0, 4.4, 3.2), posNear: new V(0.0, 4.5, 2.2), look: new V(0, 4.4, -2) },       // 2 HR trace wide
+        { pos: new V(1.6, 4.5, 1.6), look: new V(0.6, 4.5, -2) },                                    // 3 trace plunge macro
+        { pos: new V(-2.7, 2.1, 2.0), posNear: new V(-2.7, 2.1, 1.2), look: new V(-2.7, 2.1, -0.3) },// 4 pupil insert
+        { pos: new V(3.0, 1.7, 3.6), posNear: new V(2.9, 1.6, 2.8), look: new V(1.6, 1.4, 0.2) },    // 5 braked figure pull-back
+      ], 40);
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.7, radius: 0.62, threshold: 0.4 });
+
+      // ---- proxy-driven render -----------------------------------------------
+      const proxy = { t: 0, morph: 0, plunge: 0, dilate: 0 };
+      const irisBaseR = 0.32;
+      function render() {
+        // pedals fade out, nerves fade in (the morph)
+        gasPedal.userData.parts.forEach((m) => (m.opacity = 1 - proxy.morph));
+        brakePedal.userData.parts.forEach((m) => (m.opacity = 1 - proxy.morph));
+        gasNerve.opacity = proxy.morph; brakeNerve.opacity = proxy.morph;
+        // brake nerve glows brighter (the point: freeze pulls the brake)
+        brakeNerve.color = new THREE.Color(1, 1, 1).lerp(new THREE.Color("#bfe0ff"), 1);
+        // HR trace
+        drawHR(proxy.t, proxy.plunge);
+        // pupil dilates on the freeze beat
+        pupil.scale.setScalar((0.14 + proxy.dilate * 0.26) / 0.14);
+        bloom.strength = 0.62 + proxy.plunge * 0.4;
+        rig.apply();
+        composer.render();
+      }
+      render();
+
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(window.seg02 || [], capHost);
+
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      // pedals morph into nerves early-mid
+      tl.to(proxy, { morph: 1, duration: 24, ease: "sine.inOut" }, 22);
+      // gear-change: HR plunges + pupils dilate on the freeze beat (mid-late)
+      tl.to(proxy, { plunge: 1, duration: 6, ease: "power2.in" }, 74);
+      tl.to(proxy, { dilate: 1, duration: 3.5, ease: "power2.out" }, 75);
+      tl.to(proxy, { plunge: 0.78, duration: 20, ease: "sine.inOut" }, 100); // braked, held low
+
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.auto(0.0, 30, 3.6, [0, 5, 2], true);      // freeze is not the body being lazy (pedals/figure/trace)
+      cut.auto(30, 70, 3.6, [1, 2, 0, 5], true);    // the brake while the engine still screams
+      cut.auto(70, 104, 3.4, [2, 3, 4, 3], true);   // heart rate drops, the brain scans (gear-change)
+      cut.auto(104, END, 3.8, [5, 1, 4, 0], true);  // freeze is the system pulling a different lever
+
+      SK.wireCaptions(tl, phraseEls, END);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["seg02"] = tl;
+    </script>
+  </body>
+</html>
