@@ -4,8 +4,9 @@ const path = require('path');
 const { PSYCHOLOGY_TOPIC_RULES } = require('../utils/psychology-domain');
 
 const ROOT = path.join(__dirname, '..');
-const ch = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/analysis/competitor-channels.json'))).channels;
-const vd = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/analysis/competitor-top-videos.json'))).channels;
+const SUF = process.argv[2] || ''; // pass "-v2" to analyze the v2 dataset
+const ch = JSON.parse(fs.readFileSync(path.join(ROOT, `data/analysis/competitor-channels${SUF}.json`))).channels;
+const vd = JSON.parse(fs.readFileSync(path.join(ROOT, `data/analysis/competitor-top-videos${SUF}.json`))).channels;
 let demand = { videos: [] };
 try { demand = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/analysis/psychology-demand.json'))); } catch {}
 
