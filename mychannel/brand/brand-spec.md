@@ -99,30 +99,34 @@ Anchored to the actual 3D renders: near-black deep-space background, a subtle bl
 | `accent` amber | `#E8A33D` | **single** accent — one element per surface |
 | `white` | `#F2F4F8` | wordmark / primary type |
 
-### Profile picture — **attitude indicator** (aviation autopilot artificial horizon)
+### Brand mark — the **clay chibi character head** (decided 2026-06-06)
 
-The literal autopilot instrument: name + concept in one mark, legible at 24 px, and it dodges every commodity tell (no 2D blob, no yellow box).
+The channel's recurring two-head-tall clay character *is* the mark — mascot-forward, instantly recognizable, and unique to this channel (viewers see the same face in the videos and on the avatar). The earlier attitude-indicator concept was dropped in favor of the character.
 
-- Circular, near-black field with a faint blue radial bloom behind.
-- Thin **slate-blue** outer ring.
-- Hemisphere split: upper = `sky`, lower = `ground`.
-- **Amber** horizon line across the middle + a small amber center triangle (the aircraft symbol `▲`).
-- No "AP" lettering — keep it clean at small size (the wordmark carries the name on the banner).
-- Deliverable: **800×800 PNG**, all art centered & circular-safe (no edge text), exported on the square (YouTube crops to circle).
+- Beige **clay** sphere head, key light upper-left → warm terminator → shadow; faint cool bounce on the lower-right (matches the 3D render lighting).
+- Two matte dark dot eyes (the character's whole face — no nose/mouth).
+- Used in two places: the **profile picture** and the small mark in the **banner** lockup.
+
+### Profile picture
+
+- The clay chibi head fills the circular avatar (head ≈ 83% of frame), centered & circular-safe (no edge content).
+- Near-black field (`bg`) + subtle warm-cored bloom so the clay reads warm against the dark.
+- Verified legible at 96 px and 48 px (round head + two eyes read instantly).
+- Deliverable: **800×800 PNG** (`assets/profile-800.png`, exported @2x = 1600²), uploaded on the square (YouTube crops to circle).
 
 ### Banner
 
-- **2560×1440** field: near-black + subtle blue radial bloom; faint star/particle dust like the renders.
+- **2560×1440** field: near-black + subtle blue radial bloom; faint seeded star/particle dust like the renders.
 - **Center safe area (1546×423, shows on all devices):**
-  - The attitude-indicator mark (small) + wordmark **`Autopilot`** in white.
-  - Tagline beneath: **`See the brain on autopilot.`** — the word `autopilot` (or a thin underline rule) in amber. One accent only.
-- **Outside the safe area (right bleed, desktop/TV only):** a large, dim 3D element fading off the edge — the glowing orb or a neural-horizon linework — for cinematic depth without crowding the mobile crop.
-- Deliverable: **2560×1440 PNG**, < 6 MB.
+  - The clay-head mark (small) + wordmark **`Autopilot`** in white (Space Grotesk).
+  - Tagline beneath: **`See the brain on autopilot.`** — the word `autopilot` in amber. One accent only.
+- **Outside the safe area (right bleed, desktop/TV only):** a large, dim cool 3D orb fading off the edge — cinematic depth without crowding the mobile crop (verified on mobile/tablet/desktop safe-area crops).
+- Deliverable: **2560×1440 PNG** (`assets/banner-2560.png`, @2x, < 6 MB).
 
 ### Optional later — video watermark
 
-The attitude-indicator mark as a **150×150 transparent PNG** (Studio → Branding → video watermark), reinforcing the channel grid like Huberman's blue frame.
+The clay-head mark as a **150×150 transparent PNG** (Studio → Branding → video watermark), reinforcing the channel grid.
 
 ### Production
 
-Build both as **HyperFrames HTML compositions** and render to PNG deterministically — same engine/aesthetic as the videos, so the channel art and the content read as one world. Upload is Studio-manual (Data API cannot set banner/profile).
+Both are built as **standalone HTML/SVG compositions** (`assets/profile.html`, `assets/banner.html`) and captured to PNG deterministically via Playwright (`assets/shot.mjs`) — same clay tone / dark world as the videos, so channel art and content read as one. Upload is Studio-manual (Data API cannot set banner/profile). Amber stays the single accent (the tagline word + thumbnail text); the character carries identity.
