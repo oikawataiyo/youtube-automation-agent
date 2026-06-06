@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06080D; --slate:#3A4A63; --ground:#1A2233; --sky:#0C111B;
+    --amber:#E8A33D; --white:#F2F4F8;
+  }
+  html,body{margin:0;padding:0;}
+  #stage{
+    position:relative; width:2560px; height:1440px; overflow:hidden;
+    background:var(--bg); font-family:"Inter",system-ui,sans-serif;
+  }
+  /* background bloom layers (radial, no banding) */
+  .bloom{position:absolute; pointer-events:none;}
+  .bloom-main{
+    left:38%; top:42%; width:1700px; height:1700px; transform:translate(-50%,-50%);
+    background:radial-gradient(closest-side,#16243B 0%,#0C1422 45%,rgba(6,8,13,0) 75%);
+    opacity:.9;
+  }
+  .bloom-right{
+    right:-360px; top:50%; width:1500px; height:1500px; transform:translateY(-50%);
+    background:radial-gradient(closest-side,#13233C 0%,#0B1320 50%,rgba(6,8,13,0) 75%);
+    opacity:.45;
+  }
+  /* the 3D orb bleeding off the right edge (desktop/TV only) — dim, decorative */
+  .orb{position:absolute; right:-340px; top:50%; transform:translateY(-50%);
+       width:1180px; height:1180px; border-radius:50%; opacity:.62;
+       background:
+         radial-gradient(120% 120% at 34% 30%, #223349 0%, #131F31 24%, #0B121D 50%, #070B12 72%, #05070C 100%);
+       box-shadow: inset 40px 30px 120px rgba(0,0,0,.65), inset -30px -20px 90px rgba(0,0,0,.75);
+  }
+  .orb-rim{position:absolute; right:-340px; top:50%; transform:translateY(-50%);
+       width:1180px; height:1180px; border-radius:50%; opacity:.55;
+       background:radial-gradient(120% 120% at 34% 28%, rgba(120,165,225,.38) 0%, rgba(120,165,225,0) 25%);
+       mix-blend-mode:screen; }
+
+  /* all-device safe area: 1546 x 423, centered */
+  .safe{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:1546px; height:423px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lockup{display:flex; align-items:center; gap:52px;}
+  .mark{width:172px; height:172px; flex:0 0 auto;
+        filter:drop-shadow(0 0 24px rgba(20,30,50,.6));}
+  .type{display:flex; flex-direction:column; gap:18px;}
+  .wordmark{
+    font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600;
+    font-size:148px; line-height:.9; letter-spacing:-3px; color:var(--white);
+    text-shadow:0 2px 30px rgba(0,0,0,.5);
+  }
+  .tagline{
+    font-family:"Inter",system-ui,sans-serif; font-weight:400;
+    font-size:44px; letter-spacing:.5px; color:#9FB0C7;
+  }
+  .tagline .amber{color:var(--amber); font-weight:500;}
+</style>
+</head>
+<body>
+<!--
+  Autopilot — channel banner 2560x1440 (brand-spec §8)
+  Center lockup lives in the all-device safe area (1546x423).
+  Right orb bleeds outside it: shows on desktop/TV, cropped on mobile.
+-->
+<div id="stage">
+  <div class="bloom bloom-main"></div>
+  <div class="bloom bloom-right"></div>
+  <div class="orb"></div>
+  <div class="orb-rim"></div>
+  <svg id="dust" width="2560" height="1440" style="position:absolute;inset:0;pointer-events:none"></svg>
+
+  <div class="safe">
+    <div class="lockup">
+      <!-- attitude-indicator mark (matches profile) -->
+      <svg class="mark" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="ag" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="6" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#19222F"/><stop offset="100%" stop-color="#11161F"/>
+          </linearGradient>
+          <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0D131D"/><stop offset="100%" stop-color="#0B111B"/>
+          </linearGradient>
+          <clipPath id="d"><circle cx="400" cy="400" r="262"/></clipPath>
+        </defs>
+        <g transform="translate(400 400) scale(1.22) translate(-400 -400)">
+          <g clip-path="url(#d)">
+            <rect x="138" y="138" width="524" height="262" fill="url(#sg)"/>
+            <rect x="138" y="400" width="524" height="262" fill="url(#gg)"/>
+            <g stroke="#3A4A63" stroke-width="3" stroke-linecap="round" opacity="0.5">
+              <line x1="356" y1="350" x2="444" y2="350"/>
+              <line x1="356" y1="450" x2="444" y2="450"/>
+            </g>
+          </g>
+          <line x1="146" y1="400" x2="654" y2="400" stroke="#E8A33D" stroke-width="7" stroke-linecap="round" filter="url(#ag)"/>
+          <line x1="146" y1="400" x2="654" y2="400" stroke="#F4B656" stroke-width="3" stroke-linecap="round"/>
+          <path d="M400 332 L433 400 L367 400 Z" fill="#E8A33D" filter="url(#ag)"/>
+          <g stroke="#3A4A63" stroke-width="4" stroke-linecap="round" opacity="0.85">
+            <line x1="400" y1="138" x2="400" y2="160"/>
+            <line x1="313.0" y1="161.3" x2="324.0" y2="180.3"/>
+            <line x1="487.0" y1="161.3" x2="476.0" y2="180.3"/>
+            <line x1="238.0" y1="211.0" x2="257.0" y2="222.0"/>
+            <line x1="562.0" y1="211.0" x2="543.0" y2="222.0"/>
+          </g>
+          <circle cx="400" cy="400" r="262" fill="none" stroke="#3A4A63" stroke-width="3" opacity="0.7"/>
+          <circle cx="400" cy="400" r="278" fill="none" stroke="#2A3A4A" stroke-width="10"/>
+          <circle cx="400" cy="400" r="278" fill="none" stroke="#3A4A63" stroke-width="6"/>
+          <circle cx="400" cy="400" r="288" fill="none" stroke="#11161F" stroke-width="6"/>
+        </g>
+      </svg>
+
+      <div class="type">
+        <div class="wordmark">Autopilot</div>
+        <div class="tagline">See the brain on <span class="amber">autopilot</span>.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // deterministic star/particle dust (seeded — no Math.random)
+    function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+    const rnd = mulberry32(0xA1170);
+    const svg = document.getElementById('dust');
+    const NS='http://www.w3.org/2000/svg';
+    for(let i=0;i<150;i++){
+      const x=rnd()*2560, y=rnd()*1440;
+      const r=rnd()*1.6+0.4;
+      const o=rnd()*0.5+0.06;
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',x.toFixed(1)); c.setAttribute('cy',y.toFixed(1));
+      c.setAttribute('r',r.toFixed(2)); c.setAttribute('fill','#6E84A6');
+      c.setAttribute('opacity',o.toFixed(2));
+      svg.appendChild(c);
+    }
+  </script>
+</div>
+</body>
+</html>
