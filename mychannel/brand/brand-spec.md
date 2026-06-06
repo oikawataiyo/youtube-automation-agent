@@ -1,6 +1,6 @@
 # Autopilot — Brand Spec
 
-**Decided:** 2026-06-05. Public channel name **Autopilot**, handle **@autopilot**.
+**Decided:** 2026-06-05. Public channel name **Autopilot**, handle **@autopilot-c7h** (final 2026-06-06 — the clean `@autopilot` was not claimable in Studio at go-live; kept the auto-assigned handle).
 Source of truth for the channel's public identity. Grounded in `mychannel/research/competitive-research.md` (§2 naming, §3 About, §4 thumbnails, §7 implications).
 
 ---
@@ -8,7 +8,7 @@ Source of truth for the channel's public identity. Grounded in `mychannel/resear
 ## 1. Name & handle
 
 - **Display name:** `Autopilot`
-- **Handle:** `@autopilot` (single clean word — claim in Studio ASAP; the Data API cannot set handles)
+- **Handle:** `@autopilot-c7h` (final — clean `@autopilot` was unavailable to claim in Studio at go-live; the Data API cannot set handles)
 - **Concept:** the brain runs prediction on autopilot — forecasting threats, defaulting to old priors, bracing before "you" decide. The channel makes that autopilot *visible* and hands back the controls.
 
 ---
@@ -66,7 +66,7 @@ Rationale: keep the channel/operations off the daily-use personal account (peace
 |---|---|---|
 | New Google account for Autopilot | **manual** | Enable 2FA + recovery phone/email (only real risk = lockout/channel loss). |
 | Create channel "Autopilot" | **Studio UI (manual)** | Default channel of the new account, named Autopilot. |
-| Handle `@autopilot` | **Studio UI (manual)** | API cannot set handles. Claim ASAP (currently unprotected). |
+| Handle `@autopilot-c7h` | **Studio UI (manual)** ✅ | API cannot set handles. Clean `@autopilot` was unavailable in Studio at go-live; kept auto-assigned handle. |
 | Add new account as **test user** | **Cloud Console (及川大洋)** | APIs & Services → OAuth consent screen → Test users → add. ⚠️ If consent is "Testing", refresh tokens expire in 7 days → publish app for production automation (youtube = sensitive scope). |
 | Re-authorize OAuth → new account | `npm run credentials:setup` | Sign in as the NEW account at consent; regenerates `config/tokens.json`. |
 | Description / keywords | **Data API** `node scripts/apply-branding.js --apply` | Reliable. Title via API is flaky → set name in Studio too. |
