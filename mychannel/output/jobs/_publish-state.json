@@ -1,0 +1,32 @@
+{
+  "01-survivorship-v2.job.json": {
+    "videoId": "_rpTjl7YDbI",
+    "url": "https://www.youtube.com/watch?v=_rpTjl7YDbI",
+    "manuallyPublished": true,
+    "note": "posted manually before automation; seeded to prevent duplicate upload"
+  },
+  "02-depression-is-a-prediction-error-v1.job.json": {
+    "videoId": "UFT8WqVh3nQ",
+    "url": "https://www.youtube.com/watch?v=UFT8WqVh3nQ",
+    "manuallyPublished": true,
+    "note": "posted manually before automation; seeded to prevent duplicate upload"
+  },
+  "03-why-you-pull-away-v2.job.json": {
+    "videoId": "CA3tVd8LHsM",
+    "url": "https://www.youtube.com/watch?v=CA3tVd8LHsM",
+    "manuallyPublished": true,
+    "note": "posted manually before automation; seeded to prevent duplicate upload"
+  },
+  "04-your-anxiety-is-a-threat-forecast-v1.job.json": {
+    "videoId": "jRwg8yVgZMg",
+    "url": "https://www.youtube.com/watch?v=jRwg8yVgZMg",
+    "manuallyPublished": true,
+    "note": "posted manually before automation; seeded to prevent duplicate upload"
+  },
+  "05-why-you-freeze-instead-of-fight-v1.job.json": {
+    "videoId": "DN2FOQuJ2OQ",
+    "url": "https://www.youtube.com/watch?v=DN2FOQuJ2OQ",
+    "manuallyPublished": true,
+    "note": "posted manually before automation; seeded to prevent duplicate upload"
+  }
+}

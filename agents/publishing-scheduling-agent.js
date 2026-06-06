@@ -152,13 +152,14 @@ class PublishingSchedulingAgent {
   }
 
   async getVideoStream(videoPath) {
-    // In a real implementation, this would return a file stream
-    // For now, we'll simulate it
-    return JSON.stringify({
-      message: 'Video stream would be provided here',
-      path: videoPath,
-      timestamp: new Date().toISOString()
-    });
+    // Real readable stream of the rendered file (was a placeholder JSON stub
+    // that made every "upload" silently fail). Shares resolution semantics
+    // with utils/youtube-upload.js.
+    const resolved = path.isAbsolute(videoPath)
+      ? videoPath
+      : path.join(__dirname, '..', videoPath);
+    await fs.access(resolved);
+    return require('fs').createReadStream(resolved);
   }
 
   async uploadThumbnail(videoId, thumbnailPath) {

@@ -1,6 +1,6 @@
 /**
- * Real YouTube uploader (replaces the stubbed getVideoStream in the
- * publishing agent, which returned placeholder JSON instead of the file).
+ * Real YouTube uploader CLI. Core upload logic lives in utils/youtube-upload.js
+ * (shared with publish-queue.js and the publishing agent).
  *
  * Streams the actual video file with a resumable upload, then sets the
  * thumbnail. Auth + token auto-refresh is reused from CredentialManager,
@@ -30,12 +30,11 @@
 
 const fs = require('fs');
 const fsp = require('fs').promises;
-const path = require('path');
 const os = require('os');
+const path = require('path');
 const { execFileSync } = require('child_process');
 const { CredentialManager } = require('../utils/credential-manager');
-
-const ROOT = path.join(__dirname, '..');
+const { resolvePath, whoami, uploadVideo, deleteVideo } = require('../utils/youtube-upload');
 
 function parseArgs(argv) {
   const args = {};
@@ -49,122 +48,11 @@ function parseArgs(argv) {
   return args;
 }
 
-function resolvePath(p) {
-  if (!p) return p;
-  return path.isAbsolute(p) ? p : path.join(ROOT, p);
-}
-
 async function getClient() {
   const cm = new CredentialManager();
   const ok = await cm.initialize();
   if (!ok) throw new Error('CredentialManager failed to initialize (check config/credentials.json + tokens.json)');
   return cm.getYouTubeClient();
-}
-
-async function whoami(youtube) {
-  const me = await youtube.channels.list({ part: 'snippet,statistics', mine: true });
-  const ch = (me.data.items || [])[0];
-  if (!ch) throw new Error('No channel found for the authorized account.');
-  console.log(`🎬 Channel: "${ch.snippet.title}"  (id ${ch.id})`);
-  console.log(`   subs ${ch.statistics.subscriberCount} · videos ${ch.statistics.videoCount} · views ${ch.statistics.viewCount}`);
-  return ch;
-}
-
-function normalizeJob(job) {
-  if (!job.video) throw new Error('job.video is required');
-  if (!job.title) throw new Error('job.title is required');
-  const videoPath = resolvePath(job.video);
-  if (!fs.existsSync(videoPath)) throw new Error(`video file not found: ${videoPath}`);
-
-  const tags = Array.isArray(job.tags)
-    ? job.tags
-    : typeof job.tags === 'string'
-      ? job.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      : [];
-
-  let privacyStatus = job.privacyStatus || 'private';
-  // publishAt (scheduled) requires the video to start as private.
-  if (job.publishAt) privacyStatus = 'private';
-
-  return {
-    videoPath,
-    thumbnailPath: job.thumbnail ? resolvePath(job.thumbnail) : null,
-    title: job.title,
-    description: job.description || '',
-    tags,
-    categoryId: String(job.categoryId || '27'),
-    language: job.language || 'en',
-    privacyStatus,
-    publishAt: job.publishAt || undefined,
-    madeForKids: job.madeForKids === true,
-  };
-}
-
-async function uploadVideo(youtube, job) {
-  const j = normalizeJob(job);
-  const bytes = fs.statSync(j.videoPath).size;
-  const mb = (bytes / 1024 / 1024).toFixed(1);
-  console.log(`⬆️  Uploading "${j.title}"  (${mb}MB, ${j.privacyStatus})`);
-
-  let lastPct = -5;
-  const res = await youtube.videos.insert(
-    {
-      part: ['snippet', 'status'],
-      notifySubscribers: false,
-      requestBody: {
-        snippet: {
-          title: j.title,
-          description: j.description,
-          tags: j.tags,
-          categoryId: j.categoryId,
-          defaultLanguage: j.language,
-          defaultAudioLanguage: j.language,
-        },
-        status: {
-          privacyStatus: j.privacyStatus,
-          publishAt: j.publishAt,
-          selfDeclaredMadeForKids: j.madeForKids,
-          embeddable: true,
-        },
-      },
-      media: { body: fs.createReadStream(j.videoPath) },
-    },
-    {
-      // Resumable upload progress for large files.
-      onUploadProgress: (evt) => {
-        const pct = Math.floor((evt.bytesRead / bytes) * 100);
-        if (pct >= lastPct + 5) {
-          lastPct = pct;
-          process.stdout.write(`\r   ${pct}%   `);
-        }
-      },
-    }
-  );
-  process.stdout.write('\r   100%  \n');
-
-  const videoId = res.data.id;
-  const url = `https://www.youtube.com/watch?v=${videoId}`;
-  console.log(`✅ Uploaded: ${url}`);
-
-  if (j.thumbnailPath) {
-    if (fs.existsSync(j.thumbnailPath)) {
-      await youtube.thumbnails.set({
-        videoId,
-        media: { body: fs.createReadStream(j.thumbnailPath) },
-      });
-      console.log(`🖼️  Thumbnail set.`);
-    } else {
-      console.warn(`⚠️  Thumbnail not found, skipped: ${j.thumbnailPath}`);
-    }
-  }
-
-  if (j.publishAt) console.log(`⏰ Scheduled to go public at ${j.publishAt}.`);
-  return { videoId, url };
-}
-
-async function deleteVideo(youtube, videoId) {
-  await youtube.videos.delete({ id: videoId });
-  console.log(`🗑️  Deleted video ${videoId}.`);
 }
 
 function makeTestClip() {
