@@ -85,6 +85,10 @@ async function main() {
   const Lh = life.data.columnHeaders.map((c) => c.name);
   const lv = Object.fromEntries(Lh.map((k, idx) => [k, L[idx]]));
   console.log('\n========== LIFETIME ANALYTICS ==========');
+  if (!life.data.rows || !life.data.rows.length) {
+    console.log('(no analytics data yet — channel/videos too new; YouTube lags ~24-48h)');
+    return;
+  }
   console.log(`views ${fmt(lv.views)} · watch time ${fmt(Math.round(lv.estimatedMinutesWatched))} min`);
   console.log(`avg view duration ${secs(lv.averageViewDuration)} · avg view % ${Number(lv.averageViewPercentage).toFixed(1)}%`);
   console.log(`subs +${fmt(lv.subscribersGained)} / -${fmt(lv.subscribersLost)} (net ${fmt(lv.subscribersGained - lv.subscribersLost)})`);
