@@ -104,7 +104,7 @@ Anchored to the actual 3D renders: near-black deep-space background, a subtle bl
 The channel's recurring two-head-tall clay character *is* the mark — mascot-forward, instantly recognizable, and unique to this channel (viewers see the same face in the videos and on the avatar). The earlier attitude-indicator concept was dropped in favor of the character.
 
 - Beige **clay** sphere head, key light upper-left → warm terminator → shadow; faint cool bounce on the lower-right (matches the 3D render lighting).
-- Two matte dark dot eyes (the character's whole face — no nose/mouth).
+- Two matte dark dot eyes + a small minimal gentle-smile mouth (same matte dark clay) — friendlier than the source character, which has eyes only.
 - Used in two places: the **profile picture** and the small mark in the **banner** lockup.
 
 ### Profile picture
