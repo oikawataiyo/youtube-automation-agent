@@ -77,7 +77,52 @@ Rationale: keep the channel/operations off the daily-use personal account (peace
 
 ## 7. Open items
 
-- Lock the single accent color for the thumbnail system.
+- ~~Lock the single accent color for the thumbnail system.~~ ✅ **Locked = warm amber `#E8A33D`** (2026-06-06). Already in use as the section-label accent in the depression render; warm-vs-cool contrast against the slate-blue/near-black, avoids the commodity-red tell.
 - Confirm upload cadence wording in About.
 - Decide first-upload video + privacy (unlisted test recommended).
-- Banner / profile-pic art direction (separate asset task).
+- ~~Banner / profile-pic art direction (separate asset task).~~ ✅ **Decided 2026-06-06 — see §8.**
+
+---
+
+## 8. Banner & profile art direction (decided 2026-06-06)
+
+Anchored to the actual 3D renders: near-black deep-space background, a subtle blue radial bloom, slate-blue environment/linework, white type, and **one** warm-amber accent. Threat-red stays *inside* videos only (anxiety glow) — it is never a brand chrome color.
+
+### Locked palette
+
+| Token | Hex | Use |
+|---|---|---|
+| `bg` near-black | `#06080D` | base field |
+| `slate-blue` | `#3A4A63` | ring, linework, secondary type |
+| `ground` | `#1A2233` | lower hemisphere of the mark |
+| `sky` | `#0C111B` | upper hemisphere of the mark |
+| `accent` amber | `#E8A33D` | **single** accent — one element per surface |
+| `white` | `#F2F4F8` | wordmark / primary type |
+
+### Profile picture — **attitude indicator** (aviation autopilot artificial horizon)
+
+The literal autopilot instrument: name + concept in one mark, legible at 24 px, and it dodges every commodity tell (no 2D blob, no yellow box).
+
+- Circular, near-black field with a faint blue radial bloom behind.
+- Thin **slate-blue** outer ring.
+- Hemisphere split: upper = `sky`, lower = `ground`.
+- **Amber** horizon line across the middle + a small amber center triangle (the aircraft symbol `▲`).
+- No "AP" lettering — keep it clean at small size (the wordmark carries the name on the banner).
+- Deliverable: **800×800 PNG**, all art centered & circular-safe (no edge text), exported on the square (YouTube crops to circle).
+
+### Banner
+
+- **2560×1440** field: near-black + subtle blue radial bloom; faint star/particle dust like the renders.
+- **Center safe area (1546×423, shows on all devices):**
+  - The attitude-indicator mark (small) + wordmark **`Autopilot`** in white.
+  - Tagline beneath: **`See the brain on autopilot.`** — the word `autopilot` (or a thin underline rule) in amber. One accent only.
+- **Outside the safe area (right bleed, desktop/TV only):** a large, dim 3D element fading off the edge — the glowing orb or a neural-horizon linework — for cinematic depth without crowding the mobile crop.
+- Deliverable: **2560×1440 PNG**, < 6 MB.
+
+### Optional later — video watermark
+
+The attitude-indicator mark as a **150×150 transparent PNG** (Studio → Branding → video watermark), reinforcing the channel grid like Huberman's blue frame.
+
+### Production
+
+Build both as **HyperFrames HTML compositions** and render to PNG deterministically — same engine/aesthetic as the videos, so the channel art and the content read as one world. Upload is Studio-manual (Data API cannot set banner/profile).
