@@ -59,14 +59,16 @@ Cadence is intentionally soft ("New essays regularly") — no fixed-day promise 
 
 ## 6. Go-live plan
 
-**Account model (decided 2026-06-06): Brand Account** on the existing Google login.
-Rationale: solo long-run project, no sale/handoff intent, no existing AdSense → public anonymity + low maintenance + "1 person = 1 AdSense" friendly + transferable later. A separate Google account's only real benefit (hard financial/operational separation) doesn't apply. The current OAuth points at the personal channel "及川大洋"; we re-auth against the new Brand channel.
+**Account model (decided 2026-06-06): Topology B** — the YouTube **API (Google Cloud project + OAuth credentials) stays on the personal account (及川大洋)**, but the **Autopilot channel lives on a new dedicated Google account**.
+Rationale: keep the channel/operations off the daily-use personal account (peace of mind) without re-creating the API project. AdSense is a non-factor (a dedicated account still links to the one personal AdSense at monetization; no second AdSense needed). OAuth tokens are YouTube-scoped only — they can't touch Gmail/Drive. Public anonymity is identical to all options (viewers see only "Autopilot").
 
 | Item | Method | Notes |
 |---|---|---|
-| Create Brand Account "Autopilot" | **Studio UI (manual)** | youtube.com → account menu → Switch/Create channel → "Use a custom name". |
+| New Google account for Autopilot | **manual** | Enable 2FA + recovery phone/email (only real risk = lockout/channel loss). |
+| Create channel "Autopilot" | **Studio UI (manual)** | Default channel of the new account, named Autopilot. |
 | Handle `@autopilot` | **Studio UI (manual)** | API cannot set handles. Claim ASAP (currently unprotected). |
-| Re-authorize OAuth → Brand channel | repo auth flow | Pick the Autopilot Brand channel at consent; regenerates `config/tokens.json`. |
+| Add new account as **test user** | **Cloud Console (及川大洋)** | APIs & Services → OAuth consent screen → Test users → add. ⚠️ If consent is "Testing", refresh tokens expire in 7 days → publish app for production automation (youtube = sensitive scope). |
+| Re-authorize OAuth → new account | `npm run credentials:setup` | Sign in as the NEW account at consent; regenerates `config/tokens.json`. |
 | Description / keywords | **Data API** `node scripts/apply-branding.js --apply` | Reliable. Title via API is flaky → set name in Studio too. |
 | Profile picture / banner | **Studio UI (manual)** | Design assets needed (separate task). |
 | First upload | TBD | Pick from rendered library; recommend **unlisted test** first. |
