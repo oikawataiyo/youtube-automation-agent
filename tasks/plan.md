@@ -10,6 +10,12 @@ LLM がキュレーション/要約/解説した**オリジナル番組**を、T
 
 ## 決定事項 (ユーザー確認済み 2026-06-07)
 - **形式**: 付加価値型 (raw朗読でなくLLMキュレーション+解説を載せる)。
+- **収集モデル (2026-06-07 改定・収益化前提で確定)**: Reddit は「**トレンド/論点の検出センサー**」
+  として**軽量利用**。投稿本文・コメントは**再現しない** (事実/論点のみ抽出)。本文は **100%自作解説**。
+  ビジュアルは HyperFrames で **reddit風カードを自作** (実UI/ロゴは使わない)。
+  理由: Reddit User Agreement が scraping/商用利用を禁止 + 2025 Reddit が scraper を提訴中 +
+  YouTube reused-content 回避 + 商標/トレードドレス回避。**スクレイピング/画面録画は不採用**。
+  根拠詳細は `tasks/reddit-api-terms.md`。
 - **題材**: 投資全般。subreddit を絞らず人気スレを横断収集。
 - **構成**: `channels/` 集約。`mychannel`→`channels/autopilot` に git mv、
   `channels/reddit_for_investor` を新設。投稿層は `--channel` で共有。
@@ -43,9 +49,10 @@ youtube-automation-agent/
 ```
 
 ## データ契約 (スキーマ — 後続工程との接合点)
-- **threads.json** `{ schemaVersion, fetchedAt, source:"reddit", items:[{ id, subreddit, title,
-  url, permalink, author, score, numComments, createdUtc, selftext, topComments:[{author,score,body}],
-  flags:{nsfw,deleted,edited} }] }`。引用元 URL/作者/取得日時を必須化 (帰属・監査用)。
+- **threads.json (トレンドシグナル版)** `{ schemaVersion, fetchedAt, source:"reddit", items:[{ id,
+  subreddit, title, permalink, author, score, numComments, createdUtc, velocity, topicTags[],
+  flags:{nsfw,deleted,edited} }] }`。**selftext/comment body は保存しない** (再現しないため)。
+  permalink/author/取得日時は**帰属・監査用に保持**。title はトピック判定の手掛かりとして保持。
 - **segments.json** `{ schemaVersion, episodeId, title, description, tags[], thumbnailText,
   disclaimerShown:true, segments:[{ id, kind:"intro|thread|outro", narrationText, sourceRef:{threadId,permalink,author},
   display:{subreddit,score,titleCard,commentCards[]}, quoteCharCount, commentaryCharCount }] }`。
@@ -87,7 +94,8 @@ youtube-automation-agent/
 
 ## Phase 2 — 付加価値スクリプト生成 (`scripts/reddit/script.js`) — 収益化の核
 **公開ゲート (測定可能な originality 基準)**:
-- 引用率上限: 各 segment の `quoteCharCount / (quote+commentary)` ≦ 閾値 (例 0.4)。
+- **本文は100%自作解説**: 投稿/コメント文の再現を禁止 (トレンドシグナルから論点のみ使用)。
+  引用が発生する場合も最小限+帰属付き、`quoteCharCount / (quote+commentary)` ≦ 閾値 (例 0.4)。
 - 独自解説量: `commentaryCharCount` 下限。複数ソース利用 (1動画 ≧ N スレ)。
 - 重複動画検出 (過去 episode とのタイトル/題材近接チェック)。
 - **人間レビュー** (=ユーザー) を Phase 2 出力で必須化。
