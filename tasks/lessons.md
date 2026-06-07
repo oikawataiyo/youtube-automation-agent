@@ -56,3 +56,11 @@
 - **何が起きたか**: 赤 alarm の macro framing で bloom strength・point light 過大 + 寄りすぎ → 画面全体が赤白に飽和。逆に暗い反射しない sphere に寄りすぎると真っ黒な blob に。
 - **rule**: bloom は `threshold ~0.4`(明部だけ光らせる) + 控えめ `strength`(~0.5-1.2) + 過大な point light を避ける。寄り画は camera を引いて発光体が画面を埋めないように。暗 object に寄る時は背後/縁から光源を当て rim/catchlight を作る(真っ黒 blob 回避)。frame 確認必須。
 - **適用場面**: bloom + 発光体/暗 object を扱う composition の framing 調整。
+
+## 2026-06-07 reddit API 準備から
+
+### L11: 外部APIは「法的規約」だけでなく「登録ゲート」も建てる前に確認する
+- **何が起きたか**: Reddit Data API の規約(商用可否)は事前調査したが、app 作成が**実際にできるか**は確認せず auth.js/probe.js を先に実装。create app したら 2025-11 廃止のセルフサービス → Responsible Builder 手動承認(2〜4週間)の壁に当たり、probe を1回も通せず。pivot 先の StockTwits も新規登録停止中で同じ轍。
+- **rule**: 登録/app 発行が要る API は、**「①法的規約(商用/再配布) + ②アクセスゲート(self-service か承認制か登録停止中か)」を同じ調査で確認**してから client を実装する。承認制なら「申請を出す」と「ブロックされないよう source-agnostic 設計で代替ソース先行」を分ける。実発行可否は WebSearch で "<service> API self-service deprecated approval 2025/2026" を引く。
+- **適用場面**: 新しい外部 API 連携の着手時。auth client を書く前に「今すぐ key を取れるか」を確かめる。
+- 関連 memory: [[reddit_api_prep_done]] (Reddit 完全離脱 → 非Redditトレンドソースへ pivot 決定)。

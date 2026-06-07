@@ -1,147 +1,156 @@
-# Plan: 2チャンネル化 + reddit_for_investor 新設
+# Plan: investor_digest チャンネル（英語圏シニア投資・高CPM / 非Reddit・トレンドセンサー型）
 
-> Codex plan review (tasks/review_plan.md, NEEDS REVISION) を反映した改訂版 (rev2)。
+> 旧 rev2（Reddit 前提）を**全面改訂**。Reddit Data API は 2025-11-11 にセルフサービス廃止＋
+> Responsible Builder 手動承認（2〜4週間・商用却下リスク）化したため**完全離脱**（判断記録:
+> `tasks/reddit-api-terms.md`、教訓: `tasks/lessons.md` L11）。価値の核「トレンド検出＋100%自作解説＋
+> 自作ビジュアル」は信号源に依存しないので、**承認待ちゼロ・商用OKの非Redditソース**に置き換える。
 
 ## ゴール
-既存の psychology 3D チャンネル (autopilot) を維持したまま、第2チャンネル
-**reddit_for_investor** を追加する。形式は「付加価値型」: Reddit の投資系人気スレッドを
-LLM がキュレーション/要約/解説した**オリジナル番組**を、TTS朗読+字幕+reddit風ビジュアルで
-量産する。聞き流せる投資ダイジェスト。
+第2チャンネル **investor_digest**（公開ブランド名は Phase 6 で確定・内部 slug は暫定）を新設。
+形式 = **英語圏の高齢投資層**向け「聞き流せる投資ダイジェスト」。複数の公開トレンドソースから
+「今ホットな投資テーマ」を検出し、**LLM が100%自作の解説**を載せ、TTS朗読＋字幕＋**自作の
+ファイナンス系カードUI**（実サービスのUI/ロゴは使わない）で量産する。
 
-## 決定事項 (ユーザー確認済み 2026-06-07)
-- **形式**: 付加価値型 (raw朗読でなくLLMキュレーション+解説を載せる)。
-- **収集モデル (2026-06-07 改定・収益化前提で確定)**: Reddit は「**トレンド/論点の検出センサー**」
-  として**軽量利用**。投稿本文・コメントは**再現しない** (事実/論点のみ抽出)。本文は **100%自作解説**。
-  ビジュアルは HyperFrames で **reddit風カードを自作** (実UI/ロゴは使わない)。
-  理由: Reddit User Agreement が scraping/商用利用を禁止 + 2025 Reddit が scraper を提訴中 +
-  YouTube reused-content 回避 + 商標/トレードドレス回避。**スクレイピング/画面録画は不採用**。
-  根拠詳細は `tasks/reddit-api-terms.md`。
-- **題材**: 投資全般。subreddit を絞らず人気スレを横断収集。
-- **構成**: `channels/` 集約。`mychannel`→`channels/autopilot` に git mv、
-  `channels/reddit_for_investor` を新設。投稿層は `--channel` で共有。
-- **綴り訂正**: 当初案 `reddit_for_invester` → 正しい英語 `reddit_for_investor` を採用
-  (※ユーザー最終確認が必要。NG なら全 path 置換)。
+## ターゲットと題材（高CPM 最適化）
+- 層: **英語圏シニア**（広告単価が高い）。
+- 高CPM テーマ: 配当/インカム・退職(401k/IRA/Roth)・Social Security(COLA)・Medicare・年金(annuity)・
+  相続/estate・税・債券/Treasury・インフレ対策(金)・優良株・資産防衛・RMD。
+- 編集トーン: 落ち着いた・明快・煽らない。文字大きめ/読みやすい配色（シニア配慮）。
 
-## 推奨デフォルト (未確定・後で上書き可)
-- **番組フォーマット**: テーマ別ダイジェスト (人気スレ複数本を1本=15-20分)。originality 高・聞き流し向き。
-- **TTS**: Kokoro (既存 `generate-kokoro-narration.py`)。**LLM**: Claude (`@anthropic-ai/sdk`)。
+## 確定ソーススタック（アクセスゲート＋商用可否を検証済み / 各コネクタ実装前に再確認＝Phase 1 Step 0）
 
-## アーキテクチャ原則
-**制作パイプラインは完全別、投稿パイプラインは共有。**
-- autopilot = 手作り HyperFrames。reddit = data-driven テンプレ量産。
-- 共有 = YouTube認証 / package-to-jobs / publish-queue / upload / set-thumbnail → `--channel` 解決。
+### 核①: 権威ある事実・カタリスト（public-domain＝無料・再利用自由・最安全）★最優先
+| ソース | 用途 | 状態 |
+|---|---|---|
+| **SEC EDGAR API** (data.sec.gov) | 開示・8-K・Form4(内部者売買) | 公式無料・public domain（fair-access 10 req/s） |
+| **FRED** (St. Louis Fed) | 金利・CPI・国債利回り・マネー | 無料APIキー・public domain（一部系列は元データ権利あり→系列単位で確認） |
+| **U.S. Treasury** (fiscaldata) / **BLS** | 利回り・I-bond・CPI/雇用 | 無料・public domain |
+| **SSA.gov / Medicare.gov** | **COLA・Medicare 保険料改定** | 無料・public domain（シニア×高CPMの鉄板） |
+
+### 核②: ニュース velocity / トピック検出（承認待ちゼロ・商用OK）
+| ソース | 用途 | 状態 |
+|---|---|---|
+| **APITube News API** | 多ソースのニュース量・NLP（sentiment/entity）でトピック velocity | 無料枠で**商用OK**(30req/30min)。著作権物の再公開禁止＝**信号＋自作解説**で使用。登録時に commercial 対応プランを選択 |
+| **編集RSS**（Kiplinger / Bogleheads / Morningstar / Seeking Alpha / MarketWatch / Reuters / CNBC / Yahoo Finance） | シニア向けトピックレーダー＋見出し velocity（見出し=事実） | 無料 RSS。本文転載せず話題抽出のみ |
+
+### エンハンサー（任意・依存しない）
+| ソース | 用途 | 状態 |
+|---|---|---|
+| **Google Trends 公式API (alpha)** | 検索 interest velocity | **alpha=テスター限定** → 申請のみ。**核に組み込まず**、許可が出たら足す（pytrends は ToS グレーで商用不可、不採用） |
+| 株価/mover API（FMP / Finnhub 等） | 数値の裏取り | 多くは**商用=有料**。当面 EDGAR/FRED で代替、必要回のみ後で有料tier |
+
+**除外**: Reddit（承認制）、StockTwits（新規登録停止中）、NewsAPI.org 無料（非商用のみ）、yfinance（ToS グレー）。
+
+## アーキテクチャ原則（autopilot から不変）
+**制作パイプラインは完全別、投稿パイプラインは共有（`--channel` 解決）。**
+- 投稿層（package-to-jobs / publish-queue / upload / set-thumbnail）は Phase 0 で channel 対応済み・流用。
+- 収集は **source-agnostic**: 各ソースを共通 interface のコネクタにし、正規化 signals に集約。
 
 ## 目標ディレクトリ構成
 ```
 youtube-automation-agent/
-├── channels.json                  # 各ch: name/dir/youtubeChannelId/tokenFile/jobsDir/timezone/privacyDefault/publishSlot/brand
+├── channels.json                       # reddit_for_investor → investor_digest にリネーム
 ├── channels/
-│   ├── autopilot/                 # = 旧 mychannel (git mv)
-│   └── reddit_for_investor/
-│       ├── episodes/<date>/       # threads.json → segments.json → render
-│       ├── output/jobs/           # job.json + _publish-state.json
-│       ├── brand/                 # brand-spec.md, thumbnail config
-│       └── template/              # 量産用 HyperFrames composition (data-driven)
+│   ├── autopilot/                      # 既存・不変
+│   └── investor_digest/                # = 旧 reddit_for_investor (git mv)
+│       ├── episodes/<date>/            # signals.json → segments.json → render
+│       ├── output/jobs/                # job.json + _publish-state.json
+│       ├── brand/                      # brand-spec.md, thumbnail config
+│       └── template/                   # 量産用 HyperFrames composition (自作カードUI)
 ├── scripts/
 │   ├── (upload / publish-queue / package-to-jobs / set-thumbnail)  # 共有・channel対応
-│   └── reddit/  { collect.js, script.js, build-episode.js }
-└── config/  { credentials.json, tokens.autopilot.json, tokens.reddit.json }  # *.json は .gitignore
+│   └── sources/                        # ← 旧 scripts/reddit を置換
+│       ├── index.js                    # コネクタ登録 + 集約 runner
+│       ├── connector.js                # 共通 interface 定義
+│       ├── edgar.js / fred.js / ssa.js / apitube.js / rss.js
+│       └── collect.js                  # 全コネクタ実行 → episodes/<date>/signals.json
+└── config/  { credentials.json, tokens.autopilot.json, tokens.investor.json, .env }
 ```
 
-## データ契約 (スキーマ — 後続工程との接合点)
-- **threads.json (トレンドシグナル版)** `{ schemaVersion, fetchedAt, source:"reddit", items:[{ id,
-  subreddit, title, permalink, author, score, numComments, createdUtc, velocity, topicTags[],
-  flags:{nsfw,deleted,edited} }] }`。**selftext/comment body は保存しない** (再現しないため)。
-  permalink/author/取得日時は**帰属・監査用に保持**。title はトピック判定の手掛かりとして保持。
-- **segments.json** `{ schemaVersion, episodeId, title, description, tags[], thumbnailText,
-  disclaimerShown:true, segments:[{ id, kind:"intro|thread|outro", narrationText, sourceRef:{threadId,permalink,author},
-  display:{subreddit,score,titleCard,commentCards[]}, quoteCharCount, commentaryCharCount }] }`。
-- スキーマは起動時に検証。バージョン不一致は fail-fast。
+## データ契約（スキーマ）
+- **signals.json**（旧 threads.json を置換・トレンドシグナル版）
+  `{ schemaVersion, fetchedAt, sources:[{name,ok,fetched,excluded}], items:[{ id, source,
+  kind:"filing|macro|news|forum-headline", topic, tickers[], title, url, publishedAt,
+  signalStrength, sourceRef:{provider, permalink, author?}, evidence:[{label,value}] }] }`。
+  **本文/記事全文は保存しない**（事実・見出し・数値のみ）。url/provider/取得日時は帰属・監査用に必須。
+- **segments.json**（既存方針踏襲）
+  `{ schemaVersion, episodeId, title, description, tags[], thumbnailText, disclaimerShown:true,
+  segments:[{ id, kind:"intro|topic|outro", narrationText(=100%自作),
+  sourceRefs:[{provider,url}], display:{titleCard, dataCards[]},
+  commentaryCharCount, quoteCharCount }] }`。
+- スキーマは起動時検証・バージョン不一致は fail-fast。
 
 ---
 
-## Phase 0 — channel-aware インフラ refactor (最優先・autopilotを壊さない)
-**成果物**: `channels/autopilot/` への移行 + `channels.json` + token/投稿層の `--channel` 対応。
-1. **回帰の証拠を先に取る (golden fixture)**: 移行前に現行 autopilot で
-   `npm run publish:plan`(dry-run) と `--whoami`、既存 `*.job.json` を `tasks/_golden/` に保存。
-2. `git mv mychannel channels/autopilot`。
-3. 全スクリプトのデフォルトパス `mychannel/...`→`channels/autopilot/...` 更新
-   (`create-video-projects.js` の hardcode VIDEO_DIR 含む)。**旧パス全件検査**:
-   `grep -rn "mychannel" scripts tasks utils` がコメント以外でゼロ件になるまで。
-4. `channels.json` 新設。各ch: `{ name, dir, youtubeChannelId, tokenFile, jobsDir, timezone,
-   privacyDefault, publishSlot }`。起動時にスキーマ検証。
-5. `utils/credential-manager.js` / `utils/youtube-upload.js` を **token path + channel binding 対応**に:
-   - `tokens.json` 固定 → channels.json の `tokenFile` を読む。既存 `tokens.json` を
-     `config/tokens.autopilot.json` に複製 (既存稼働温存)。
-   - **誤投稿ガード**: upload 前に `--whoami` の channel ID と channels.json の
-     `youtubeChannelId` を照合し、不一致なら **upload 拒否** (CRITICAL safety)。
-   - refresh token 失効時の再認証手順を明文化。`config/*.json` は `.gitignore` 済み確認。
-6. `package-to-jobs`/`publish-queue`/`set-thumbnail`/`upload` に `--channel` 追加 (channels.json 解決)。
-   `--channel` 省略時は autopilot 既定 + **deprecation 警告**を出す (移行期間限定)。
-**成功条件**: 移行後 `npm run publish:plan -- --channel autopilot` の出力が golden fixture と一致。
-   `--whoami` が autopilot の channel ID を返す。stale `mychannel` 参照ゼロ。
-**失敗時の復旧**: git でロールバック (Phase 0 は単独 commit、混ぜない)。
+## Phase 0 — channel-aware インフラ（**完了済み**, commit 7337bbe）
+移行・channels.json・誤投稿ガード（assertChannel）・`--channel` 対応は実装済み。本 plan では不変。
 
-## Phase 1 — Reddit collection (`scripts/reddit/collect.js`)
-**事前ゲート (このPhaseのStep 0)**: Reddit API の**商用/収益化利用可否**を利用規約で確認し
-`tasks/reddit-api-terms.md` に結論を記録。利用不可なら代替 (公式RSS/データ提供元) に切替える分岐を先に決める。
-1. Reddit OAuth (script-type app)。`.env` に `REDDIT_CLIENT_ID/SECRET/USER_AGENT` 追加 (.env は除外済)。
-2. subreddit basket (config化) を横断し top/hot 取得、score/comments/velocity でランク。
-3. 上位 N スレ + 上位コメント → `episodes/<date>/threads.json` (上記スキーマ)。
-**失敗モード対応**: rate limit (指数backoff)、token 失効、削除/編集済み投稿、NSFW/PII 除外、
-重複排除、コメント取得部分失敗時の continue、**再実行の冪等性** (同 date は上書きでなく versioned)。
-**成功条件**: スキーマ検証 pass の threads.json が生成され、除外ログが残る。
+## Phase R — Reddit 痕跡の cleanup ＆ リネーム（最初に実施・autopilot に触れない）
+1. `scripts/reddit/auth.js` `scripts/reddit/probe.js` 削除（dead code）。`scripts/sources/` を新設。
+2. `.env.example` の `REDDIT_*` ブロック削除。`package.json` の `reddit:probe` 削除。
+3. channel リネーム `reddit_for_investor` → **`investor_digest`**（暫定・要ユーザー最終確認）:
+   - `git mv channels/reddit_for_investor channels/investor_digest`
+   - `channels.json` の key / dir / jobsDir / brand path / tokenFile(`tokens.investor.json`) 更新。
+   - 非コメントの `reddit_for_investor` 参照ゼロを `grep` で確認。
+4. `tasks/reddit-api-terms.md` は**離脱の判断記録として保持**（消さない）。
+**成功条件**: stale な `reddit`/`reddit_for_investor` 参照ゼロ。autopilot の publish:plan が無回帰。単独 commit。
 
-## Phase 2 — 付加価値スクリプト生成 (`scripts/reddit/script.js`) — 収益化の核
-**公開ゲート (測定可能な originality 基準)**:
-- **本文は100%自作解説**: 投稿/コメント文の再現を禁止 (トレンドシグナルから論点のみ使用)。
-  引用が発生する場合も最小限+帰属付き、`quoteCharCount / (quote+commentary)` ≦ 閾値 (例 0.4)。
-- 独自解説量: `commentaryCharCount` 下限。複数ソース利用 (1動画 ≧ N スレ)。
-- 重複動画検出 (過去 episode とのタイトル/題材近接チェック)。
-- **人間レビュー** (=ユーザー) を Phase 2 出力で必須化。
-**金融コンテンツ safeguard**: 投資助言でない旨の **disclaimer を台本/概要欄に必須挿入**、
-相場操縦的投稿・銘柄宣伝(pump)の除外、断定回避、事実は元スレに帰属。
-**成果物**: `segments.json` (上記スキーマ) + title/description/tags/サムネ文言。
-**成功条件**: ゲート全 pass + ユーザー台本レビュー OK。
+## Phase 1 — ソースコネクタ（source-agnostic 収集）
+**Step 0（ゲート・教訓 L11）**: 各ソースの **規約（商用/再配布）＋アクセス（key 即発行か）** を
+着手直前に確認し `tasks/sources-terms.md` に記録。NG なら当該コネクタを外す/差し替える。
+1. 共通 interface `connector.js`: `fetch() → 正規化 items[]`（kind/topic/tickers/url/signalStrength/sourceRef）。
+2. コネクタ実装（依存の薄い順）: `edgar.js`(public domain) → `fred.js` → `ssa.js` →
+   `rss.js`(複数 feed) → `apitube.js`(要 API key・商用枠)。Google Trends は許可後に追加。
+3. `collect.js`: 全コネクタ実行 → 重複排除 → signalStrength でランク → `episodes/<date>/signals.json`。
+**失敗モード対応**: rate limit(指数backoff)、key 失効、部分失敗時 continue、再実行の冪等性
+（同 date は versioned）、PII/不適切除外、除外ログ保持。
+**成功条件**: スキーマ検証 pass の signals.json が複数ソースから生成され、各ソース ok/excluded ログが残る。
 
-## Phase 2.5 — 暫定ブランド (Phase 3/4/5 の入力)
-チャンネル名/handle 候補・色・音声(voice)・レイアウト方針・サムネ規則の**暫定** brand-spec を確定。
-正式ブランド (競合調査ベース) は Phase 6 で確定するが、render に必要な最小限を先に固定。
+## Phase 2 — 100%自作スクリプト生成（収益化の核）
+**公開ゲート（測定可能な originality）**: 本文は完全自作（記事/投稿文を再現しない）。引用が出る場合は
+最小限＋帰属、`quoteCharCount/(quote+commentary) ≦ 0.4`。`commentaryCharCount` 下限。複数ソース利用。
+過去 episode との題材近接チェック。**人間レビュー（ユーザー）必須**。
+**金融 safeguard**: 「投資助言でない」**disclaimer を台本＋概要欄に必須**、断定回避、pump/煽り除外、
+数値は public-domain ソースに帰属（EDGAR/FRED/SSA）。
+**成果物**: `segments.json` + title/description/tags/サムネ文言（シニア向けトーン）。
+**成功条件**: ゲート全 pass ＋ ユーザー台本レビュー OK。
+
+## Phase 2.5 — 暫定ブランド（render 入力の最小固定）
+voice（落ち着いた英語ナレーション）・配色（高コントラスト・大きめ文字）・**自作カードUI レイアウト**
+（ニュース/データ/ティッカーのカード＝自前資産、実サービスUI不使用）・サムネ規則の暫定 spec を確定。
 
 ## Phase 3 — narration + caption
-Kokoro TTS で segment毎WAV (voice は 2.5 で選定) + whisper word-timing → `words.js`。
+Kokoro TTS で segment 毎 WAV（voice は 2.5 で選定）＋ whisper word-timing → `words.js`。
 
-## Phase 4 — 量産テンプレ render (最大の作り込み・単独多セッション化可)
-**1つの再利用 HyperFrames composition** を segments.json で駆動 (redditカード/upvote/コメントカード)。
-`build-episode.js` が tts→caption→segments→render を一括 → `full.mp4`。
+## Phase 4 — 量産テンプレ render（最大の作り込み・多セッション化可）
+**1つの再利用 HyperFrames composition** を segments.json で駆動（自作のファイナンスカード/データ可視化/
+ティッカー帯）。`build-episode.js` が tts→caption→segments→render を一括 → `full.mp4`。
 
-## Phase 0.5 — reddit用 YouTubeチャンネル + 認証 (ユーザー作業含む / Phase 5 の前提)
-- ユーザー: ブランドアカウントとして新チャンネル作成 (handle は Studio 手動)。
-- OAuth フローを reddit ch 選択で実行し `config/tokens.reddit.json` + `youtubeChannelId` を取得・記録。
-- channels.json の `reddit_for_investor.youtubeChannelId` を埋める (Phase 5 ガードの基準値)。
+## Phase 0.5 — investor_digest 用 YouTube チャンネル + 認証（ユーザー作業含む）
+新チャンネル作成（handle は Studio 手動）→ OAuth を当 channel で実行 → `config/tokens.investor.json`＋
+`youtubeChannelId` 取得 → `channels.json` の `investor_digest.youtubeChannelId` を埋める（Phase 5 ガード基準値）。
 
-## Phase 5 — サムネ + 投稿 (段階的ゲート)
-1. reddit ch 用 thumbnail config (既存 designed-thumbnail 流用)。
-2. **誤チャンネル投稿防止の段階ゲート**: dry-run → channel ID 照合 (Phase 0 ガード) →
-   **unlisted テスト投稿で実機確認** → 予約 (publishAt) 確認 → 本番 public。
-**成功条件**: 正しいチャンネルに予約公開され、誤チャンネル投稿が構造的に不可能。
+## Phase 5 — サムネ + 投稿（段階ゲート）
+designed-thumbnail 流用 → dry-run → channel ID 照合（Phase 0 ガード）→ **unlisted 実機確認** →
+予約(publishAt) → public。**誤チャンネル投稿が構造的に不可能**であること。
 
 ## Phase 6 — 正式ブランド/アイデンティティ
-競合調査ベースで名前/handle/ビジュアル確定。brand-spec.md + thumbnail brand rules 正式化。
+競合調査ベースで名前/handle/ビジュアル確定（[[channel_design_research_first]] の方針）。brand-spec 正式化。
 
 ---
 
 ## リスク / 留意
-- **誤投稿 (CRITICAL)**: 2ch同居で最大の事故。Phase 0 の channel-ID バインド + Phase 5 段階ゲートで構造的に防ぐ。
-- **収益化**: inauthentic content ポリシー。出典・発効日を要確認 (現状 [invideo解説](https://invideo.io/blog/youtube-kills-ai-faceless-channels/) ベース、**YouTube公式で裏取り**)。Phase 2 の測定可能ゲートが生命線。
-- **Reddit API規約**: 商用利用可否を Phase 1 ゲートで確定。
-- **金融コンテンツ**: 免責・誤情報・pump 対策を Phase 2 に組込み。
-- **autopilot退行**: golden fixture + 後方互換 + 単独 commit で担保。
+- **ソース規約 (各個)**: 商用/再配布可否はソース毎に異なる → Phase 1 Step 0 で着手直前に確認（教訓 L11）。
+- **アクセスゲート再発**: Google Trends alpha は許可制 → 核に入れず任意。新ソース追加時も「今 key を取れるか」を先に確認。
+- **商用データ API コスト**: 株価系は scale 時に有料化判断（当面 public-domain で代替）。
+- **YouTube reused-content**: 100%自作解説＋自作ビジュアルで構造的に回避（収益化の生命線）。
+- **金融コンテンツ**: 免責・誤情報・pump 対策を Phase 2 に組込み。事実は政府ソースに帰属。
+- **autopilot 退行**: Phase R/全 Phase で autopilot に触れない・単独 commit・grep 検証。
 
-## 進め方 (Phase 順 — Codex 提案反映)
+## 進め方
 ```
-Phase 0 → Phase 1(規約ゲート→収集) → Phase 2(台本+ゲート, ユーザーレビュー) →
-Phase 2.5(暫定brand) → Phase 3-4(narration/render) → Phase 0.5(reddit認証) → Phase 5(投稿) → Phase 6(正式brand)
+Phase 0(済) → Phase R(cleanup/rename) → Phase 1(規約ゲート→多源収集) →
+Phase 2(自作台本+ゲート, ユーザーレビュー) → Phase 2.5(暫定brand) →
+Phase 3-4(narration/render) → Phase 0.5(認証) → Phase 5(投稿) → Phase 6(正式brand)
 ```
-- 各 Phase 独立 commit/push。Phase 0 は autopilot 退行が怖いので単独完了+golden検証。
-- Phase 1-2 を先に通し「台本の質」を早期にユーザーレビュー (ここが OK なら残りは機械的)。
+- 各 Phase 独立 commit/push。Phase 1-2 を先に通し「台本の質」を早期にユーザーレビュー。

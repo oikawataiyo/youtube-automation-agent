@@ -9,6 +9,15 @@
 > 必ず https://www.reddit.com/prefs/apps と開発者ダッシュボード、
 > および https://www.redditinc.com/policies/data-api-terms（手動閲覧）で裏取りすること。
 
+## ⚠️ 2026-06-07 実地で判明（重大）: セルフサービス API キー廃止
+Reddit は **2025-11-11 にセルフサービスの API キー発行を廃止**。`prefs/apps` で create app
+しても client_id/secret は出ず、**Responsible Builder Policy の利用申請 → 手動承認（目標7日・
+実際2〜4週間、非商用でも詳細説明要）→ 承認後に app 作成**という流れに変更。
+よって probe の実 200 確認は**承認が下りるまで不可**。収益化=商用判定での却下/契約要求リスクも残る。
+→ 下記「結論」は承認が下りた場合の話。**承認ブロックを避けるため collect.js は source-agnostic 化し、
+承認不要の非Redditトレンドソースで先行する方針を別途検討**（次のユーザー判断）。
+申請ページ: https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy
+
 ## 結論: **条件付き OK（CONDITIONAL）**
 
 開発・検証フェーズ（非収益化での疎通確認・台本品質レビュー）は **free tier で進めてよい**。
