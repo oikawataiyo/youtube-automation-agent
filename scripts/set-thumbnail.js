@@ -71,6 +71,7 @@ async function main() {
     }
   }
   console.log(`\n✅ ${ok}/${plan.length} thumbnails updated.`);
+  if (ok < plan.length) process.exitCode = 1; // let callers/retries detect failure
 }
 
 main().catch((e) => { console.error('❌', e.message); process.exit(1); });
