@@ -27,6 +27,7 @@
     "publish:morning": "node scripts/package-to-jobs.js && node scripts/publish-queue.js --slots 06:00,08:00,10:00 --mode rotate",
     "publish:morning:plan": "node scripts/publish-queue.js --slots 06:00,08:00,10:00 --mode rotate --dry-run",
     "analytics": "node scripts/analytics-report.js",
+    "reddit:probe": "node scripts/reddit/probe.js",
     "experiment:slots": "node scripts/experiment-report.js",
     "test:slots": "node utils/jst-slots.test.js",
     "workflow:daily": "node workflows/daily-content-pipeline.js",
