@@ -18,6 +18,7 @@
     "video:from-script": "node scripts/produce-from-script.js",
     "video:produce": "node scripts/produce-video-project.js",
     "video:qa": "node scripts/qa-video-screenshots.js",
+    "thumb:build": "node scripts/build-thumbnail.js",
     "upload": "node scripts/upload-video.js",
     "jobs:build": "node scripts/package-to-jobs.js",
     "publish:plan": "node scripts/publish-queue.js --dry-run",

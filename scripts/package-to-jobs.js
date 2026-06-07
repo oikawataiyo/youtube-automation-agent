@@ -45,6 +45,18 @@ function slugFromVideoPath(p) {
   return path.basename(p).replace(/\.[^.]+$/, '');
 }
 
+/**
+ * If the video's project dir has a designed thumbnail at renders/thumb.jpg,
+ * return its repo-relative path; else null. video looks like
+ * mychannel/video/<slug>/renders/<file>.mp4 → mychannel/video/<slug>.
+ */
+function designedThumbFor(video) {
+  const m = video.match(/^(.*[\\/]video[\\/][^\\/]+)[\\/]/);
+  if (!m) return null;
+  const rel = path.join(m[1], 'renders', 'thumb.jpg');
+  return fs.existsSync(path.resolve(ROOT, rel)) ? rel.replace(/\\/g, '/') : null;
+}
+
 /** Extract the first fenced code block that appears after `label` in `block`. */
 function codeBlockAfter(block, label) {
   const idx = block.indexOf(label);
@@ -70,7 +82,10 @@ function parsePackage(md) {
     const order = numMatch ? parseInt(numMatch[1], 10) : jobs.length + 1;
 
     const video = inlineCodeAfter(sec, '動画ファイル');
-    const thumbnail = inlineCodeAfter(sec, 'サムネ');
+    // Prefer the pipeline's designed thumbnail (renders/thumb.jpg) over a manual
+    // サムネ path so videos never ship a frame-grab. Falls back to サムネ, then none.
+    const mdThumb = inlineCodeAfter(sec, 'サムネ');
+    const thumbnail = designedThumbFor(video) || mdThumb;
     const title = codeBlockAfter(sec, '**タイトル:**');
     const description = codeBlockAfter(sec, '**説明:**');
     const tagsRaw = codeBlockAfter(sec, '**タグ:**');
