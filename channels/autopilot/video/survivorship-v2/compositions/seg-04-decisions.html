@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-04-words.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0a0c10;
+        --bg: #0a0c10; --bg-grid: #141925; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --alarm: #d8392e; --warn: #ff5a3c; --gold: #caa86a;
+        --green: #6aa878; --paper: #c9c1ad; --deep: #172638;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); }
+
+      #grid { position: absolute; inset: 0;
+        background-image:
+          linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 70% 58% at 50% 47%, transparent 36%, rgba(0,0,0,0.62) 100%); }
+      #warmwash, #coldwash, #spotwash { position:absolute; inset:0; pointer-events:none; opacity:0; }
+      #warmwash { background: radial-gradient(ellipse 55% 45% at 50% 42%, rgba(202,168,106,0.12), transparent 68%); }
+      #coldwash { background: linear-gradient(180deg, transparent 25%, rgba(23,38,56,0.55) 100%); }
+      #spotwash { background: radial-gradient(ellipse 36% 48% at 50% 44%, rgba(202,168,106,0.20), transparent 70%); }
+      .particle { position:absolute; width:3px; height:3px; border-radius:50%; background:#3a4658; opacity:0; }
+
+      #stageSvg { position:absolute; inset:0; width:1920px; height:1080px; }
+      .goldLine { stroke:var(--gold); stroke-width:3; fill:none; }
+      .ghostDot { fill:#5b6472; opacity:0; }
+      .gridCell { fill:rgba(58,70,88,0.0); stroke:rgba(154,166,178,0.22); stroke-width:1; }
+      .barTrack { fill:rgba(58,70,88,0.28); }
+      .barFill { fill:var(--alarm); }
+
+      #kicker { position:absolute; left:88px; top:84px; opacity:0;
+        font-size:22px; letter-spacing:0.32em; text-transform:uppercase; color:var(--steel); }
+      #kicker .num { color:var(--gold); }
+      #kickerline { position:absolute; left:88px; top:122px; height:2px; width:0; background:var(--steel); opacity:0.5; }
+
+      .domainLabel { position:absolute; left:236px; top:188px; opacity:0;
+        font-size:28px; font-weight:800; letter-spacing:0.2em; text-transform:uppercase;
+        color:var(--steel); white-space:nowrap; }
+
+      #type { position:absolute; inset:0; }
+      .centerBlock { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px; }
+      .bigTitle { font-size:92px; font-weight:800; line-height:1.04; letter-spacing:0.02em; color:var(--ink); text-transform:uppercase; }
+      .bigTitle b { color:var(--warn); }
+      .bigTitle .gold { color:var(--gold); }
+      .sub { margin-top:22px; font-size:34px; font-weight:300; line-height:1.28; color:var(--steel); }
+      .sub b { color:var(--ink); font-weight:700; }
+
+      .ghostLabel { position:absolute; opacity:0; font-size:25px; font-weight:600;
+        color:var(--steel); white-space:nowrap; }
+      .nodeLabel { position:absolute; opacity:0; font-size:26px; font-weight:800;
+        letter-spacing:0.1em; text-transform:uppercase; color:var(--gold); white-space:nowrap; }
+
+      .topHead { position:absolute; left:50%; top:150px; opacity:0; text-align:center; width:1500px;
+        color:var(--ink); font-size:54px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; }
+      .topHead b { color:var(--warn); }
+      .topHead .gold { color:var(--gold); }
+
+      .lowLine { position:absolute; left:50%; top:812px; opacity:0; text-align:center; width:1320px;
+        color:var(--ink); font-size:40px; line-height:1.18; font-weight:300; }
+      .lowLine b { color:var(--warn); font-weight:800; }
+      .lowLine .gold { color:var(--gold); font-weight:800; }
+      .lowLine .small { display:block; margin-top:10px; font-size:30px; color:var(--steel); }
+
+      .metric { position:absolute; opacity:0; text-align:center; color:var(--ink); }
+      .metric .num { font-size:104px; font-weight:800; color:var(--bone); line-height:1; font-variant-numeric:tabular-nums; }
+      .metric .lab { margin-top:8px; color:var(--steel); font-size:24px; letter-spacing:0.1em; text-transform:uppercase; }
+
+      #journal { position:absolute; left:196px; top:300px; opacity:0; width:560px; min-height:320px;
+        padding:34px 38px; background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.42); }
+      #journal .year { float:right; color:var(--steel); font-size:28px; font-weight:700; }
+      #journal .name { color:var(--gold); font-size:26px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
+      #journal .paperTitle { clear:both; margin-top:24px; font-size:40px; line-height:1.14; color:var(--ink); font-weight:300; }
+      #journal .author { margin-top:20px; color:var(--mute); font-size:24px; letter-spacing:0.06em; }
+
+      .storyCard { position:absolute; opacity:0; width:520px; padding:26px 30px;
+        background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.40); }
+      .storyCard .cap { font-size:24px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; }
+      .storyCard .line { margin-top:14px; color:var(--steel); font-size:28px; line-height:1.24; font-weight:300; }
+
+      #founder { left:50%; top:262px; width:660px; margin-left:-330px; }
+      #founder .cap { color:var(--gold); }
+      #riskSrc { position:absolute; left:50%; top:470px; opacity:0; text-align:center; width:1100px;
+        color:var(--mute); font-size:23px; letter-spacing:0.12em; text-transform:uppercase; }
+
+      .speechCard { position:absolute; left:50%; top:330px; opacity:0; width:1040px; margin-left:-520px;
+        padding:34px 40px; background:rgba(20,25,37,0.92); border:1px solid rgba(154,166,178,0.40);
+        border-radius:4px; text-align:center; color:var(--bone); font-size:46px; font-weight:300;
+        font-style:italic; line-height:1.2; }
+
+      #notebook { position:absolute; left:50%; top:356px; opacity:0; width:580px; margin-left:-290px;
+        padding:32px 38px; background:rgba(40,36,28,0.94); border:1px solid rgba(202,168,106,0.5);
+        box-shadow:0 30px 80px rgba(0,0,0,0.5); }
+      #notebook .tab { color:var(--gold); font-size:24px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; }
+      #notebook .yr { float:right; color:var(--paper); font-size:24px; font-weight:700; }
+      #notebook .body { clear:both; margin-top:22px; color:var(--paper); font-size:32px; line-height:1.22; font-weight:300; }
+      #notebook .strike { position:absolute; left:34px; right:34px; top:118px; height:3px; background:var(--alarm); transform:scaleX(0); transform-origin:left center; opacity:0; }
+
+      .confLine { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1200px;
+        font-family:serif; color:var(--gold); font-size:60px; font-weight:400; letter-spacing:0.02em; }
+      .confLow { position:absolute; left:50%; top:806px; opacity:0; text-align:center; width:1200px;
+        font-family:serif; color:var(--paper); font-size:38px; font-style:italic; font-weight:400; }
+
+      .miniCoin { position:absolute; opacity:0; width:64px; height:64px; border-radius:50%;
+        background:radial-gradient(circle at 38% 34%, #e6cd92, #caa86a 60%, #8a6f3e);
+        box-shadow:0 0 24px rgba(202,168,106,0.5); }
+      #tkCoin { left:50%; top:600px; margin-left:-32px; }
+      #coinHeads { position:absolute; left:50%; top:560px; opacity:0; margin-left:-120px; width:240px;
+        text-align:center; color:var(--gold); font-size:44px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; }
+
+      #deepTease { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px;
+        color:var(--gold); font-size:60px; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; }
+      #deepTease b { color:var(--warn); }
+
+      #caps { position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
+        width:1500px; text-align:center; }
+      .phrase { position:absolute; left:0; right:0; bottom:0; opacity:0;
+        font-size:41px; line-height:1.34; letter-spacing:0.01em; color:var(--mute); font-weight:400; }
+      .phrase .w { color:var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="seg-04-decisions"
+      data-start="0"
+      data-duration="292.9"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="vo" data-start="0" data-duration="292.9" data-track-index="9"
+             src="../assets/narration/seg-04-decisions.wav" data-volume="1"></audio>
+
+      <div id="bg" class="clip" data-start="0" data-duration="292.9" data-track-index="0">
+        <div id="grid"></div>
+        <div id="particles"></div>
+        <div id="warmwash"></div>
+        <div id="coldwash"></div>
+        <div id="spotwash"></div>
+        <div id="vignette"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="292.9" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="careerViz"></g>
+          <g id="relViz"></g>
+          <g id="investViz"></g>
+          <g id="riskViz"></g>
+          <g id="objViz"></g>
+          <g id="confessViz"></g>
+        </svg>
+      </div>
+
+      <div id="labels" class="clip" data-start="0" data-duration="292.9" data-track-index="2">
+        <div id="kicker">SURVIVORSHIP BIAS &nbsp;.&nbsp; <span class="num">PART 05</span></div>
+        <div id="kickerline"></div>
+        <div class="domainLabel" id="careerLabel">CAREER</div>
+        <div class="domainLabel" id="relLabel">RELATIONSHIPS</div>
+        <div class="domainLabel" id="investLabel">INVESTING</div>
+        <div class="domainLabel" id="riskLabel">RISK-TAKING</div>
+        <div class="domainLabel" id="objLabel" style="color:var(--gold)">A FAIR OBJECTION</div>
+      </div>
+
+      <div id="type" class="clip" data-start="0" data-duration="292.9" data-track-index="3">
+        <div class="centerBlock" id="intro">
+          <div class="bigTitle">IT STOPS BEING<br><b>ABSTRACT</b></div>
+        </div>
+
+        <div class="nodeLabel" id="careerNode">SUCCESSFUL AT 24</div>
+        <div class="ghostLabel" id="gNovelist" style="left:1090px; top:300px;">NOVELIST &mdash; never published</div>
+        <div class="ghostLabel" id="gMusician" style="left:1090px; top:372px;">MUSICIAN &mdash; never broke through</div>
+        <div class="ghostLabel" id="gQuieter" style="left:1090px; top:444px;">older and broker and quieter</div>
+        <div class="lowLine" id="careerCall">THE PATH IS REAL.&nbsp;&nbsp;THE BASE RATE IS <b>HIDDEN</b></div>
+
+        <div class="nodeLabel" id="coupleNode" style="left:300px; top:300px;">30 YEARS</div>
+        <div class="lowLine" id="relCall">THE ADVICE SURVIVED.&nbsp;&nbsp;THE COUPLE SURVIVED.<span class="small">so you assume the advice caused it</span></div>
+        <div class="topHead" id="relEmph" style="top:700px;">UNKNOWABLE FROM <span class="gold">THE INSIDE</span></div>
+
+        <div id="journal">
+          <span class="year">2018</span>
+          <div class="name">Journal of Financial Economics</div>
+          <div class="paperTitle">Just 4% of stocks created the entire net wealth gain</div>
+          <div class="author">Bessembinder</div>
+        </div>
+        <div class="metric" id="mi4" style="left:1440px; top:316px; width:360px;"><div class="num" id="mi4num" style="color:var(--gold)">0%</div><div class="lab">the entire net wealth gain</div></div>
+        <div class="metric" id="mi96" style="left:1440px; top:512px; width:360px;"><div class="num" id="mi96num" style="font-size:84px;">0%</div><div class="lab">&asymp; short-term Treasury bills</div></div>
+        <div class="ghostLabel" id="investYears" style="left:980px; top:724px; color:var(--mute);">1926 &ndash; 2016</div>
+        <div class="lowLine" id="investCall">EVERY STOCK-PICKER IS A <span class="gold">SURVIVOR</span><span class="small">pulled from a small lucky sample</span></div>
+        <div class="ghostLabel" id="dayLabel" style="left:50%; top:760px; width:600px; margin-left:-300px; text-align:center;">the rest get day jobs</div>
+
+        <div class="storyCard" id="founder"><div class="cap">FOUNDER</div><div class="line">quit the job &middot; bet the savings &middot; made it work</div></div>
+        <div id="riskSrc">U.S. BUREAU OF LABOR STATISTICS / BUSINESS EMPLOYMENT DYNAMICS</div>
+        <div class="metric" id="mr1" style="left:320px; top:520px; width:460px;"><div class="num" id="mr1num" style="color:var(--alarm)">0%</div><div class="lab">fail in year one</div></div>
+        <div class="metric" id="mr2" style="left:1140px; top:520px; width:460px;"><div class="num" id="mr2num" style="color:var(--alarm)">0%</div><div class="lab">fail within ten years</div></div>
+        <div class="lowLine" id="riskCall">ONE DATA POINT<span class="small">from a <b>graveyard</b> of identical-looking attempts</span></div>
+
+        <div class="speechCard" id="objCard">&ldquo;isn't there signal in the survivors?&rdquo;</div>
+        <div class="topHead" id="objAnswer" style="color:var(--gold); top:330px;">YES &mdash; WITH A KNIFE EDGE OF ASTERISKS</div>
+        <div class="lowLine" id="objLine" style="top:760px;">you cannot tell signal from noise inside the sample</div>
+        <div class="nodeLabel" id="objBill" style="left:50%; top:286px; width:600px; margin-left:-300px; text-align:center;">1 BILLIONAIRE</div>
+        <div class="ghostLabel" id="objBar" style="left:50%; top:772px; width:600px; margin-left:-300px; text-align:center; color:var(--steel);">99 BARISTAS</div>
+        <div class="lowLine" id="objCall">EVIDENCE THE STRATEGY IS <span class="gold">HIGH-VARIANCE</span><span class="small">not evidence it is <b>GOOD</b> &mdash; two different claims</span></div>
+
+        <div class="confLine" id="cf1">I'm going to admit something.</div>
+        <div id="notebook"><span class="yr">2014</span><div class="tab">My Investing Notebook</div><div class="body">three years of my twenties</div><div class="strike" id="nbStrike"></div></div>
+        <div class="confLow" id="cf2" style="top:600px;">the track record was, on paper, undeniable</div>
+        <div class="topHead" id="cf3" style="top:150px;">ONE OF SEVEN STUDENTS</div>
+        <div class="topHead" id="cf4" style="top:150px;">A COIN FLIPPED SEVEN TIMES</div>
+        <div class="topHead" id="cf5" style="top:150px; color:var(--gold);">TAUGHT BY THE ONE HEADS</div>
+        <div id="coinHeads">HEADS</div>
+        <div class="confLow" id="cf6" style="top:790px;">I was lucky &mdash; I lost a small amount</div>
+        <div class="confLow" id="cf7" style="top:838px; color:var(--alarm);">it cost me a year of savings</div>
+
+        <div class="centerBlock" id="tk1"><div class="bigTitle">THE MISTAKE ISN'T<br>ADMIRING THE SURVIVOR</div></div>
+        <div class="centerBlock" id="tk2"><div class="bigTitle" style="font-size:64px;">IT'S USING THEM AS <b>EVIDENCE</b><br>FOR YOUR OWN DECISION</div></div>
+        <div class="centerBlock" id="tk3"><div class="bigTitle">INSPIRATION<br><span class="gold">WITHOUT BASE RATES</span></div></div>
+        <div class="centerBlock" id="tk4"><div class="bigTitle" style="font-size:58px;">A COIN TOSS SOMEONE WON<br><b>REPACKAGED AND SOLD AS A STRATEGY</b></div></div>
+        <div class="miniCoin" id="tkCoin"></div>
+
+        <div class="centerBlock" id="t1"><div class="bigTitle">STEP BACK FROM<br>YOUR OWN DECISIONS</div></div>
+        <div class="centerBlock" id="t2"><div class="bigTitle" style="font-size:72px;">IF WE CAN SEE THIS &hellip;<br><b>WHY DOES NOBODY ACT ON IT?</b></div></div>
+        <div class="centerBlock" id="t3"><div class="bigTitle">THE FIX IS NOT<br><b>MORE INFORMATION</b></div></div>
+        <div id="deepTease">ONE LAYER DEEPER THAN INDUSTRY<br><b>ALL THE WAY TO THE INSIDE OF YOUR SKULL</b></div>
+      </div>
+
+      <div id="caps" class="clip" data-start="0" data-duration="292.9" data-track-index="4"></div>
+    </div>
+
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(20260604);
+      const SVGNS = "http://www.w3.org/2000/svg";
+
+      function svg(tag, attrs, parent){
+        const el = document.createElementNS(SVGNS, tag);
+        for (const [k,v] of Object.entries(attrs || {})) el.setAttribute(k, v);
+        if (parent) parent.appendChild(el);
+        return el;
+      }
+      function textSvg(txt, x, y, cls, parent, size){
+        const t = svg("text", {x, y, class: cls || "", fill:"currentColor"}, parent);
+        t.textContent = txt;
+        if (size) t.setAttribute("font-size", size);
+        return t;
+      }
+
+      (function(){
+        const host = document.getElementById("particles");
+        for (let i=0;i<80;i++){
+          const p=document.createElement("div"); p.className="particle";
+          p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*1080)+"px";
+          p.style.transform="scale("+(0.6+rnd()*1.6)+")";
+          p.dataset.drift=(rnd()*2-1).toFixed(2);
+          host.appendChild(p);
+        }
+      })();
+
+      // B1 CAREER: one lit rising path (survivor) plus a graveyard scatter of failures.
+      const careerG = document.getElementById("careerViz");
+      const careerPath = svg("polyline", {points:"300,752 400,712 500,690 600,602 690,540 762,440 806,360", class:"goldLine", opacity:0}, careerG);
+      const careerNodeDot = svg("circle", {cx:806, cy:360, r:0, fill:"var(--gold)", opacity:0}, careerG);
+      const careerLen = careerPath.getTotalLength();
+      careerPath.setAttribute("stroke-dasharray", careerLen);
+      careerPath.setAttribute("stroke-dashoffset", careerLen);
+      const careerGhosts=[];
+      for(let i=0;i<40;i++){
+        const x=1080+rnd()*580, y=336+rnd()*430;
+        careerGhosts.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:6,class:"ghostDot"},careerG));
+      }
+
+      // B2 RELATIONSHIPS: one gold couple glyph (survivor) plus a grid of dim couples.
+      const relG = document.getElementById("relViz");
+      function makeCouple(cx, cy, stroke, parent){
+        const g=svg("g",{opacity:0},parent);
+        const a=svg("circle",{cx:cx-26,cy,r:20,fill:"none",stroke,"stroke-width":3},g);
+        const b=svg("circle",{cx:cx+26,cy,r:20,fill:"none",stroke,"stroke-width":3},g);
+        const link=svg("line",{x1:cx-6,y1:cy,x2:cx+6,y2:cy,stroke,"stroke-width":3},g);
+        return {g, a, b, link};
+      }
+      const coupleSurvivor = makeCouple(380, 430, "var(--gold)", relG);
+      const coupleGhosts=[];
+      for(let i=0;i<8;i++){
+        const col=i%2, row=Math.floor(i/2);
+        const cx=1180+col*250, cy=350+row*128;
+        coupleGhosts.push(makeCouple(cx, cy, "#5b6472", relG));
+      }
+
+      // B3 INVESTING: a 10x10 grid; 4 cells gold (the wealth gain), 96 dim steel.
+      const investG = document.getElementById("investViz");
+      const cellEls=[]; const gridStartX=1000, gridStartY=300, pitch=40, cellSize=32;
+      const goldSet = new Set([44,45,54,55]);
+      for(let i=0;i<100;i++){
+        const col=i%10, row=Math.floor(i/10);
+        const x=gridStartX+col*pitch, y=gridStartY+row*pitch;
+        cellEls.push(svg("rect",{x,y,width:cellSize,height:cellSize,rx:2,class:"gridCell"},investG));
+      }
+      const dayjobsDots=[];
+      for(let i=0;i<24;i++){
+        const x=1000+rnd()*400, y=770+rnd()*70;
+        dayjobsDots.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:5,class:"ghostDot"},investG));
+      }
+
+      // B4 RISK-TAKING: two graveyard bars filling to the failure percentages.
+      const riskG = document.getElementById("riskViz");
+      const barW = 460;
+      svg("rect",{x:320,y:660,width:barW,height:26,rx:3,class:"barTrack",opacity:0},riskG).setAttribute("id","rt1");
+      const rFill1 = svg("rect",{x:320,y:660,width:0,height:26,rx:3,class:"barFill"},riskG);
+      svg("rect",{x:1140,y:660,width:barW,height:26,rx:3,class:"barTrack",opacity:0},riskG).setAttribute("id","rt2");
+      const rFill2 = svg("rect",{x:1140,y:660,width:0,height:26,rx:3,class:"barFill"},riskG);
+
+      // B5 OBJECTION: 100 dots; one billionaire balloons, the rest shrink to baristas.
+      const objG = document.getElementById("objViz");
+      const objDots=[];
+      const billDot = svg("circle",{cx:960,cy:438,r:0,fill:"var(--gold)",opacity:0},objG);
+      objDots.push(billDot);
+      for(let i=1;i<100;i++){
+        let x=420+rnd()*1080, y=336+rnd()*404;
+        if(Math.abs(x-960)<70 && Math.abs(y-438)<70){ x+=160; }
+        objDots.push(svg("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:6,fill:"#5b6472",opacity:0},objG));
+      }
+
+      // B6 CONFESSION: seven student tokens; six fall, one survivor becomes a coin.
+      const confessG = document.getElementById("confessViz");
+      const tokens=[]; const tokN=7; const tokPitch=100; const tokStartX=960-((tokN-1)/2)*tokPitch;
+      let survivorTok=null;
+      for(let i=0;i<tokN;i++){
+        const cx=tokStartX+i*tokPitch, cy=438;
+        const t=svg("circle",{cx,cy,r:30,fill:"none",stroke:"var(--gold)","stroke-width":4,opacity:0},confessG);
+        tokens.push(t);
+        if(i===3) survivorTok=t;
+      }
+
+      // Captions: short phrase groups, active word highlighted.
+      const WORDS = window.SEG04_WORDS || [];
+      const capHost = document.getElementById("caps");
+      const phrases=[]; let cur=[];
+      WORDS.forEach((w)=>{
+        cur.push(w);
+        const punct=/[.!?]$/.test(w[0]);
+        const comma=/[,]$/.test(w[0]) && cur.length>=6;
+        if (punct || comma || cur.length>=10) { phrases.push(cur); cur=[]; }
+      });
+      if(cur.length) phrases.push(cur);
+      const phraseEls = phrases.map(ph=>{
+        const div=document.createElement("div"); div.className="phrase";
+        ph.forEach(w=>{ const s=document.createElement("span"); s.className="w"; s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); });
+        capHost.appendChild(div);
+        return {el:div,start:ph[0][1],end:ph[ph.length-1][2],words:[...div.querySelectorAll(".w")]};
+      });
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const DUR = 292.9;
+      const mi4num = document.getElementById("mi4num");
+      const mi96num = document.getElementById("mi96num");
+      const mr1num = document.getElementById("mr1num");
+      const mr2num = document.getElementById("mr2num");
+
+      gsap.set(["#intro","#tk1","#tk2","#tk3","#tk4","#t1","#t2","#t3","#deepTease"],{xPercent:-50,yPercent:-50});
+      gsap.set([".topHead",".lowLine"],{xPercent:-50});
+      gsap.set([".confLine"],{xPercent:-50,yPercent:-50});
+      gsap.set([".confLow"],{xPercent:-50});
+
+      // Background intro.
+      tl.to("#grid",{opacity:0.5,duration:1.4,ease:"power2.out"},0)
+        .to(".particle",{opacity:0.42,duration:2,stagger:0.018,ease:"power1.out"},0.2)
+        .fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:300,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+      gsap.utils.toArray(".particle").forEach((p)=>{
+        const d=parseFloat(p.dataset.drift)||0;
+        tl.to(p,{y:"+="+(d*28),duration:36,ease:"sine.inOut",yoyo:true,repeat:1},0);
+      });
+
+      const mi4Proxy={v:0}, mi96Proxy={v:0}, mr1Proxy={v:0}, mr2Proxy={v:0};
+      gsap.set(cellEls,{opacity:0});
+
+      // B0 INTRO.
+      tl.fromTo("#intro",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},0.3)
+        .to("#intro .bigTitle b",{scale:1.04,transformOrigin:"center",duration:0.2,yoyo:true,repeat:1,ease:"power2.out"},1.4)
+        .to("#intro",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},3.2);
+
+      // B1 CAREER: one lit rising path vs a graveyard of failures.
+      tl.fromTo("#careerLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},3.8)
+        .fromTo(careerPath,{strokeDashoffset:careerLen,opacity:1},{strokeDashoffset:0,duration:2.2,ease:"power2.inOut"},4.2)
+        .to(careerNodeDot,{attr:{r:11},opacity:1,duration:0.4,ease:"back.out(1.7)"},6.2)
+        .fromTo("#careerNode",{opacity:0,y:10},{opacity:1,y:0,duration:0.5,ease:"power2.out"},6.4)
+        .to(careerGhosts.slice(0,14),{opacity:0.5,duration:0.4,stagger:0.04,ease:"power1.out"},17.1)
+        .fromTo("#gNovelist",{opacity:0,x:16},{opacity:0.85,x:0,duration:0.5,ease:"power2.out"},17.1)
+        .to(careerGhosts.slice(14,28),{opacity:0.5,duration:0.4,stagger:0.04,ease:"power1.out"},22.0)
+        .fromTo("#gMusician",{opacity:0,x:16},{opacity:0.85,x:0,duration:0.5,ease:"power2.out"},22.0)
+        .to(careerGhosts.slice(28,40),{opacity:0.32,duration:0.5,stagger:0.04,ease:"power1.out"},28.56)
+        .to(careerGhosts,{attr:{cy:"+=18"},opacity:0.2,duration:1.2,ease:"power1.inOut"},28.56)
+        .fromTo("#gQuieter",{opacity:0,x:16},{opacity:0.7,x:0,duration:0.5,ease:"power2.out"},28.56)
+        .fromTo("#careerCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},31.76)
+        .to("#careerCall b",{scale:1.08,color:"#ff5a3c",transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},33.2)
+        .to([careerPath,careerNodeDot,...careerGhosts],{opacity:0,duration:0.6,ease:"power2.inOut"},34.4)
+        .to(["#careerLabel","#careerNode","#gNovelist","#gMusician","#gQuieter","#careerCall"],{opacity:0,duration:0.6,ease:"power2.inOut"},34.4);
+
+      // B2 RELATIONSHIPS: one surviving couple vs the dim couples who divorced.
+      tl.fromTo("#relLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},35.14)
+        .to(coupleSurvivor.g,{opacity:1,duration:0.5,ease:"power2.out"},36.1)
+        .fromTo("#coupleNode",{opacity:0,y:10},{opacity:1,y:0,duration:0.5,ease:"power2.out"},36.3)
+        .to(coupleGhosts.map(c=>c.g),{opacity:0.7,duration:0.4,stagger:0.08,ease:"power1.out"},39.0)
+        .to(coupleGhosts.map(c=>c.a),{attr:{cx:"-=16"},stroke:"#d8392e",duration:0.5,stagger:0.04,ease:"power2.out"},42.54)
+        .to(coupleGhosts.map(c=>c.b),{attr:{cx:"+=16"},stroke:"#d8392e",duration:0.5,stagger:0.04,ease:"power2.out"},42.54)
+        .to(coupleGhosts.map(c=>c.link),{opacity:0,duration:0.3,ease:"power2.in"},42.74)
+        .fromTo("#relCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},43.66)
+        .to([...coupleGhosts.map(c=>c.a),...coupleGhosts.map(c=>c.b)],{stroke:"#5b6472",duration:0.8,ease:"power1.inOut"},45.0)
+        .to(coupleGhosts.map(c=>c.g),{opacity:0.25,duration:0.8,ease:"power1.inOut"},45.0)
+        .fromTo("#relEmph",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power3.out"},54.16)
+        .to("#relEmph .gold",{scale:1.06,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},55.0)
+        .to([coupleSurvivor.g,...coupleGhosts.map(c=>c.g)],{opacity:0,duration:0.6,ease:"power2.inOut"},55.6)
+        .to(["#relLabel","#coupleNode","#relCall","#relEmph"],{opacity:0,duration:0.6,ease:"power2.inOut"},55.6);
+
+      // B3 INVESTING: the Bessembinder grid; 4% gold vs 96% dim.
+      tl.fromTo("#investLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},56.48)
+        .fromTo("#journal",{opacity:0,x:-34},{opacity:1,x:0,duration:0.7,ease:"power3.out"},58.98)
+        .to(cellEls,{opacity:1,duration:0.5,stagger:0.003,ease:"power1.out"},62.4)
+        .to([...goldSet].map(i=>cellEls[i]),{attr:{fill:"var(--gold)",stroke:"var(--gold)"},duration:0.4,stagger:0.06,ease:"power2.out"},63.42)
+        .fromTo("#mi4",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},63.42)
+        .to(mi4Proxy,{v:4,duration:1.6,ease:"power2.out",onUpdate:()=>{mi4num.textContent=Math.round(mi4Proxy.v)+"%";}},63.6)
+        .fromTo("#investYears",{opacity:0},{opacity:0.9,duration:0.5,ease:"power2.out"},68.64)
+        .to(cellEls.filter((_,i)=>!goldSet.has(i)),{attr:{fill:"rgba(91,100,114,0.5)"},duration:0.5,stagger:0.004,ease:"power1.out"},72.6)
+        .fromTo("#mi96",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},72.6)
+        .to(mi96Proxy,{v:96,duration:1.8,ease:"power2.out",onUpdate:()=>{mi96num.textContent=Math.round(mi96Proxy.v)+"%";}},72.8)
+        .fromTo("#investCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},79.02)
+        .to("#investCall .gold",{scale:1.06,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},80.4)
+        .to(dayjobsDots,{opacity:0.4,duration:0.4,stagger:0.02,ease:"power1.out"},96.66)
+        .fromTo("#dayLabel",{opacity:0},{opacity:0.85,duration:0.4,ease:"power2.out"},96.66)
+        .to("#dayLabel",{color:"#9aa6b2",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},97.1)
+        .to([...cellEls,...dayjobsDots],{opacity:0,duration:0.6,ease:"power2.inOut"},97.6)
+        .to(["#investLabel","#journal","#mi4","#mi96","#investYears","#investCall","#dayLabel"],{opacity:0,duration:0.6,ease:"power2.inOut"},97.6);
+
+      // B4 RISK-TAKING: the founder survivor vs BLS graveyard statistics.
+      tl.fromTo("#riskLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},98.16)
+        .fromTo("#founder",{opacity:0,y:20},{opacity:1,y:0,duration:0.6,ease:"power3.out"},99.88)
+        .fromTo("#riskSrc",{opacity:0},{opacity:0.9,duration:0.5,ease:"power2.out"},110.6)
+        .to("#founder",{opacity:0.28,duration:0.6,ease:"power2.inOut"},114.9)
+        .to("#rt1",{opacity:1,duration:0.4,ease:"power2.out"},115.34)
+        .fromTo("#mr1",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},115.34)
+        .to(rFill1,{attr:{width:93.8},duration:1.4,ease:"power2.out"},115.5)
+        .to(mr1Proxy,{v:20.4,duration:1.4,ease:"power2.out",onUpdate:()=>{mr1num.textContent=mr1Proxy.v.toFixed(1)+"%";}},115.5)
+        .to("#rt2",{opacity:1,duration:0.4,ease:"power2.out"},119.6)
+        .fromTo("#mr2",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},119.6)
+        .to(rFill2,{attr:{width:300.4},duration:1.6,ease:"power2.out"},119.8)
+        .to(mr2Proxy,{v:65.3,duration:1.6,ease:"power2.out",onUpdate:()=>{mr2num.textContent=mr2Proxy.v.toFixed(1)+"%";}},119.8)
+        .fromTo("#riskCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},127.08)
+        .to("#riskCall b",{scale:1.08,color:"#ff5a3c",transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},128.2)
+        .to(["#riskLabel","#founder","#riskSrc","#mr1","#mr2","#riskCall","#rt1","#rt2"],{opacity:0,duration:0.6,ease:"power2.inOut"},129.6)
+        .to([rFill1,rFill2],{opacity:0,duration:0.6,ease:"power2.inOut"},129.6);
+
+      // B5 THE FAIR OBJECTION: high-variance, 1 billionaire vs 99 baristas.
+      tl.fromTo("#objLabel",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},130.42)
+        .fromTo("#objCard",{opacity:0,y:20,scale:0.96},{opacity:1,y:0,scale:1,duration:0.6,ease:"power3.out"},135.8)
+        .to("#objCard",{opacity:0,duration:0.5,ease:"power2.in"},143.8)
+        .fromTo("#objAnswer",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power3.out"},144.5)
+        .fromTo("#objLine",{opacity:0,y:14},{opacity:1,y:0,duration:0.55,ease:"power3.out"},148.96)
+        .to(["#objAnswer","#objLine"],{opacity:0,duration:0.5,ease:"power2.in"},153.4)
+        .to(objDots,{opacity:0.5,duration:0.4,stagger:0.004,ease:"power1.out"},154.0)
+        .to(billDot,{attr:{r:46},opacity:1,duration:0.7,ease:"back.out(1.6)"},156.68)
+        .fromTo("#objBill",{opacity:0,y:10},{opacity:1,y:0,duration:0.5,ease:"power2.out"},156.9)
+        .to(objDots.slice(1),{attr:{r:3},opacity:0.26,duration:0.6,stagger:0.004,ease:"power2.out"},159.0)
+        .fromTo("#objBar",{opacity:0,y:-10},{opacity:0.85,y:0,duration:0.5,ease:"power2.out"},159.2)
+        .fromTo("#objCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},168.32)
+        .to("#objCall b",{scale:1.08,color:"#ff5a3c",transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},169.6)
+        .to(objDots,{opacity:0,duration:0.6,ease:"power2.inOut"},175.2)
+        .to(["#objLabel","#objBill","#objBar","#objCall"],{opacity:0,duration:0.6,ease:"power2.inOut"},175.2);
+
+      // B6 CONFESSION (gear-change): dim everything to a single warm spotlight.
+      tl.to("#grid",{opacity:0.12,duration:1.2,ease:"power2.inOut"},176.04)
+        .to(".particle",{opacity:0.14,duration:1.2,ease:"power2.inOut"},176.04)
+        .to("#spotwash",{opacity:1,duration:1.4,ease:"power2.inOut"},176.04)
+        .fromTo("#cf1",{opacity:0,y:18},{opacity:1,y:0,duration:0.8,ease:"power2.out"},176.3)
+        .to("#cf1",{opacity:0,y:-14,duration:0.6,ease:"power2.in"},180.0)
+        .fromTo("#notebook",{opacity:0,y:-30,rotation:-3},{opacity:1,y:0,rotation:0,duration:0.7,ease:"power3.out"},180.52)
+        .to("#notebook",{y:8,duration:0.5,ease:"sine.inOut",yoyo:true,repeat:1},181.3)
+        .fromTo("#cf2",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},186.96)
+        .to("#cf2",{opacity:0,duration:0.5,ease:"power2.in"},200.4)
+        .to("#notebook",{y:-180,scale:0.82,opacity:0.5,duration:0.8,ease:"power2.inOut"},200.4)
+        .fromTo("#cf3",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},201.22)
+        .to(tokens,{opacity:1,duration:0.4,stagger:0.06,ease:"back.out(1.6)"},201.4)
+        .to([tokens[0],tokens[1],tokens[2],tokens[4],tokens[5],tokens[6]],{attr:{cy:"+=210"},stroke:"#d8392e",opacity:0,duration:0.9,stagger:0.05,ease:"power2.in"},204.06)
+        .to(survivorTok,{attr:{r:34},duration:0.4,ease:"power2.out"},204.2)
+        .to("#cf3",{opacity:0,duration:0.5,ease:"power2.in"},207.6)
+        .fromTo("#cf4",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},208.56)
+        .to(survivorTok,{scaleX:0,duration:0.16,repeat:7,yoyo:true,transformOrigin:"960px 438px",ease:"none"},208.9)
+        .to("#cf4",{opacity:0,duration:0.5,ease:"power2.in"},211.6)
+        .fromTo("#cf5",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},212.2)
+        .to(survivorTok,{attr:{fill:"var(--gold)"},scaleX:1,duration:0.2,ease:"power2.out"},212.2)
+        .fromTo("#coinHeads",{opacity:0,scale:0.7},{opacity:1,scale:1,duration:0.45,ease:"back.out(1.7)"},212.4)
+        .to("#warmwash",{opacity:0.32,duration:0.2,yoyo:true,repeat:1,ease:"power2.out"},212.4)
+        .fromTo("#cf6",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},213.4)
+        .fromTo("#cf7",{opacity:0,y:14},{opacity:1,y:0,duration:0.6,ease:"power2.out"},223.6)
+        .to("#notebook",{opacity:0.22,duration:0.6,ease:"power2.inOut"},223.6)
+        .to("#nbStrike",{opacity:1,scaleX:1,duration:0.6,ease:"power2.out"},224.0)
+        .to(["#cf5","#cf6","#cf7","#coinHeads","#notebook",survivorTok],{opacity:0,duration:0.7,ease:"power2.inOut"},229.0)
+        .to("#spotwash",{opacity:0,duration:0.9,ease:"power2.inOut"},229.0)
+        .to("#grid",{opacity:0.5,duration:1.0,ease:"power2.inOut"},229.6)
+        .to(".particle",{opacity:0.42,duration:1.0,ease:"power2.inOut"},229.6);
+
+      // B7 TAKEAWAY.
+      tl.fromTo("#tk1",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},230.76)
+        .to("#tk1",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},233.6)
+        .fromTo("#tk2",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},234.12)
+        .to("#tk2 b",{scale:1.06,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},236.0)
+        .to("#tk2",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},238.2)
+        .fromTo("#tk3",{opacity:0,y:24,scale:0.96},{opacity:1,y:0,scale:1,duration:0.7,ease:"power3.out"},238.86)
+        .to("#tk3",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},244.4)
+        .fromTo("#tk4",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},244.98)
+        .fromTo("#tkCoin",{opacity:0,scale:0.5,rotation:-90},{opacity:1,scale:1,rotation:0,duration:0.6,ease:"back.out(1.7)"},245.3)
+        .to("#tkCoin",{rotation:360,duration:0.9,ease:"power2.inOut"},245.9)
+        .to(["#tk4","#tkCoin"],{opacity:0,duration:0.6,ease:"power2.inOut"},247.4);
+
+      // B8 TRANSITION to seg-05.
+      tl.fromTo("#t1",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},248.42)
+        .to("#t1",{opacity:0,y:-18,duration:0.6,ease:"power2.in"},265.6)
+        .fromTo("#t2",{opacity:0,y:24},{opacity:1,y:0,duration:0.8,ease:"power3.out"},266.66)
+        .to("#t2 b",{color:"#ff5a3c",duration:0.4,ease:"power2.inOut"},268.0)
+        .to("#t2",{opacity:0,y:-18,duration:0.6,ease:"power2.in"},281.4)
+        .fromTo("#t3",{opacity:0,scale:1.18},{opacity:1,scale:1,duration:0.45,ease:"power4.in"},282.34)
+        .to("#t3 b",{scale:1.05,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},283.4)
+        .to("#t3",{opacity:0,duration:0.6,ease:"power2.in"},285.0)
+        .fromTo("#deepTease",{opacity:0,y:18},{opacity:1,y:0,duration:0.7,ease:"power3.out"},285.52)
+        .to("#deepTease b",{color:"#ff5a3c",scale:1.04,transformOrigin:"center",duration:0.5,ease:"power2.out"},291.44);
+
+      // Caption karaoke.
+      phraseEls.forEach((p,i)=>{
+        const showAt=Math.max(0,p.start-0.15);
+        const hideAt=(i<phraseEls.length-1)? phraseEls[i+1].start-0.1 : DUR-0.1;
+        tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.28,ease:"power2.out"},showAt);
+        p.words.forEach((wEl)=>{
+          tl.to(wEl,{color:"#f4efe6",duration:0.10,ease:"none"},parseFloat(wEl.dataset.start));
+        });
+        if(i<phraseEls.length-1){
+          tl.to(p.el,{opacity:0,y:-10,duration:0.24,ease:"power2.in"},hideAt);
+          tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.24);
+        }
+      });
+
+      window.__timelines["seg-04-decisions"] = tl;
+    </script>
+  </body>
+</html>

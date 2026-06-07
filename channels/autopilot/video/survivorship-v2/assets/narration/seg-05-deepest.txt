@@ -1,0 +1,23 @@
+Remember the thing I told you to hold near the start. Three hundred thousand years of ancestors got better at staying alive by watching what worked and copying it. Your brain is running ancient software. The whole thing is built to learn from outcomes you can see.
+
+Here's the thing about that software. It was written for an environment that didn't hide its dead.
+
+In a hunter-gatherer band, when the hunter didn't come back, you knew. There was a funeral. There was an empty mat at the fire. You buried him with the others. The base rate of dangerous hunting was something you couldn't not see. The evolutionary feedback loop - copy what survives, avoid what dies - worked because the dying happened in front of you.
+
+A 2022 paper in the Journal of Theoretical Biology on the evolution of cognitive biases in human learning makes the architecture clear: brains were selected to attend to vivid, visible, recent cases, because in an ancestral environment, vivid-visible-recent was a pretty good proxy for important. The snake at your feet is more relevant than a statistical risk estimate of snake bites in the region. The neighbor who choked on a berry yesterday is more relevant than dietary epidemiology.
+
+Then, around the printing press, the environment changed. And around the search engine, it changed again. And around the recommendation algorithm, it broke. Because for the first time in human history, the world started to hide its dead at industrial scale.
+
+The failed founders don't get a chapter in the airport bookstore. The bankrupt traders don't get a podcast. The fifty thousand people who took the influencer's advice and didn't change don't get a before and after photo. The selection process that used to happen in front of your eyes - and that your brain was tuned to learn from - now happens out of sight. You're using a stone-age learning system in a curated highlight reel.
+
+This is not a moral failing. This is a hardware mismatch. Your pattern-recognition is doing exactly what it was built to do. The problem is what you're aiming it at.
+
+And this is why the fix is not more information. Because more information doesn't change the hardware. More information will, if anything, give your visible-vivid-recent system more visible-vivid-recent material to overweight. The book you read tomorrow to fix survivorship bias is itself, almost certainly, going to be a book that survived - pulled from the publishing graveyard for reasons that include but are not limited to being correct.
+
+Quick aside that I owe you. This video is also a survivor. You are watching it because it was, by some combination of luck and execution, surfaced to you. The competing videos that explained this same idea with worse production values, or worse titles, or that the algorithm tested on a smaller audience first, are not in front of you. So if at the end of this you find yourself thinking this is the clearest explanation of survivorship bias I've ever seen - please notice that you are reading that thought through the very bias the video is about. The compliment is partly diagnostic.
+
+So: if knowledge can't fix this, what can? And this is the most uncomfortable answer in the entire video. The only thing that can move you against survivorship bias, reliably and on a schedule, is a ritual.
+
+A small, deliberately uncomfortable habit you perform on every decision, regardless of how you feel about it. A habit your brain will resist, because the habit is asking your brain to look at evidence that isn't there. A habit that, performed mechanically and often, manually inserts the data your evolved cognition cannot.
+
+The good news is, after fifty years of research, we know what most of those rituals look like. That was the theory. Here is the practice.

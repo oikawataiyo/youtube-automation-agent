@@ -1,0 +1,8 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-04-decisions.txt",
+  "generated_at": "2026-05-31T12:52:00.000Z",
+  "engine": "hyperframes tts (kokoro-82M)",
+  "duration_seconds": 292.928
+}

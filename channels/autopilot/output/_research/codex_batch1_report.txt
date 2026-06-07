@@ -1,0 +1,3 @@
+C:\Users\oioce\dev\youtube-automation-agent\mychannel\output\_research\codex_digest_batch1.md
+usable entries: 5 / 6
+skipped entries: 1 / 6

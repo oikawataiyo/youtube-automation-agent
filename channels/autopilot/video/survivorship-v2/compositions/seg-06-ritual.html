@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="../assets/narration/seg-06-words.js"></script>
+    <style>
+      * { margin:0; padding:0; box-sizing:border-box; }
+      html, body {
+        width:1920px; height:1080px; overflow:hidden; background:#0a0c10;
+        --bg:#0a0c10; --bg-grid:#141925; --bone:#e8e4d8; --steel:#9aa6b2;
+        --ink:#f4efe6; --mute:#5b6472; --alarm:#d8392e; --warn:#ff5a3c; --gold:#caa86a;
+        --green:#6aa878; --paper:#c9c1ad; --deep:#172638;
+        font-family:"Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position:absolute; inset:0; background:var(--bg); }
+      #grid { position:absolute; inset:0; opacity:0; background-image:linear-gradient(var(--bg-grid) 1px, transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px); background-size:64px 64px; }
+      #vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 70% 58% at 50% 47%, transparent 36%, rgba(0,0,0,0.64) 100%); }
+      #warmwash, #coldwash { position:absolute; inset:0; pointer-events:none; opacity:0; }
+      #warmwash { background:radial-gradient(ellipse 52% 44% at 50% 45%, rgba(202,168,106,0.13), transparent 70%); }
+      #coldwash { background:linear-gradient(180deg, transparent 20%, rgba(23,38,56,0.54) 100%); }
+      .particle { position:absolute; width:3px; height:3px; border-radius:50%; background:#3a4658; opacity:0; }
+      #stageSvg { position:absolute; inset:0; width:1920px; height:1080px; }
+      .dimDot { fill:#5b6472; opacity:0; }
+      .goldDot { fill:var(--gold); opacity:0; }
+      .paperLine { stroke:rgba(154,166,178,0.45); stroke-width:2; }
+      .goldStroke { fill:none; stroke:var(--gold); stroke-width:4; }
+      .warnStroke { fill:none; stroke:var(--warn); stroke-width:6; }
+      .track { fill:rgba(91,100,114,0.24); }
+      .fillGold { fill:var(--gold); }
+      #kicker { position:absolute; left:88px; top:84px; opacity:0; font-size:22px; letter-spacing:0.32em; text-transform:uppercase; color:var(--steel); }
+      #kicker .num { color:var(--gold); }
+      #kickerline { position:absolute; left:88px; top:122px; height:2px; width:0; background:var(--steel); opacity:0.5; }
+      #type { position:absolute; inset:0; }
+      .centerBlock { position:absolute; left:50%; top:50%; opacity:0; text-align:center; width:1500px; }
+      .bigTitle { font-size:82px; font-weight:800; line-height:1.06; color:var(--ink); text-transform:uppercase; }
+      .bigTitle b, .gold { color:var(--gold); }
+      .warn { color:var(--warn); }
+      .sub { margin-top:18px; color:var(--steel); font-size:32px; line-height:1.28; font-weight:300; }
+      .ritualTag { position:absolute; left:88px; top:178px; opacity:0; color:var(--gold); font-size:25px; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; }
+      .sideNote { position:absolute; opacity:0; width:470px; color:var(--steel); font-size:28px; line-height:1.25; font-weight:300; }
+      .callout { position:absolute; left:50%; top:800px; opacity:0; text-align:center; width:1380px; color:var(--ink); font-size:40px; line-height:1.18; font-weight:300; }
+      .callout .small { display:block; margin-top:10px; color:var(--steel); font-size:30px; }
+      .metric { position:absolute; opacity:0; text-align:center; color:var(--ink); }
+      .metric .num { font-size:96px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums; }
+      .metric .lab { margin-top:8px; color:var(--steel); font-size:24px; letter-spacing:0.1em; text-transform:uppercase; }
+      .worksheet { position:absolute; opacity:0; width:660px; padding:30px 36px; background:rgba(20,25,37,0.94); border:1px solid rgba(154,166,178,0.42); color:var(--paper); }
+      .worksheet .cap { color:var(--gold); font-size:24px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; }
+      .worksheet .line { margin-top:18px; color:var(--paper); font-size:32px; line-height:1.22; font-weight:300; }
+      #caps { position:absolute; left:50%; bottom:78px; transform:translateX(-50%); width:1500px; text-align:center; }
+      .phrase { position:absolute; left:0; right:0; bottom:0; opacity:0; font-size:41px; line-height:1.34; letter-spacing:0.01em; color:var(--mute); font-weight:400; }
+      .phrase .w { color:var(--mute); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="seg-06-ritual" data-start="0" data-duration="160.469" data-width="1920" data-height="1080">
+      <audio id="vo" data-start="0" data-duration="160.469" data-track-index="9" src="../assets/narration/seg-06-ritual.wav" data-volume="1"></audio>
+      <div id="bg" class="clip" data-start="0" data-duration="160.469" data-track-index="0">
+        <div id="grid"></div><div id="particles"></div><div id="warmwash"></div><div id="coldwash"></div><div id="vignette"></div>
+      </div>
+      <div id="stage" class="clip" data-start="0" data-duration="160.469" data-track-index="1">
+        <svg id="stageSvg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+          <g id="baseViz"></g>
+          <g id="graveViz"></g>
+          <g id="premortemViz"></g>
+          <g id="falsifyViz"></g>
+          <g id="frictionViz"></g>
+        </svg>
+      </div>
+      <div id="labels" class="clip" data-start="0" data-duration="160.469" data-track-index="2">
+        <div id="kicker">SURVIVORSHIP BIAS &nbsp;.&nbsp; <span class="num">PART 07</span></div>
+        <div id="kickerline"></div>
+        <div class="ritualTag" id="r1">RITUAL 01 / BASE RATE</div>
+        <div class="ritualTag" id="r2">RITUAL 02 / GRAVEYARD INTERVIEW</div>
+        <div class="ritualTag" id="r3">RITUAL 03 / PRE-MORTEM</div>
+        <div class="ritualTag" id="r4">RITUAL 04 / FALSIFICATION</div>
+      </div>
+      <div id="type" class="clip" data-start="0" data-duration="160.469" data-track-index="3">
+        <div class="centerBlock" id="intro"><div class="bigTitle">THE PRACTICE<br><b>IS A RITUAL</b></div><div class="sub">four chores that put the missing data back in the room</div></div>
+        <div class="metric" id="mTen" style="left:300px; top:338px; width:380px;"><div class="num">10</div><div class="lab">visible wins</div></div>
+        <div class="metric" id="mTotal" style="left:1240px; top:338px; width:380px;"><div class="num">10,000</div><div class="lab">actual buyers</div></div>
+        <div class="callout" id="baseCall">OUT OF HOW MANY?<span class="small">the denominator is the missing planes</span></div>
+        <div class="sideNote" id="graveNote" style="left:260px; top:360px;">Go find someone who tried the same thing and failed.</div>
+        <div class="callout" id="graveCall">COMPLETE THE DATASET<br><span class="small">if no failure can be found, that is itself data</span></div>
+        <div class="worksheet" id="work" style="left:630px; top:282px;"><div class="cap">PRE-MORTEM WORKSHEET</div><div class="line">It is six months later.<br>The project has failed.<br>What went wrong?</div></div>
+        <div class="metric" id="riskMetric" style="left:1290px; top:450px; width:340px;"><div class="num">2x</div><div class="lab">risks identified</div></div>
+        <div class="callout" id="preCall">PRE-LOAD THE MISSING PLANES<br><span class="small">before the decision has a chance to flatter itself</span></div>
+        <div class="worksheet" id="advice" style="left:250px; top:314px;"><div class="cap">ADVICE</div><div class="line">This strategy always works if you are disciplined enough.</div></div>
+        <div class="callout" id="falseCall">WHAT WOULD PROVE THIS WRONG?<span class="small">if nothing could, you are inside mythology</span></div>
+        <div class="centerBlock" id="chores"><div class="bigTitle">THESE ARE NOT INSIGHTS<br><span class="gold">THEY ARE CHORES</span></div></div>
+        <div class="centerBlock" id="friction"><div class="bigTitle" style="font-size:70px;">DEFEATED BY FRICTION<br><span class="warn">NOT CLEVERNESS</span></div></div>
+      </div>
+      <div id="caps" class="clip" data-start="0" data-duration="160.469" data-track-index="4"></div>
+    </div>
+    <script>
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(20260606);
+      const SVGNS = "http://www.w3.org/2000/svg";
+      function svg(tag, attrs, parent){ const el=document.createElementNS(SVGNS,tag); for(const [k,v] of Object.entries(attrs||{})) el.setAttribute(k,v); if(parent) parent.appendChild(el); return el; }
+      (function(){ const host=document.getElementById("particles"); for(let i=0;i<78;i++){ const p=document.createElement("div"); p.className="particle"; p.style.left=(rnd()*1920)+"px"; p.style.top=(rnd()*1080)+"px"; p.style.transform="scale("+(0.6+rnd()*1.6)+")"; p.dataset.drift=(rnd()*2-1).toFixed(2); host.appendChild(p); }})();
+
+      const base=document.getElementById("baseViz");
+      svg("rect",{x:308,y:600,width:380,height:30,rx:3,class:"track",opacity:0,id:"barSmall"},base);
+      svg("rect",{x:308,y:600,width:0,height:30,rx:3,class:"fillGold",opacity:0,id:"barSmallFill"},base);
+      svg("rect",{x:1248,y:600,width:380,height:30,rx:3,class:"track",opacity:0,id:"barBig"},base);
+      svg("rect",{x:1248,y:600,width:0,height:30,rx:3,fill:"rgba(216,57,46,0.75)",opacity:0,id:"barBigFill"},base);
+      const denominatorDots=[]; for(let i=0;i<96;i++){ denominatorDots.push(svg("circle",{cx:(870+rnd()*250).toFixed(1),cy:(330+rnd()*330).toFixed(1),r:4,class:"dimDot"},base)); }
+
+      const grave=document.getElementById("graveViz");
+      const graveDots=[]; for(let i=0;i<56;i++){ graveDots.push(svg("circle",{cx:(850+rnd()*630).toFixed(1),cy:(310+rnd()*360).toFixed(1),r:6,class:"dimDot"},grave)); }
+      const interview=svg("circle",{cx:580,cy:488,r:86,fill:"rgba(202,168,106,0.08)",stroke:"var(--gold)","stroke-width":3,opacity:0,id:"interview"},grave);
+      const premortem=document.getElementById("premortemViz");
+      const risks=[]; for(let i=0;i<10;i++){ const y=368+i*34; risks.push(svg("line",{x1:700,y1:y,x2:1050,y2:y,class:"paperLine",opacity:0},premortem)); }
+      const falsify=document.getElementById("falsifyViz");
+      const x1=svg("line",{x1:1130,y1:330,x2:1460,y2:660,class:"warnStroke",opacity:0},falsify);
+      const x2=svg("line",{x1:1460,y1:330,x2:1130,y2:660,class:"warnStroke",opacity:0},falsify);
+      const question=svg("text",{x:1295,y:510,fill:"var(--gold)","font-size":120,"font-weight":800,"text-anchor":"middle",opacity:0,id:"question"},falsify); question.textContent="?";
+      const friction=document.getElementById("frictionViz");
+      const teeth=[]; for(let i=0;i<18;i++){ teeth.push(svg("rect",{x:440+i*58,y:480,width:32,height:80,rx:3,fill:i%2?"rgba(154,166,178,0.45)":"rgba(202,168,106,0.72)",opacity:0},friction)); }
+
+      const WORDS = window.SEG06_WORDS || [];
+      const capHost=document.getElementById("caps"); const phrases=[]; let cur=[];
+      WORDS.forEach((w)=>{ cur.push(w); const punct=/[.!?]$/.test(w[0]); const comma=/[,]$/.test(w[0])&&cur.length>=6; if(punct||comma||cur.length>=10){ phrases.push(cur); cur=[]; }});
+      if(cur.length) phrases.push(cur);
+      const phraseEls=phrases.map(ph=>{ const div=document.createElement("div"); div.className="phrase"; ph.forEach(w=>{ const s=document.createElement("span"); s.className="w"; s.textContent=w[0]+" "; s.dataset.start=w[1]; div.appendChild(s); }); capHost.appendChild(div); return {el:div,start:ph[0][1],end:ph[ph.length-1][2],words:[...div.querySelectorAll(".w")]}; });
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused:true });
+      const DUR = 160.469;
+      gsap.set(["#intro","#chores","#friction"],{xPercent:-50,yPercent:-50});
+      gsap.set(".callout",{xPercent:-50});
+      tl.to("#grid",{opacity:0.5,duration:1.4,ease:"power2.out"},0)
+        .to(".particle",{opacity:0.42,duration:2,stagger:0.018,ease:"power1.out"},0.2)
+        .fromTo("#kicker",{opacity:0,x:-20},{opacity:1,x:0,duration:1,ease:"power2.out"},0.4)
+        .to("#kickerline",{width:300,opacity:0.5,duration:1.1,ease:"power2.inOut"},0.5);
+      gsap.utils.toArray(".particle").forEach((p)=>{ const d=parseFloat(p.dataset.drift)||0; tl.to(p,{y:"+="+(d*28),duration:34,ease:"sine.inOut",yoyo:true,repeat:1},0); });
+
+      tl.fromTo("#intro",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},0.2)
+        .to("#intro",{opacity:0,y:-18,duration:0.5,ease:"power2.in"},5.5);
+
+      tl.fromTo("#r1",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},6.0)
+        .fromTo("#mTen",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},12.0)
+        .fromTo("#mTotal",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},17.0)
+        .to(["#barSmall","#barBig","#barSmallFill","#barBigFill"],{opacity:1,duration:0.4,ease:"power2.out"},18.0)
+        .to("#barSmallFill",{attr:{width:38},duration:1.0,ease:"power2.out"},18.2)
+        .to("#barBigFill",{attr:{width:380},duration:1.0,ease:"power2.out"},18.2)
+        .to(denominatorDots,{opacity:0.34,duration:0.35,stagger:0.006,ease:"power1.out"},24.0)
+        .fromTo("#baseCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},28.0)
+        .to("#baseCall",{color:"#caa86a",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},30.0)
+        .to(["#r1","#mTen","#mTotal","#baseCall","#barSmall","#barBig","#barSmallFill","#barBigFill",...denominatorDots],{opacity:0,duration:0.6,ease:"power2.inOut"},36.0);
+
+      tl.fromTo("#r2",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},37.0)
+        .fromTo("#graveNote",{opacity:0,x:-20},{opacity:1,x:0,duration:0.6,ease:"power3.out"},39.0)
+        .to(interview,{opacity:1,duration:0.5,ease:"power2.out"},42.0)
+        .to(graveDots,{opacity:0.38,duration:0.45,stagger:0.014,ease:"power1.out"},46.0)
+        .to(graveDots.slice(0,18),{fill:"#d8392e",opacity:0.55,duration:0.35,stagger:0.02,ease:"power2.out"},55.0)
+        .fromTo("#graveCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},62.0)
+        .to("#graveCall .small",{color:"#ff5a3c",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},65.0)
+        .to(["#r2","#graveNote","#graveCall",interview,...graveDots],{opacity:0,duration:0.6,ease:"power2.inOut"},70.0);
+
+      tl.fromTo("#r3",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},71.0)
+        .fromTo("#work",{opacity:0,y:-24,rotation:-2},{opacity:1,y:0,rotation:0,duration:0.7,ease:"power3.out"},74.0)
+        .to(risks,{opacity:1,duration:0.35,stagger:0.08,ease:"power1.out"},82.0)
+        .fromTo("#riskMetric",{opacity:0,y:16},{opacity:1,y:0,duration:0.5,ease:"power2.out"},90.0)
+        .to("#riskMetric .num",{scale:1.1,transformOrigin:"center",duration:0.25,yoyo:true,repeat:1,ease:"power2.out"},91.0)
+        .fromTo("#preCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},99.0)
+        .to("#preCall",{color:"#caa86a",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},101.0)
+        .to(["#r3","#work","#riskMetric","#preCall",...risks],{opacity:0,duration:0.6,ease:"power2.inOut"},107.0);
+
+      tl.fromTo("#r4",{opacity:0,y:14},{opacity:1,y:0,duration:0.5,ease:"power2.out"},108.0)
+        .fromTo("#advice",{opacity:0,x:-24},{opacity:1,x:0,duration:0.7,ease:"power3.out"},111.0)
+        .to(question,{opacity:1,duration:0.5,ease:"power2.out"},118.0)
+        .to([x1,x2],{opacity:1,duration:0.25,stagger:0.15,ease:"power4.in"},123.0)
+        .fromTo("#falseCall",{opacity:0,y:16},{opacity:1,y:0,duration:0.55,ease:"power3.out"},128.0)
+        .to("#falseCall .small",{color:"#ff5a3c",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},131.0)
+        .to(["#r4","#advice","#falseCall",question,x1,x2],{opacity:0,duration:0.6,ease:"power2.inOut"},136.0);
+
+      tl.fromTo("#chores",{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:"power3.out"},137.0)
+        .to("#chores .gold",{scale:1.06,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},142.0)
+        .to("#chores",{opacity:0,duration:0.5,ease:"power2.in"},147.0)
+        .fromTo("#friction",{opacity:0,scale:1.12},{opacity:1,scale:1,duration:0.45,ease:"power4.in"},148.0)
+        .to(teeth,{opacity:1,duration:0.3,stagger:0.03,ease:"power1.out"},148.2)
+        .to(teeth,{x:(i)=>i%2?18:-18,duration:0.4,yoyo:true,repeat:5,ease:"sine.inOut"},149.0)
+        .to("#friction .warn",{scale:1.05,transformOrigin:"center",duration:0.3,yoyo:true,repeat:1,ease:"power2.out"},154.0);
+
+      phraseEls.forEach((p,i)=>{ const showAt=Math.max(0,p.start-0.15); const hideAt=(i<phraseEls.length-1)?phraseEls[i+1].start-0.1:DUR-0.1; tl.fromTo(p.el,{opacity:0,y:14},{opacity:1,y:0,duration:0.28,ease:"power2.out"},showAt); p.words.forEach((wEl)=>{ tl.to(wEl,{color:"#f4efe6",duration:0.10,ease:"none"},parseFloat(wEl.dataset.start)); }); if(i<phraseEls.length-1){ tl.to(p.el,{opacity:0,y:-10,duration:0.24,ease:"power2.in"},hideAt); tl.set(p.el,{opacity:0,visibility:"hidden"},hideAt+0.24); }});
+      window.__timelines["seg-06-ritual"] = tl;
+    </script>
+  </body>
+</html>

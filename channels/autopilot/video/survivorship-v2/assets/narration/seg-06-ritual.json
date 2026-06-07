@@ -1,0 +1,8 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "seg-06-ritual.txt",
+  "generated_at": "2026-05-31T14:06:00.000Z",
+  "engine": "hyperframes tts (kokoro-82M)",
+  "duration_seconds": 160.469
+}
