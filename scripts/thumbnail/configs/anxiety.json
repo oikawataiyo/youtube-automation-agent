@@ -1,0 +1,11 @@
+{
+  "accent": "#ffb020",
+  "bg": "teal",
+  "emotion": "alert",
+  "mark": "AUTOPILOT",
+  "lines": [
+    { "t": "YOUR BRAIN IS", "style": "plain", "small": true },
+    { "t": "FORECASTING", "style": "plain" },
+    { "t": "THREATS", "style": "accent" }
+  ]
+}

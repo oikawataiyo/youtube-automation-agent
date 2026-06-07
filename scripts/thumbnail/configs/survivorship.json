@@ -1,0 +1,11 @@
+{
+  "accent": "#ff5a4d",
+  "bg": "slate",
+  "emotion": "curious",
+  "mark": "AUTOPILOT",
+  "lines": [
+    { "t": "THE PLANES THAT", "style": "plain", "small": true },
+    { "t": "CAME BACK", "style": "plain" },
+    { "t": "LIED", "style": "accent" }
+  ]
+}

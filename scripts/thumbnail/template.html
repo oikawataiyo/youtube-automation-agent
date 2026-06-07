@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&display=swap" rel="stylesheet" onerror="window.__fontFail=true" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; }
+  #stage {
+    position: relative; width: 1280px; height: 720px;
+    font-family: 'Anton', 'Archivo Black', 'Arial Black', 'Impact', sans-serif;
+    color: #fff;
+  }
+  /* ---- backgrounds: bright, saturated, never near-black ---- */
+  .bg { position: absolute; inset: 0; }
+  .bg-indigo { background:
+      radial-gradient(120% 90% at 18% 8%, #4b6cb7 0%, #2a3a78 42%, #16204a 100%); }
+  .bg-teal   { background:
+      radial-gradient(120% 90% at 18% 8%, #1fb6a6 0%, #0f6e7e 45%, #0a3f52 100%); }
+  .bg-ember  { background:
+      radial-gradient(120% 90% at 18% 8%, #ff7a3c 0%, #c23b2e 45%, #6e1830 100%); }
+  .bg-dusk   { background:
+      radial-gradient(120% 90% at 20% 6%, #7a5cc7 0%, #4a3a8f 45%, #241a48 100%); }
+  .bg-slate  { background:
+      radial-gradient(120% 90% at 18% 8%, #5a7a93 0%, #2f4a60 45%, #16242f 100%); }
+  /* subtle vignette + top glow so text pops & it isn't flat */
+  .glow { position:absolute; inset:0;
+    background: radial-gradient(70% 55% at 30% 30%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%); }
+  .vig  { position:absolute; inset:0; box-shadow: inset 0 0 220px rgba(0,0,0,.45); }
+
+  /* ---- text block ---- */
+  #text { position:absolute; left:64px; top:60px; width:740px; height:600px;
+    display:flex; flex-direction:column; justify-content:center; align-items:flex-start; }
+  .line { text-transform:uppercase; line-height:0.98; letter-spacing:0.5px;
+    font-size:104px; position:relative; display:inline-block;
+    text-shadow: 0 4px 0 rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.55);
+    -webkit-text-stroke: 2px rgba(0,0,0,.28); }
+  .line.small { font-size:72px; }
+  .line.plain  { color:#ffffff; }
+  .line.accent { color: var(--accent); -webkit-text-stroke: 2px rgba(0,0,0,.35); }
+  .line.strike { color:#ffffff; }
+  .line.strike::after { content:""; position:absolute; left:-6px; right:-6px; top:52%;
+    height:12px; background: var(--accent); transform: rotate(-3.5deg);
+    box-shadow: 0 2px 10px rgba(0,0,0,.5); border-radius:3px; }
+
+  /* ---- chibi ---- */
+  #chibi { position:absolute; right:40px; bottom:0; width:470px; height:560px; }
+  #rim { position:absolute; right:70px; bottom:60px; width:420px; height:420px;
+    border-radius:50%; filter: blur(36px); opacity:.55;
+    background: radial-gradient(circle, var(--accent), transparent 65%); }
+
+  /* ---- brand mark ---- */
+  #mark { position:absolute; right:34px; top:30px;
+    font-size:26px; letter-spacing:5px; color:#fff; opacity:.85;
+    text-shadow:0 2px 8px rgba(0,0,0,.6); }
+  #markdot { display:inline-block; width:13px; height:13px; border-radius:50%;
+    background:var(--accent); margin-right:10px; vertical-align:middle; transform:translateY(-2px); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bg"></div>
+  <div class="glow"></div>
+  <div id="rim"></div>
+  <div id="chibi"></div>
+  <div class="vig"></div>
+  <div id="text"></div>
+  <div id="mark"></div>
+</div>
+
+<script>
+const C = window.__THUMB || {
+  accent:'#ffb020', bg:'indigo', emotion:'sad', mark:'AUTOPILOT',
+  lines:[{t:'IT WAS NEVER A',style:'plain',small:true},{t:'CHEMICAL',style:'strike'},{t:'IMBALANCE',style:'strike'}]
+};
+const stage = document.getElementById('stage');
+stage.style.setProperty('--accent', C.accent || '#ffb020');
+document.getElementById('bg').className = 'bg bg-' + (C.bg || 'indigo');
+
+// text
+const tEl = document.getElementById('text');
+(C.lines || []).forEach(l => {
+  const d = document.createElement('div');
+  d.className = 'line ' + (l.style || 'plain') + (l.small ? ' small' : '');
+  d.textContent = l.t;
+  tEl.appendChild(d);
+});
+
+// brand mark
+const m = document.getElementById('mark');
+m.innerHTML = '<span id="markdot"></span>' + (C.mark || 'AUTOPILOT');
+
+// ---- 2D chibi matching scene-kit: skin #e8c9a8, eyes #2a2320, 2-head-tall ----
+function chibiSVG(emotion) {
+  const SKIN = '#e8c9a8', SKIN_SH = '#cda886', INK = '#2a2320';
+  // expression bits
+  let browL, browR, eyeRY = 17, mouth, tear = '', tilt = 0;
+  if (emotion === 'sad') {
+    browL = 'M150 150 Q175 138 196 150'; browR = 'M274 150 Q295 138 320 150'; // inner-up
+    eyeRY = 15; mouth = 'M205 250 Q235 232 265 250'; // down arc
+    tilt = -4;
+  } else if (emotion === 'curious') {
+    browL = 'M150 142 Q175 132 196 140'; browR = 'M274 132 Q295 120 320 130'; // R raised
+    eyeRY = 20; mouth = 'M222 244 Q235 252 248 244'; tilt = 6;
+  } else if (emotion === 'alert' || emotion === 'tense') {
+    browL = 'M150 134 Q175 150 196 142'; browR = 'M274 142 Q295 150 320 134'; // down-inner
+    eyeRY = 22; mouth = 'M214 250 Q235 244 256 250'; tear = '<circle cx="318" cy="210" r="11" fill="#bfe3ff" opacity=".9"/>';
+  } else { // calm
+    browL = 'M150 146 Q175 140 196 146'; browR = 'M274 146 Q295 140 320 146';
+    eyeRY = 17; mouth = 'M210 240 Q235 262 260 240';
+  }
+  return `<svg viewBox="0 0 470 560" width="470" height="560" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hl" cx="38%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#fff" stop-opacity=".35"/>
+        <stop offset="55%" stop-color="${SKIN}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g transform="translate(0 6) rotate(${tilt} 235 200)">
+      <!-- body (shoulders tucked under head, no neck gap) -->
+      <path d="M138 475 Q138 332 235 332 Q332 332 332 475 L332 560 L138 560 Z" fill="${SKIN}"/>
+      <path d="M138 475 Q138 332 235 332 Q332 332 332 475 L332 560 L138 560 Z" fill="url(#hl)"/>
+      <!-- arms (slumped) -->
+      <rect x="112" y="350" width="42" height="155" rx="21" fill="${SKIN_SH}"/>
+      <rect x="316" y="350" width="42" height="155" rx="21" fill="${SKIN_SH}"/>
+      <!-- head -->
+      <circle cx="235" cy="182" r="158" fill="${SKIN}"/>
+      <circle cx="235" cy="182" r="158" fill="url(#hl)"/>
+      <!-- eyes -->
+      <ellipse cx="173" cy="190" rx="15" ry="${eyeRY}" fill="${INK}"/>
+      <ellipse cx="297" cy="190" rx="15" ry="${eyeRY}" fill="${INK}"/>
+      <circle cx="178" cy="183" r="5" fill="#fff" opacity=".9"/>
+      <circle cx="302" cy="183" r="5" fill="#fff" opacity=".9"/>
+      <!-- brows -->
+      <path d="${browL}" stroke="${INK}" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="${browR}" stroke="${INK}" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <!-- mouth -->
+      <path d="${mouth}" stroke="${INK}" stroke-width="9" fill="none" stroke-linecap="round"/>
+      ${tear}
+    </g>
+  </svg>`;
+}
+document.getElementById('chibi').innerHTML = chibiSVG(C.emotion || 'sad');
+
+// signal readiness once fonts settle (or after a cap, offline-safe)
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+  .then(() => setTimeout(() => { window.__thumbReady = true; }, 120));
+setTimeout(() => { window.__thumbReady = true; }, 2500);
+</script>
+</body>
+</html>

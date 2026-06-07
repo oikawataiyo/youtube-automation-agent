@@ -1,0 +1,11 @@
+{
+  "accent": "#38d2e0",
+  "bg": "indigo",
+  "emotion": "tense",
+  "mark": "AUTOPILOT",
+  "lines": [
+    { "t": "WHY YOU", "style": "plain", "small": true },
+    { "t": "FREEZE", "style": "accent" },
+    { "t": "INSTEAD OF FIGHT", "style": "plain", "small": true }
+  ]
+}

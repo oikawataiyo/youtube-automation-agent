@@ -1,0 +1,11 @@
+{
+  "accent": "#ff5a4d",
+  "bg": "dusk",
+  "emotion": "sad",
+  "mark": "AUTOPILOT",
+  "lines": [
+    { "t": "IT WAS NEVER A", "style": "plain", "small": true },
+    { "t": "CHEMICAL", "style": "strike" },
+    { "t": "IMBALANCE", "style": "strike" }
+  ]
+}

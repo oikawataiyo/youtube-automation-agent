@@ -1,0 +1,11 @@
+{
+  "accent": "#38d2e0",
+  "bg": "ember",
+  "emotion": "sad",
+  "mark": "AUTOPILOT",
+  "lines": [
+    { "t": "WHY YOU", "style": "plain", "small": true },
+    { "t": "PUSH LOVE", "style": "plain" },
+    { "t": "AWAY", "style": "accent" }
+  ]
+}

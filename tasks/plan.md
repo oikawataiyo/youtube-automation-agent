@@ -1,142 +1,71 @@
-# Plan: Produce "不安は脳の予測 / Your Anxiety Is a Threat Forecast" (v1)
-
-**Script:** `data/scripts/1780100000001_your-anxiety-is-a-threat-forecast.md` (+ `.json`)
-**New video dir:** `mychannel/video/your-anxiety-is-a-threat-forecast-v1/`
-**Base kit:** copy the **v2** `scene-kit.js` from `why-you-pull-away-v2` (brightness + camera-rig + cutter already baked in).
-**New libraries to debut:** postprocessing/bloom + seeded simplex-noise + rough.js
-**Pillar:** mood. **Target length:** ~9 min (Hook + 5 sections + Outro = 7 segments).
-
----
+# Plan: Morning-slot publish scheduling (JST) + posting-time experiment infra
 
 ## Requirements (restated)
+- Stop posting at JST evening (last time: ~19:00 JST by mistake). Target **early-morning JST** slots aimed at the US/English audience.
+- Test slots **06:00 / 08:00 / 10:00 JST** (long-form). Buffer/QuickFrame logic: JST 06:00–08:00 ≈ US-East early-evening, US-West afternoon.
+- Build **infra only now** — no posting today. Videos flow in later (production is a separate track; O/P scripts done but not animated; queue currently 0 pending).
+- Infra must support **both** experiment shapes:
+  - **batch**: fill one morning's 06:00/08:00/10:00 with several ready videos (quick move off evening).
+  - **rotate**: 1 video/day, slot cycles 06→08→10→06… across ~30 videos (the only design that can *rank* slots).
+- Per-video **slot log** so YouTube Studio's "when viewers are online" + analytics-report can later be read by slot.
 
-1. Turn the leftover anxiety script into a finished, concatenated MP4 in the established
-   HyperFrames + three.js chibi style, reusing the proven v2 kit.
-2. Debut three new **deterministic + seek-safe + UMD-loadable** libraries, used where they
-   earn their place (not bolted on):
-   - **bloom** → the glow beats (screen afterglow, the ringing red alarm, the thin line of daylight).
-   - **simplex-noise (seeded)** → the script's spine metaphor: weather/storm lines flowing
-     through a transparent body; breathing chest; drifting cloud/fog. Replaces `Math.sin` hacks.
-   - **rough.js (seeded)** → hand-drawn beats: the wall of question-mark doors, the chalk
-     `DANGER`/`SAFE` blackboard, the brass barometer dial face.
-3. Keep the v2 quality bars: bright enough (no near-black), **max 4s per camera framing**
-   (`makeCutter.auto`), karaoke captions from real word timings.
-4. v1 of this title only — do not touch any existing video dir.
+## Current state (verified)
+- Machine TZ = `Tokyo Standard Time`. `new Date("YYYY-MM-DDTHH:MM")` parses as JST; `.toISOString()` stores UTC. So today's tooling already *can* hit morning JST — the 19:00 was a bad `--start`, not a gap.
+- `_publish-state.json`: all 5 jobs seeded as published → **0 pending**. No new video to attach right now.
+- `publish-queue.js` schedules via uniform `--start` + `--every`. Cannot express "3 fixed clock-slots per day then jump to next day" (non-uniform spacing).
 
----
+## Design decisions
+1. **Timezone-explicit, not machine-dependent.** Compute UTC from JST clock-time directly (`Date.UTC(y,mo,d, hh-9, mm)`; Japan has no DST). Robust even if the machine TZ changes or this runs in CI.
+2. **Additive flags** — when `--slots` is absent, current `--start/--every` behavior is unchanged (no regression for existing callers).
+3. **Skip past slots** automatically (YouTube rejects `publishAt` in the past); roll to the next day's slots if today's are gone.
+4. **Slot metadata in state**, not a second file — extend each `_publish-state.json` entry with `slotJst` + `weekdayJst`, so analysis joins on the file we already maintain.
 
-## Segment map (motif per section)
+## Phases
 
-| Seg | Section | Core visual (from script Visual notes) | Lib used |
-| --- | --- | --- | --- |
-| seg-00 (index.html) | Hook | 3am bedroom, screen afterglow on ceiling, chest rising fast under blanket, frozen clock | bloom (screen glow) + simplex (breath) |
-| seg-01 | §1 火事の前に鳴る警報 | silent dark hallway, red alarm under glass ringing; reflection morphs to a human eye | bloom (red alarm) |
-| seg-02 | §2 分からなさに耐えられない | person facing a wall of closed doors marked only with `?`; cold light slides door to door | rough.js (`?` doors) + bloom (cold slit) |
-| seg-03 | §3 体が予測を書いてしまう | transparent body; weather-map lines flow through chest/stomach, becoming an outward storm | **simplex flow field** (hero beat) + bloom |
-| seg-04 | §4 予測を生かし続ける輪 | night classroom; a notebook stamps `SAFE` each time a door shuts; blackboard still reads `DANGER` | rough.js (chalk) + bloom |
-| seg-05 | §5 予測を測り直す | hand turns a brass barometer `STORM → CHANGEABLE`; window cloudy but a thin daylight line | rough.js (dial) + bloom (daylight) + simplex (clouds) |
-| seg-06 | Outro | the alarm still speaks but is one input among many; calmer, lighter room | bloom (soft) |
+### Phase 1 — `publish-queue.js` slot/rotate scheduling (core, ~1 file)
+New flags (only active when `--slots` is given):
+- `--slots "06:00,08:00,10:00"` — JST clock times.
+- `--mode batch|rotate` (default `rotate`).
+  - `batch`: assign pending videos to the slots **on a single JST date**, in order, skipping past slots; overflow beyond the slot count is ignored this run (warn).
+  - `rotate`: 1 video/day; for the i-th pending video → date = `from + i` days, slot = `slots[i % slots.length]`.
+- `--from "YYYY-MM-DD"` — first JST date. Default: today if ≥1 slot still future, else tomorrow.
+- Build the `publishAt` (UTC ISO) list from (date, jstSlot) pairs via the explicit converter.
+- `--dry-run` prints each: `<publishAt UTC> | <JST date HH:MM (Weekday)> | <file> | "<title>"`.
 
-Unifying motif: **weather/forecast** (simplex-driven storm lines) + **alarm glow** (bloom).
-3D chibi room/hallway/classroom reuse the v2 chibi + chair + camera-rig code; the barometer
-and weather-map are SVG/canvas overlays composited over the 3D (same layering as v2 captions).
+Helper (small, pure, testable):
+```
+jstSlotToUtcIso("YYYY-MM-DD", "HH:MM") -> ISO string   // subtract 9h, no DST
+```
 
----
+### Phase 2 — Slot logging in state
+- On upload, write `slotJst: "06:00"`, `weekdayJst: "Sun"` alongside existing `videoId/publishAt`.
 
-## Phase 0 — Library de-risking spike (DO THIS FIRST, gates everything)
+### Phase 3 — Analytics by slot (small)
+- Extend `scripts/analytics-report.js` (or a thin `scripts/experiment-report.js`) to group published videos by `slotJst` and show per slot: count, avg first-24h views, avg CTR, avg % viewed. Reads `_publish-state.json` + Analytics API (already wired).
+- Label clearly: "directional only until ≥~8–10 videos/slot" (content confound).
 
-The one real unknown: three's `EffectComposer`/`UnrealBloomPass` live in `examples/jsm` (ESM) and
-will NOT load as classic UMD `<script src>` alongside the global `THREE@0.160`. Mixing ESM +
-the existing global setup is the risk that could sink the whole approach.
-
-- **Step 0.1** — Consult `/three` and `/hyperframes` skills for the supported postprocessing path.
-- **Step 0.2** — Pick a UMD/global bloom that binds to the existing `window.THREE` 0.160 without
-  loading three twice. Candidate: **pmndrs `postprocessing`** UMD build (`window.POSTPROCESSING`).
-  Confirm version compatibility with three 0.160.
-- **Step 0.3** — Build a throwaway 1-scene probe: cube + emissive material + bloom, rendered via
-  `composer.render()` inside a paused `gsap.timeline({onUpdate})`. Render 2s headless with
-  `hyperframes render`; frame-verify the glow appears AND that seeking backward reproduces the
-  same frame (determinism). Drive any effect time uniform from the timeline proxy, never a clock.
-- **Step 0.4** — Same probe for simplex-noise (seeded via alea; `noise(x, t)` with `t` from proxy)
-  and rough.js (seeded canvas redraw on seek). Both are low-risk; confirm UMD globals load.
-- **GATE:** if UMD bloom can't be made deterministic/headless-safe, fall back to a
-  cheap emissive + additive-sprite "fake bloom" in-scene and report before proceeding. Do not
-  build 7 segments on an unproven pass.
-
-**Deliverable:** `assets/lib/fx-kit.js` — thin wrappers: `makeBloomComposer(renderer,scene,camera,opts)`,
-`makeNoise(seed)`, `roughDraw(...)` — so the 7 segments don't duplicate setup. Extends scene-kit, not replaces it.
-
----
-
-## Phase 1 — Scaffold
-
-- **Step 1.1** — Create `mychannel/video/your-anxiety-is-a-threat-forecast-v1/` mirroring the v2
-  tree: `assets/lib/`, `assets/narration/`, `compositions/`, `renders/`, `index.html`,
-  `hyperframes.json`, `package.json`, `CLAUDE.md`, `design.md`.
-- **Step 1.2** — Copy v2 `scene-kit.js` verbatim as the shared base. Add `fx-kit.js` from Phase 0.
-- **Step 1.3** — Write `design.md`: the segment map above + per-seg framings + lib usage, so each
-  segment build has a self-contained brief.
-
-## Phase 2 — Narration (one pass for all 7)
-
-- **Step 2.1** — Extract clean narration prose per section into `assets/narration/seg-NN.txt`
-  (strip `> Visual` / `⏱` / headings; keep spoken text only). Hook→seg-00 … Outro→seg-06.
-- **Step 2.2** — Kokoro TTS (`/hyperframes-media tts`) → `seg-NN.wav` (match v2 voice).
-- **Step 2.3** — Whisper transcribe (reuse v2 `_transcribe.py`) → `seg-NN.json` + `seg-NN-words.js`
-  (`window.segNN = [...]`). Read each wav's true duration to set each composition's `data-duration`/`END`.
-
-## Phase 3 — Build segments (proven v2 pattern, one at a time)
-
-For each seg: 5 `makeCameraRig` framings (3D segs) + `makeCutter.auto(from,to,~4,frames,dolly)` +
-`warmLight`/`makeFill` brightness floors + the assigned new lib + karaoke captions via
-`buildCaptions`/`wireCaptions`. All motion on the GSAP timeline; render (`composer.render()`) in
-`onUpdate`. No `Date.now`/`Math.random`/`rAF`.
-
-- 3.0 seg-00 Hook (bedroom; bloom+simplex) — also the hardest integration; validates fx-kit end-to-end.
-- 3.1 seg-01 · 3.2 seg-02 · 3.3 seg-03 (simplex hero beat) · 3.4 seg-04 · 3.5 seg-05 · 3.6 seg-06.
-- After each: `npm run check` (lint 0 errors; the ~N `duplicate_audio_track` warnings are the known
-  standalone-per-seg false positive).
-
-## Phase 4 — Render + verify + assemble (one render at a time)
-
-- **Step 4.1** — `npx hyperframes render` per seg, **foreground**, **one at a time** (parallel renders
-  thrash the GPU + corrupt shared output — lessons L5/L6). Hook uses index.html (omit `--composition`).
-- **Step 4.2** — Frame-verify each: `ffmpeg -ss <t> -i renders/seg-NN.mp4 -frames:v 1 renders/_check/NN.png`
-  then Read the png. Confirm brightness, bloom, the new-lib beat, and caption sync.
-- **Step 4.3** — Confirm identical codecs (h264/1920x1080/30fps/aac) so concat copies without re-encode.
-- **Step 4.4** — `ffmpeg -f concat -safe 0 -i renders/concat.txt -c copy renders/your-anxiety-...-full.mp4`.
-- **Step 4.5** — Spot-check 2–3 frames across segment boundaries in the full file.
-
-## Phase 5 — Commit + memory
-
-- **Step 5.1** — Commit **source only** (html + lib + narration txt/json/js), not wav/mp4 (v1 convention).
-  Branch from master per workflow; conventional commit; push.
-- **Step 5.2** — Update memory: new production-state file for this video + a `tech-knowledge` Obsidian
-  note "HyperFrames-compatible deterministic libraries" (the UMD/seek-safe filter + the bloom path found).
-- **Step 5.3** — Update `tasks/lessons.md` with any new gotchas (esp. the bloom UMD path).
-
----
-
-## Risks
-
-| Risk | Sev | Mitigation |
-| --- | --- | --- |
-| three `EffectComposer`/bloom is ESM-only → won't load as UMD next to global THREE | **HIGH** | Phase 0 spike + UMD pmndrs `postprocessing`; emissive/sprite fallback if it fails |
-| Bloom pass non-deterministic on backward seek (internal clock) | HIGH | Drive all time uniforms from timeline proxy; verify backward-seek reproduces frame in 0.3 |
-| rough.js redraw-on-seek cost / flicker | MED | Seed fixed; redraw only on value change; pre-bake static `?`/dial if needed |
-| Render concurrency / bg-cwd traps | MED | One render at a time, foreground (lessons L5/L6) |
-| Chibi face can't carry subtle emotion | LOW | Anxiety is environmental (rooms/weather), not facial — fits chibi well |
-| Codex delegation hangs on Windows | LOW | Build segments in-session; if delegating, bypass-sandbox + `</dev/null` (memory) |
-
-## Complexity: **MEDIUM–HIGH**
-Phase 0 spike is the gate. If bloom UMD works, Phases 1–5 are a known, repeatable pipeline (this is
-the 4th video in this exact style). Estimate: spike + scaffold + narration ~1 session; 7 segments
-build/render/verify ~2–3 sessions (1 render at a time is the bottleneck). Recommend splitting:
-**Session A = Phase 0–2 (de-risk + scaffold + narration)**, then proceed segment-by-segment.
+### Phase 4 — npm scripts + docs
+- `publish:morning` → `package-to-jobs && publish-queue --slots 06:00,08:00,10:00 --mode rotate`.
+- Short usage note: batch vs rotate, slots are JST, expectations (weak lever for evergreen; real read-out is the Studio heatmap after data accrues).
 
 ## Acceptance criteria
-- [ ] Phase 0 probe proves bloom is deterministic + headless-renderable (or fallback chosen & reported)
-- [ ] All 7 segs: lint clean, bright (no near-black), ≤4s framings, captions synced to word timings
-- [ ] Each new lib visibly used in ≥1 beat and adds to the storytelling (bloom glow, simplex storm, rough sketch)
-- [ ] Full MP4 concatenated `-c copy` (no re-encode), frame-verified across boundaries, ~9 min
-- [ ] Source committed + pushed; memory + lessons updated
+- `node scripts/publish-queue.js --dry-run --slots 06:00,08:00,10:00 --mode batch` prints 3 rows; **06:00 JST on date D → `D-1`T21:00:00Z**, 08:00 → `D-1`T23:00:00Z, 10:00 → `D`T01:00:00Z (verify against hand calc).
+- `--mode rotate --from <date> --limit 6` → 6 rows on 6 consecutive JST dates, slots cycling 06/08/10/06/08/10.
+- A slot already past **today** is skipped; scheduling rolls forward.
+- Omitting `--slots` reproduces today's exact `--start/--every` output (regression check).
+- After a real upload, `_publish-state.json` entry carries `slotJst` + `weekdayJst`.
+- No new video is posted as part of building this (infra-only, per decision).
+
+## Risks
+- **publishAt < now**: handled by past-slot skipping + the existing near-now warning.
+- **DST drift (US side)**: JST fixed; US local target shifts ±1h seasonally. Acceptable — fix the JST clock, read results empirically.
+- **Quota**: ≤6 uploads/run (unchanged cap); batch of 3 is safe.
+- **Analysis confound (not code)**: ranking 06 vs 08 vs 10 needs rotation + ~8–10 videos/slot; documented so results aren't over-read.
+- **Scope creep**: video production is explicitly out of scope.
+
+## Complexity: LOW–MEDIUM
+- Phase 1 ~1–1.5h · Phase 2 ~15m · Phase 3 ~1h · Phase 4 ~20m. Mostly one file + a small analytics add.
+
+## Out of scope
+- Producing/animating new videos (separate track).
+- Shorts-specific slots (08:00–10:00) — same mechanism applies later; not built now.
