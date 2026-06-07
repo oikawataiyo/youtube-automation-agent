@@ -31,7 +31,7 @@ function slugFromScriptFile(fileName) {
 }
 
 function projectDirFromScript(scriptPath) {
-  return path.join(ROOT, 'mychannel', 'video', `${slugFromScriptFile(path.basename(scriptPath))}-v1`);
+  return path.join(ROOT, 'channels', 'autopilot', 'video', `${slugFromScriptFile(path.basename(scriptPath))}-v1`);
 }
 
 function run(command, commandArgs, options = {}) {

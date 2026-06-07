@@ -1,0 +1,25 @@
+{
+  "defaultChannel": "autopilot",
+  "channels": {
+    "autopilot": {
+      "dir": "channels/autopilot",
+      "youtubeChannelId": "UCxEagAMHdRgP22rKN8uHWig",
+      "tokenFile": "config/tokens.autopilot.json",
+      "jobsDir": "channels/autopilot/output/jobs",
+      "timezone": "Asia/Tokyo",
+      "privacyDefault": "private",
+      "publishSlot": null,
+      "brand": "channels/autopilot/brand/brand-spec.md"
+    },
+    "reddit_for_investor": {
+      "dir": "channels/reddit_for_investor",
+      "youtubeChannelId": null,
+      "tokenFile": "config/tokens.reddit.json",
+      "jobsDir": "channels/reddit_for_investor/output/jobs",
+      "timezone": "Asia/Tokyo",
+      "privacyDefault": "private",
+      "publishSlot": null,
+      "brand": "channels/reddit_for_investor/brand/brand-spec.md"
+    }
+  }
+}

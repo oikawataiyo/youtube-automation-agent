@@ -6,10 +6,14 @@ const chalk = require('chalk');
 const { Logger } = require('./logger');
 
 class CredentialManager {
-  constructor() {
+  /**
+   * @param {{ tokensPath?: string }} [opts] - per-channel token file. Defaults
+   *   to config/tokens.json for backward compatibility.
+   */
+  constructor(opts = {}) {
     this.logger = new Logger('CredentialManager');
     this.credentialsPath = path.join(__dirname, '..', 'config', 'credentials.json');
-    this.tokensPath = path.join(__dirname, '..', 'config', 'tokens.json');
+    this.tokensPath = opts.tokensPath || path.join(__dirname, '..', 'config', 'tokens.json');
     this.credentials = {};
     this.tokens = {};
   }

@@ -35,6 +35,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { CredentialManager } = require('../utils/credential-manager');
 const { resolvePath, whoami, uploadVideo, deleteVideo } = require('../utils/youtube-upload');
+const { resolveChannel, assertChannel } = require('../utils/channels');
 
 function parseArgs(argv) {
   const args = {};
@@ -48,10 +49,10 @@ function parseArgs(argv) {
   return args;
 }
 
-async function getClient() {
-  const cm = new CredentialManager();
+async function getClient(channel) {
+  const cm = new CredentialManager({ tokensPath: channel.tokenFile });
   const ok = await cm.initialize();
-  if (!ok) throw new Error('CredentialManager failed to initialize (check config/credentials.json + tokens.json)');
+  if (!ok) throw new Error(`CredentialManager failed to initialize (check config/credentials.json + ${path.basename(channel.tokenFile)})`);
   return cm.getYouTubeClient();
 }
 
@@ -91,21 +92,25 @@ async function selfTest(youtube) {
 
 (async () => {
   const args = parseArgs(process.argv.slice(2));
-  const youtube = await getClient();
+  const channel = resolveChannel();
+  const youtube = await getClient(channel);
 
   if (args.whoami) {
     await whoami(youtube);
     return;
   }
   if (args.delete) {
+    await assertChannel(youtube, channel); // don't delete on the wrong channel
     await deleteVideo(youtube, args.delete);
     return;
   }
   if (args.selfTest) {
+    await assertChannel(youtube, channel);
     await selfTest(youtube);
     return;
   }
   if (args.job) {
+    await assertChannel(youtube, channel); // abort if token routes to the wrong channel
     const jobPath = resolvePath(args.job);
     const job = JSON.parse(await fsp.readFile(jobPath, 'utf8'));
     await uploadVideo(youtube, job);

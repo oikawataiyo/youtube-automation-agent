@@ -10,21 +10,24 @@
  * Flags:
  *   --all            use the map file (default scripts/thumbnail/thumb-map.json)
  *   --map <path>     override the map file
- *   --state <path>   publish-state.json (default mychannel/output/jobs/_publish-state.json)
+ *   --channel <name> channel from channels.json (default autopilot). Sets state path + token.
+ *   --state <path>   publish-state.json (default: the channel's jobsDir/_publish-state.json)
  *   --dry-run        print the plan, upload nothing
  */
 
 const fs = require('fs');
 const path = require('path');
 const { CredentialManager } = require('../utils/credential-manager');
+const { resolveChannel, assertChannel } = require('../utils/channels');
 
 const ROOT = path.join(__dirname, '..');
 const arg = (name, def) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : def; };
 const hasFlag = (name) => process.argv.includes(name);
 
 const DRY = hasFlag('--dry-run');
+const CHANNEL = resolveChannel();
 const MAP_FILE = path.resolve(ROOT, arg('--map', 'scripts/thumbnail/thumb-map.json'));
-const STATE_FILE = path.resolve(ROOT, arg('--state', 'mychannel/output/jobs/_publish-state.json'));
+const STATE_FILE = path.resolve(ROOT, arg('--state', path.join(CHANNEL.jobsDir, '_publish-state.json')));
 
 /** Build [{videoId, image, label}] from either --all map or positional args. */
 function buildPlan() {
@@ -56,9 +59,10 @@ async function main() {
   }
   if (DRY) { console.log('\n(dry-run — nothing uploaded)'); return; }
 
-  const cm = new CredentialManager();
+  const cm = new CredentialManager({ tokensPath: CHANNEL.tokenFile });
   if (!(await cm.initialize())) throw new Error('CredentialManager init failed');
   const youtube = cm.getYouTubeClient();
+  await assertChannel(youtube, CHANNEL); // abort if token routes to the wrong channel
 
   let ok = 0;
   for (const p of plan) {

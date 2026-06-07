@@ -26,6 +26,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveChannel } = require('../utils/channels');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -34,8 +35,9 @@ function arg(name, def) {
   return i >= 0 ? process.argv[i + 1] : def;
 }
 
-const IN = path.resolve(ROOT, arg('--in', 'mychannel/output/UPLOAD_PACKAGE.md'));
-const OUT = path.resolve(ROOT, arg('--out', 'mychannel/output/jobs'));
+const CHANNEL = resolveChannel();
+const IN = path.resolve(ROOT, arg('--in', path.join(CHANNEL.dir, 'output', 'UPLOAD_PACKAGE.md')));
+const OUT = path.resolve(ROOT, arg('--out', CHANNEL.jobsDir));
 
 function slugFromVideoPath(p) {
   // mychannel/video/<slug>/renders/<file>.mp4  -> <slug>; fallback to file stem.
