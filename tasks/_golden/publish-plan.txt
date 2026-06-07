@@ -1,0 +1,6 @@
+
+> youtube-automation-agent@1.0.0 publish:plan
+> node scripts/publish-queue.js --dry-run
+
+📋 5 job(s), 0 pending, uploading up to 6.
+✅ Nothing pending — all jobs already published.
