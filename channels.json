@@ -11,15 +11,15 @@
       "publishSlot": null,
       "brand": "channels/autopilot/brand/brand-spec.md"
     },
-    "reddit_for_investor": {
-      "dir": "channels/reddit_for_investor",
+    "investor_digest": {
+      "dir": "channels/investor_digest",
       "youtubeChannelId": null,
-      "tokenFile": "config/tokens.reddit.json",
-      "jobsDir": "channels/reddit_for_investor/output/jobs",
+      "tokenFile": "config/tokens.investor.json",
+      "jobsDir": "channels/investor_digest/output/jobs",
       "timezone": "Asia/Tokyo",
       "privacyDefault": "private",
       "publishSlot": null,
-      "brand": "channels/reddit_for_investor/brand/brand-spec.md"
+      "brand": "channels/investor_digest/brand/brand-spec.md"
     }
   }
 }
