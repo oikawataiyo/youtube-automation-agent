@@ -89,3 +89,15 @@ data/analysis/
 
 # Asset/video info files
 data/**/*.info
+
+# Codex review error dumps (stderr captures, not artifacts)
+tasks/*.err
+
+# Waveform caches (regenerated from audio)
+**/.waveform-cache/
+
+# Codex work archives (superseded snapshots)
+**/_archive-codex/
+
+# Local scheduler lock
+.claude/scheduled_tasks.lock
