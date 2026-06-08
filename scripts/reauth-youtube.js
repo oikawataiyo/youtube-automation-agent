@@ -5,7 +5,7 @@
  * Unlike `npm run credentials:setup` (the full wizard), this ONLY runs the
  * OAuth flow — it does not re-prompt for the client id/secret or touch any
  * other config. It forces the Google account picker + consent so you can
- * select the new Autopilot account and get a durable refresh_token.
+ * select the psycollege channel's account and get a durable refresh_token.
  *
  * Backs up the current config/tokens.json to config/tokens.json.bak first,
  * so you can revert to the previous (personal) account if needed.
@@ -46,7 +46,7 @@ function ask(q) {
     scope: SCOPES,
   });
 
-  console.log('\n1) Open this URL and sign in as the NEW Autopilot account (autopilot.studi@gmail.com):\n');
+  console.log('\n1) Open this URL and sign in as the psycollege channel account (autopilot.studi@gmail.com):\n');
   console.log(url);
   console.log('\n2) After approving, the browser redirects to a localhost page that will NOT load — that is expected.');
   console.log('   Copy the value of the `code=...` parameter from the address bar.\n');
@@ -71,10 +71,10 @@ function ask(q) {
   const ch = (me.data.items || [])[0];
   if (ch) {
     console.log(`\n🎬 Authorized channel: "${ch.snippet.title}"  (id ${ch.id})`);
-    console.log(ch.snippet.title.toLowerCase().includes('autopilot')
-      ? '   → Looks like Autopilot. Tell Claude "done".'
-      : '   ⚠️  This is NOT the Autopilot channel. Re-run and pick the right account, or restore tokens.json.bak.');
+    console.log(/psycollege|autopilot/.test(ch.snippet.title.toLowerCase())
+      ? '   → Looks like psycollege. Tell Claude "done".'
+      : '   ⚠️  This is NOT the psycollege channel. Re-run and pick the right account, or restore tokens.json.bak.');
   } else {
-    console.log('\n⚠️  No channel found for this account. Make sure the Autopilot channel exists on it.');
+    console.log('\n⚠️  No channel found for this account. Make sure the psycollege channel exists on it.');
   }
 })().catch((e) => { console.error('Error:', e.message); process.exit(1); });

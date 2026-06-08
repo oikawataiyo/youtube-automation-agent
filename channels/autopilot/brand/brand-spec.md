@@ -1,35 +1,35 @@
-# Autopilot — Brand Spec
+# psycollege — Brand Spec
 
-**Decided:** 2026-06-05. Public channel name **Autopilot**, handle **@autopilot-c7h** (final 2026-06-06 — the clean `@autopilot` was not claimable in Studio at go-live; kept the auto-assigned handle).
-Source of truth for the channel's public identity. Grounded in `mychannel/research/competitive-research.md` (§2 naming, §3 About, §4 thumbnails, §7 implications).
+**Renamed:** 2026-06-08. Public channel name is now **psycollege** (was `Autopilot`); the icon is a refined clay **"P" monogram** built from the character's face (was the clay head). Internal channel key / directory stays `autopilot` (plumbing only).
+**Originally decided:** 2026-06-05. Source of truth for the channel's public identity. Grounded in `mychannel/research/competitive-research.md` (§2 naming, §3 About, §4 thumbnails, §7 implications).
 
 ---
 
 ## 1. Name & handle
 
-- **Display name:** `Autopilot`
-- **Handle:** `@autopilot-c7h` (final — clean `@autopilot` was unavailable to claim in Studio at go-live; the Data API cannot set handles)
-- **Concept:** the brain runs prediction on autopilot — forecasting threats, defaulting to old priors, bracing before "you" decide. The channel makes that autopilot *visible* and hands back the controls.
+- **Display name:** `psycollege`
+- **Handle:** `@psycollege` — **to claim in Studio** (Data API cannot set handles; verify availability, fall back to a suffixed handle if taken, as happened with `@autopilot-c7h`).
+- **Concept:** psychology, made legible — a "college for your mind." Each video is a cinematic essay on the predictive brain: what is actually firing when we spiral, freeze, or pull away. Mechanisms, not symptoms.
 
 ---
 
 ## 2. Tagline (banner / one-liner)
 
-> **See the brain on autopilot.**
+> **The science of your mind.**
 
-Alt: *The science of the mind running on autopilot.*
+Alt: *Psychology, made legible.* · *A college for your mind.*
 
 ---
 
 ## 3. About / channel description (draft A — ~640 chars)
 
-> Your brain is running on autopilot — predicting, forecasting, and bracing for threats before you ever decide a thing. Autopilot makes that hidden machinery visible.
+> Your brain is always running ahead of you — predicting, forecasting, and bracing for threats before you ever decide a thing. psycollege makes that hidden machinery visible.
 >
 > Every video is a cinematic essay on the predictive brain: the neuroscience of why we spiral into anxiety, sink into depression, freeze, or pull away — and what's actually firing in the circuit when we do. Not symptoms. Mechanisms.
 >
 > Grounded in predictive-processing neuroscience and peer-reviewed research, rendered in original 3D animation. New essays regularly.
 >
-> Educational only — not medical advice or a substitute for professional care. Subscribe to start seeing your own autopilot.
+> Educational only — not medical advice or a substitute for professional care. Subscribe to start seeing how your own mind works.
 
 **Why this shape (per §3):**
 1. Line 1 = emotional positioning (what it is / how it feels).
@@ -51,8 +51,8 @@ Cadence is intentionally soft ("New essays regularly") — no fixed-day promise 
 
 - **Base:** our 3D cinematic render (slate-blue palette + bloom), one frame chosen as hero.
 - **Text:** the **mechanism in 1 word** or an **assertion in 2–3 words**, set in a heavy condensed sans, one **accent color** (consistent across the channel — propose a single bloom accent, e.g. warm amber or cyan, picked once and locked).
-  - e.g. `PREDICTION ERROR`, `THREAT FORECAST`, `FALSE ALARM`, `AUTOPILOT`.
-- **Brand mark:** small consistent corner element (an "AP" / autopilot glyph or a thin accent rule) so the grid reads as one channel — like Huberman's blue brand frame.
+  - e.g. `PREDICTION ERROR`, `THREAT FORECAST`, `FALSE ALARM`.
+- **Brand mark:** small consistent corner element (the clay **"P" monogram** or a thin accent rule) so the grid reads as one channel — like Huberman's blue brand frame.
 - **Avoid (commodity tells, §4):** 2D blob mascots, yellow boxes, fluorescent diagram explainer style.
 
 ---
@@ -99,33 +99,33 @@ Anchored to the actual 3D renders: near-black deep-space background, a subtle bl
 | `accent` amber | `#E8A33D` | **single** accent — one element per surface |
 | `white` | `#F2F4F8` | wordmark / primary type |
 
-### Brand mark — the **clay chibi character head** (decided 2026-06-06)
+### Brand mark — the clay **"P" monogram** (renamed 2026-06-08)
 
-The channel's recurring two-head-tall clay character *is* the mark — mascot-forward, instantly recognizable, and unique to this channel (viewers see the same face in the videos and on the avatar). The earlier attitude-indicator concept was dropped in favor of the character.
+The mark is a refined letter **"P"** sculpted from the clay character: the round **head becomes the bowl** of the P, a clay **stem** forms the stroke, and the character's signature **two dot-eyes + gentle smile** sit inside the bowl — so the letter and the face read at once. Initials the channel name (`psycollege`) while staying mascot-forward and unique. (Supersedes the bare clay-head mark used through 2026-06-07.)
 
-- Beige **clay** sphere head, key light upper-left → warm terminator → shadow; faint cool bounce on the lower-right (matches the 3D render lighting).
-- Two matte dark dot eyes + a small minimal gentle-smile mouth (same matte dark clay) — friendlier than the source character, which has eyes only.
+- Same **clay** material as the renders: key light upper-left → warm terminator → shadow, faint cool bounce lower-right (`#rim`). A continuous `userSpaceOnUse` gradient spans stem + bowl so the lighting is one piece.
+- Stem top is **tucked inside the bowl** so the crown is one clean dome (no poking corner).
 - Used in two places: the **profile picture** and the small mark in the **banner** lockup.
 
 ### Profile picture
 
-- The clay chibi head fills the circular avatar (head ≈ 83% of frame), centered & circular-safe (no edge content).
+- The clay "P" monogram is centered & circular-safe (the bowl/face sits within the round crop, no edge content).
 - Near-black field (`bg`) + subtle warm-cored bloom so the clay reads warm against the dark.
-- Verified legible at 96 px and 48 px (round head + two eyes read instantly).
+- Verified legible small (the round bowl + two eyes still read as a face inside the P).
 - Deliverable: **800×800 PNG** (`assets/profile-800.png`, exported @2x = 1600²), uploaded on the square (YouTube crops to circle).
 
 ### Banner
 
 - **2560×1440** field: near-black + subtle blue radial bloom; faint seeded star/particle dust like the renders.
 - **Center safe area (1546×423, shows on all devices):**
-  - The clay-head mark (small) + wordmark **`Autopilot`** in white (Space Grotesk).
-  - Tagline beneath: **`See the brain on autopilot.`** — the word `autopilot` in amber. One accent only.
+  - The clay "P" monogram (small) + wordmark **`psycollege`** in white (Space Grotesk).
+  - Tagline beneath: **`The science of your mind.`** — the word `mind` in amber. One accent only.
 - **Outside the safe area (right bleed, desktop/TV only):** a large, dim cool 3D orb fading off the edge — cinematic depth without crowding the mobile crop (verified on mobile/tablet/desktop safe-area crops).
 - Deliverable: **2560×1440 PNG** (`assets/banner-2560.png`, @2x, < 6 MB).
 
 ### Optional later — video watermark
 
-The clay-head mark as a **150×150 transparent PNG** (Studio → Branding → video watermark), reinforcing the channel grid.
+The clay "P" monogram as a **150×150 transparent PNG** (Studio → Branding → video watermark), reinforcing the channel grid.
 
 ### Production
 

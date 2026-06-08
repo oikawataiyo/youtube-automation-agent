@@ -63,7 +63,7 @@
 </head>
 <body>
 <!--
-  Autopilot — channel banner 2560x1440 (brand-spec §8)
+  psycollege — channel banner 2560x1440 (brand-spec §8)
   Center lockup lives in the all-device safe area (1546x423).
   Right orb bleeds outside it: shows on desktop/TV, cropped on mobile.
 -->
@@ -76,10 +76,10 @@
 
   <div class="safe">
     <div class="lockup">
-      <!-- clay chibi character head (matches profile) — transparent bg -->
-      <svg class="mark" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+      <!-- "P" monogram (matches profile icon) — clay stem + bowl/face, transparent bg -->
+      <svg class="mark" viewBox="182 100 540 540" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="clay" cx="38%" cy="31%" r="74%">
+          <radialGradient id="clay" cx="382" cy="300" r="430" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stop-color="#F0CBA0"/>
             <stop offset="30%" stop-color="#E0B383"/>
             <stop offset="55%" stop-color="#CC9A68"/>
@@ -87,23 +87,25 @@
             <stop offset="92%" stop-color="#7C5234"/>
             <stop offset="100%" stop-color="#5E3D26"/>
           </radialGradient>
-          <radialGradient id="rim" cx="76%" cy="80%" r="38%">
+          <radialGradient id="rim" cx="600" cy="560" r="300" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stop-color="#7E8CA0" stop-opacity="0.30"/>
             <stop offset="62%" stop-color="#7E8CA0" stop-opacity="0"/>
           </radialGradient>
         </defs>
-        <circle cx="400" cy="400" r="332" fill="url(#clay)"/>
-        <circle cx="400" cy="400" r="332" fill="url(#rim)"/>
-        <ellipse cx="312" cy="420" rx="43" ry="54" fill="#241710"/>
-        <ellipse cx="488" cy="420" rx="43" ry="54" fill="#241710"/>
-        <ellipse cx="305" cy="398" rx="14" ry="17" fill="#4A3322" opacity="0.55"/>
-        <ellipse cx="481" cy="398" rx="14" ry="17" fill="#4A3322" opacity="0.55"/>
-        <path d="M352 520 Q400 556 448 520" fill="none" stroke="#241710" stroke-width="17" stroke-linecap="round"/>
+        <rect x="262" y="300" width="104" height="328" rx="52" fill="url(#clay)"/>
+        <rect x="262" y="300" width="104" height="328" rx="52" fill="url(#rim)"/>
+        <circle cx="452" cy="320" r="190" fill="url(#clay)"/>
+        <circle cx="452" cy="320" r="190" fill="url(#rim)"/>
+        <ellipse cx="406" cy="330" rx="25" ry="31" fill="#241710"/>
+        <ellipse cx="502" cy="330" rx="25" ry="31" fill="#241710"/>
+        <ellipse cx="399" cy="317" rx="8" ry="10" fill="#4A3322" opacity="0.55"/>
+        <ellipse cx="495" cy="317" rx="8" ry="10" fill="#4A3322" opacity="0.55"/>
+        <path d="M428 394 Q454 416 480 394" fill="none" stroke="#241710" stroke-width="10" stroke-linecap="round"/>
       </svg>
 
       <div class="type">
-        <div class="wordmark">Autopilot</div>
-        <div class="tagline">See the brain on <span class="amber">autopilot</span>.</div>
+        <div class="wordmark">psycollege</div>
+        <div class="tagline">The science of your <span class="amber">mind</span>.</div>
       </div>
     </div>
   </div>

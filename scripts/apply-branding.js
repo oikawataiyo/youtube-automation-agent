@@ -1,11 +1,12 @@
 /**
- * Apply the Autopilot brand to the live channel via the YouTube Data API.
+ * Apply the psycollege brand to the live channel via the YouTube Data API.
  *
  * Sets brandingSettings.channel.{title,description,keywords} on the
- * authenticated channel (mine=true). Source of truth: mychannel/brand/brand-spec.md.
+ * authenticated channel (mine=true). Source of truth:
+ * channels/autopilot/brand/brand-spec.md (internal key stays `autopilot`).
  *
  * NOTE / limits:
- *   - The @handle CANNOT be set via the Data API — claim @autopilot in YouTube
+ *   - The @handle CANNOT be set via the Data API — claim @psycollege in YouTube
  *     Studio (Settings -> Channel -> Advanced) manually.
  *   - Channel TITLE changes via the API are unreliable for some account types;
  *     we send it but you must VERIFY in Studio (description/keywords are reliable).
@@ -27,15 +28,15 @@ const ROOT = path.join(__dirname, '..');
 
 // --- Brand values (mirror of brand-spec.md §3/§4) -------------------------
 const BRAND = {
-  title: 'Autopilot',
+  title: 'psycollege',
   description: [
-    'Your brain is running on autopilot — predicting, forecasting, and bracing for threats before you ever decide a thing. Autopilot makes that hidden machinery visible.',
+    'Your brain is always running ahead of you — predicting, forecasting, and bracing for threats before you ever decide a thing. psycollege makes that hidden machinery visible.',
     '',
     "Every video is a cinematic essay on the predictive brain: the neuroscience of why we spiral into anxiety, sink into depression, freeze, or pull away — and what's actually firing in the circuit when we do. Not symptoms. Mechanisms.",
     '',
     'Grounded in predictive-processing neuroscience and peer-reviewed research, rendered in original 3D animation. New essays regularly.',
     '',
-    'Educational only — not medical advice or a substitute for professional care. Subscribe to start seeing your own autopilot.',
+    'Educational only — not medical advice or a substitute for professional care. Subscribe to start seeing how your own mind works.',
   ].join('\n'),
   // keywords: space-separated; quote multi-word phrases (API convention)
   keywords: '"predictive brain" neuroscience psychology anxiety depression "predictive processing" "cinematic essay" "mental health" "how your brain works"',
@@ -101,5 +102,5 @@ function show(label, channel) {
   });
   console.log('\n✅ Applied. Verify in Studio:');
   show('AFTER', res.data);
-  console.log('\nReminder: claim @autopilot handle + set banner/profile picture in Studio (API cannot).');
+  console.log('\nReminder: claim @psycollege handle + set banner/profile picture in Studio (API cannot).');
 })();

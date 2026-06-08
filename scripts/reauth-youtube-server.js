@@ -106,8 +106,8 @@ const server = http.createServer(async (req, res) => {
     console.log(durable
       ? '🟢 DURABLE — no 7-day expiry. Auto-posting will keep working.'
       : '🔴 STILL 7-DAY EXPIRY — the app may not be fully "In production" yet. Verify publishing status and re-run.');
-    if (ch && !chName.toLowerCase().includes('autopilot')) {
-      console.log('⚠️  This is NOT the Autopilot channel. Re-run and pick the right account, or restore tokens.json.bak.');
+    if (ch && !/psycollege|autopilot/.test(chName.toLowerCase())) {
+      console.log('⚠️  This is NOT the psycollege channel. Re-run and pick the right account, or restore tokens.json.bak.');
     }
 
     setTimeout(() => { server.close(); process.exit(durable ? 0 : 2); }, 500);

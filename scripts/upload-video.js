@@ -75,7 +75,7 @@ async function selfTest(youtube) {
   try {
     const r = await uploadVideo(youtube, {
       video: clip,
-      title: `Autopilot pipeline self-test (delete me) ${new Date().toISOString()}`,
+      title: `psycollege pipeline self-test (delete me) ${new Date().toISOString()}`,
       description: 'Automated upload pipeline verification. Safe to ignore — auto-deleted.',
       tags: ['test'],
       privacyStatus: 'unlisted',
