@@ -23,6 +23,11 @@ const projectDir = path.resolve(projectArg);
 const fps = Number(option('--fps', '12'));
 if (!Number.isFinite(fps) || fps <= 0) throw new Error(`Invalid fps: ${fps}`);
 
+const renderWidth = Number(option('--width', '1920'));
+const renderHeight = Number(option('--height', '1080'));
+if (!Number.isFinite(renderWidth) || renderWidth <= 0) throw new Error(`Invalid width: ${renderWidth}`);
+if (!Number.isFinite(renderHeight) || renderHeight <= 0) throw new Error(`Invalid height: ${renderHeight}`);
+
 const output = path.resolve(projectDir, option('--output', 'renders/final-playwright.mp4'));
 const indexPath = path.join(projectDir, 'index.html');
 const segmentsPath = path.join(projectDir, 'assets', 'segments.json');
@@ -77,7 +82,7 @@ async function main() {
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
 
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: renderWidth, height: renderHeight }, deviceScaleFactor: 1 });
   await page.goto(pathToFileURL(indexPath).href, { waitUntil: 'load', timeout: 60000 });
   await page.waitForFunction(() => Boolean(window.__timelines && window.__timelines.main), null, { timeout: 60000 });
 

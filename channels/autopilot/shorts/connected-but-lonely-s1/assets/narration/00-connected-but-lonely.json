@@ -1,0 +1,9 @@
+{
+  "voice": "am_adam",
+  "speed": 0.85,
+  "source": "00-connected-but-lonely.txt",
+  "duration_seconds": 47.672,
+  "generated_at": "2026-06-08T13:15:47.149281+00:00",
+  "engine": "kokoro-onnx-v1.0",
+  "sample_rate": 24000
+}
