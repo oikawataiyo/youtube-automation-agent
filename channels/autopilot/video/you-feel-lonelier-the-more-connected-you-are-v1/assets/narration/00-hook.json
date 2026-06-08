@@ -1,0 +1,9 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "00-hook.txt",
+  "duration_seconds": 26.776,
+  "generated_at": "2026-06-08T12:39:33.220277+00:00",
+  "engine": "kokoro-onnx-v1.0",
+  "sample_rate": 24000
+}

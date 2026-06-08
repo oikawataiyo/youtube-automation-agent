@@ -1,0 +1,9 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "03-why-it-reaches-so-deep.txt",
+  "duration_seconds": 115.528,
+  "generated_at": "2026-06-08T12:48:44.016926+00:00",
+  "engine": "kokoro-onnx-v1.0",
+  "sample_rate": 24000
+}

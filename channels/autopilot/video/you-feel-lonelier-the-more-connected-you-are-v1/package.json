@@ -1,0 +1,11 @@
+{
+  "name": "you-feel-lonelier-the-more-connected-you-are-v1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.6.63 preview",
+    "check": "npx --yes hyperframes@0.6.63 lint && npx --yes hyperframes@0.6.63 validate --timeout 30000",
+    "render": "node ../../../../scripts/render-video-playwright.js . --fps 12 --output renders/you-feel-lonelier-the-more-connected-you-are-v1-full.mp4",
+    "publish": "npx --yes hyperframes@0.6.63 publish"
+  }
+}

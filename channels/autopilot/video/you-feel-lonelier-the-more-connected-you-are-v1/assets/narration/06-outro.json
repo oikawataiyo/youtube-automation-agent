@@ -1,0 +1,9 @@
+{
+  "voice": "am_adam",
+  "speed": 0.8,
+  "source": "06-outro.txt",
+  "duration_seconds": 46.896,
+  "generated_at": "2026-06-08T12:50:02.651783+00:00",
+  "engine": "kokoro-onnx-v1.0",
+  "sample_rate": 24000
+}

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden; background: #0a0c10;
+        --bg: #0a0c10; --bg-grid: #141925; --bone: #e8e4d8; --steel: #9aa6b2;
+        --ink: #f4efe6; --mute: #5b6472; --alarm: #d8392e; --warn: #ff5a3c; --gold: #caa86a;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      #root { position: absolute; inset: 0; background: var(--bg); color: var(--ink); }
+      #texture { position: absolute; inset: 0; overflow: hidden; }
+      #grid { position: absolute; inset: 0;
+        background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0.5; }
+      #vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 72% 60% at 50% 45%, transparent 36%, rgba(0,0,0,0.66) 100%); }
+      .particle { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #3a4658; opacity: 0.42; }
+      .scene { position: absolute; inset: 0; opacity: 0; overflow: hidden; }
+      .kicker { position: absolute; left: 88px; top: 84px; font-size: 22px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--steel); }
+      .kicker b { color: var(--gold); font-weight: 700; }
+      .line { position: absolute; left: 88px; top: 122px; width: 300px; height: 2px; background: var(--steel); opacity: 0.45; transform-origin: left center; }
+      .title { position: absolute; left: 120px; top: 214px; width: 1000px; font-size: 60px; line-height: 1.02; letter-spacing: 0; font-weight: 800; text-transform: uppercase; color: var(--ink); }
+      .title .marker { color: var(--gold); }
+      .thesis { position: absolute; left: 128px; top: 510px; width: 780px; font-size: 39px; line-height: 1.26; color: var(--steel); font-weight: 300; }
+      .diagram { position: absolute; right: 120px; top: 194px; width: 640px; height: 580px; }
+      .panel { position: absolute; inset: 0; border: 1px solid rgba(154,166,178,0.38); background: rgba(10,12,16,0.26); }
+      .axis-x, .axis-y { position: absolute; background: rgba(154,166,178,0.5); transform-origin: left center; }
+      .axis-x { left: 86px; bottom: 98px; width: 458px; height: 2px; }
+      .axis-y { left: 86px; bottom: 98px; width: 2px; height: 356px; }
+      .trace { position: absolute; left: 88px; bottom: 100px; width: 452px; height: 272px; border-left: 0; border-bottom: 0; }
+      .trace svg { width: 100%; height: 100%; overflow: visible; }
+      .trace path { fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 780; stroke-dashoffset: 780; }
+      .dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--alarm); opacity: 0; }
+      .ghost { position: absolute; width: 12px; height: 12px; border: 1px solid rgba(154,166,178,0.55); border-radius: 50%; opacity: 0; }
+      .hidden-band { position: absolute; left: 86px; right: 96px; bottom: 74px; height: 72px; background: linear-gradient(180deg, rgba(216,57,46,0), rgba(216,57,46,0.22)); opacity: 0; }
+      .visual-note { position: absolute; left: 48px; right: 48px; bottom: 42px; font-size: 20px; line-height: 1.35; color: var(--steel); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.76; }
+      .beat-word { position: absolute; right: 140px; top: 804px; color: var(--warn); font-size: 42px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0; }
+      .caps { position: absolute; left: 50%; bottom: 86px; transform: translateX(-50%); width: 1480px; text-align: center; }
+      .caption { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0; color: var(--mute); font-size: 43px; line-height: 1.35; font-weight: 400; }
+      .caption b { color: var(--ink); font-weight: 500; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="581.6" data-width="1920" data-height="1080">
+      <div id="texture" class="clip" data-start="0" data-duration="581.6" data-track-index="0">
+        <div id="grid"></div>
+        <div id="particles"></div>
+        <div id="vignette"></div>
+      </div>
+      <section id="seg-00-hook" class="scene clip" data-start="0" data-duration="26.5" data-track-index="1">
+        <div class="kicker">PSYCHOLOGY FIELD NOTE &nbsp;·&nbsp; <b>PART 01</b></div>
+        <div class="line"></div>
+        <div class="title">Why You Feel Lonelier the <span class="marker">More</span> Connected You Are</div>
+        <div class="thesis">A face glows blue in a dark room. One thumb moves through parties, trips, couples, promotions, bodies, apartments, all of them warm and alive somewhere else. You opened the app because you felt alone,...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 230 C72 170 116 220 166 148 C222 68 288 112 348 58 C392 20 426 42 452 14"/></svg></div>
+          <div class="visual-note">A single face underlit by cold phone-glow in a dark room, with an endless vertical scroll of glowing highlight-reel thumbnails reflected in the eyes</div>
+        </div>
+        <div class="beat-word">CONNECTED</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-01-the-connected-and-the-alone" class="scene clip" data-start="26.5" data-duration="96" data-track-index="2">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 02</b></div>
+        <div class="line"></div>
+        <div class="title">The Connected <span class="marker">and</span> the Alone</div>
+        <div class="thesis">Here&#39;s the thing about connection now: you can be reachable by everyone and still feel untouched by anyone. The phone says you are included. The body says no one is here. And the strange...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 120 C60 104 88 196 156 176 C232 154 236 56 312 70 C374 82 390 210 452 190"/></svg></div>
+          <div class="visual-note">A cold blue bedroom is overlaid with two thin graph lines, one labeled connection and one labeled loneliness, both rising together while a small</div>
+        </div>
+        <div class="beat-word">CONNECTED</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-02-the-comparison-machine" class="scene clip" data-start="122.5" data-duration="100" data-track-index="3">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 03</b></div>
+        <div class="line"></div>
+        <div class="title">The <span class="marker">Comparison</span> Machine</div>
+        <div class="thesis">And this is where the feed stops being neutral. It is not just showing you people. It is giving your brain a measuring stick that never touches the floor. Festinger (1954, Human Relations) argued...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 218 C80 218 94 142 156 142 C226 142 220 70 292 70 C360 70 380 28 452 28"/></svg></div>
+          <div class="visual-note">A glowing vertical feed becomes an uphill escalator made of highlight posts, with a small figure trying to climb while each step tilts steeper</div>
+        </div>
+        <div class="beat-word">MACHINE</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-03-why-it-reaches-so-deep" class="scene clip" data-start="222.5" data-duration="99" data-track-index="4">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 04</b></div>
+        <div class="line"></div>
+        <div class="title">Why It <span class="marker">Reaches</span> So Deep</div>
+        <div class="thesis">Here is why this hurts more than it feels like it should. Loneliness is not just an opinion you have about your weekend. Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 230 C72 170 116 220 166 148 C222 68 288 112 348 58 C392 20 426 42 452 14"/></svg></div>
+          <div class="visual-note">A dim figure sits with a small ember glowing in the chest, and when it flares for warmth a flat phone image of a</div>
+        </div>
+        <div class="beat-word">REACHES</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-04-passive-scrolling-is-the-poison" class="scene clip" data-start="321.5" data-duration="102" data-track-index="5">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 05</b></div>
+        <div class="line"></div>
+        <div class="title">Passive Scrolling <span class="marker">Is</span> the Poison</div>
+        <div class="thesis">This is where the distinction matters, because the problem is not simply screens. It is passive exposure pretending to be participation. Verduyn et al. (2015, Journal of Experimental Psychology: General) found that passive Facebook...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 120 C60 104 88 196 156 176 C232 154 236 56 312 70 C374 82 390 210 452 190"/></svg></div>
+          <div class="visual-note">A split screen shows a gray passive scroll sinking downward on one side while a warm active message thread lights two-way arrows on the</div>
+        </div>
+        <div class="beat-word">SCROLLING</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-05-what-your-nervous-system-actually-counts" class="scene clip" data-start="423.5" data-duration="105" data-track-index="6">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 06</b></div>
+        <div class="line"></div>
+        <div class="title">What Your Nervous <span class="marker">System</span> Actually Counts</div>
+        <div class="thesis">Okay. So what do you actually do with this. Start by separating contact from consumption. Verduyn et al. (2015, Journal of Experimental Psychology: General) gives the cleanest rule: active beats passive. Send the message....</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 218 C80 218 94 142 156 142 C226 142 220 70 292 70 C360 70 380 28 452 28"/></svg></div>
+          <div class="visual-note">The same dark-room figure sends one real message, the cold feed-column dims, and a warm light now comes from inside the room as another</div>
+        </div>
+        <div class="beat-word">SYSTEM</div>
+        <div class="caps"></div>
+      </section>
+      <section id="seg-06-outro" class="scene clip" data-start="528.5" data-duration="53.1" data-track-index="7">
+        <div class="kicker">HIDDEN MECHANISM &nbsp;·&nbsp; <b>PART 07</b></div>
+        <div class="line"></div>
+        <div class="title">Closing <span class="marker">Thought</span></div>
+        <div class="thesis">You are not broken for feeling alone inside a crowd of notifications. Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for Social Connection) would call that ache a signal, not a verdict,...</div>
+        <div class="diagram">
+          <div class="panel"></div>
+          <div class="axis-x"></div>
+          <div class="axis-y"></div>
+          <div class="hidden-band"></div>
+          <div class="trace"><svg viewBox="0 0 452 272"><path d="M0 230 C72 170 116 220 166 148 C222 68 288 112 348 58 C392 20 426 42 452 14"/></svg></div>
+          <div class="visual-note">The argument collapses into one quiet sentence, then leaves the viewer with a question.</div>
+        </div>
+        <div class="beat-word">THOUGHT</div>
+        <div class="caps"></div>
+      </section>
+    </div>
+    <script>
+      const PROJECT_ID = "you-feel-lonelier-the-more-connected-you-are-v1";
+      const SEGMENTS = [{"id":"seg-00-hook","part":"PART 01","heading":"Hook","title":"Why You Feel Lonelier the More Connected You Are","narration":"A face glows blue in a dark room. One thumb moves through parties, trips, couples, promotions, bodies, apartments, all of them warm and alive somewhere else. You opened the app because you felt alone, and somehow you are lonelier than when you started. You are not failing at connection. You are running a Stone-Age comparison program against a feed engineered to never let you win.","visualNote":"A single face underlit by cold phone-glow in a dark room, with an endless vertical scroll of glowing highlight-reel thumbnails reflected in the eyes while the rest of the room disappears into shadow.","duration":26.5,"register":"hook","start":0,"end":26.5,"captions":["A face glows blue in a dark room.","One thumb moves through parties, trips, couples, promotions, bodies, apartments, all of them","warm and alive somewhere else.","You opened the app because you felt alone, and somehow you are lonelier","than when you started.","You are not failing at connection.","You are running a Stone-Age comparison program against a feed engineered to never","let you win."]},{"id":"seg-01-the-connected-and-the-alone","part":"PART 02","heading":"The Connected and the Alone","title":"The Connected and the Alone","narration":"Here's the thing about connection now: you can be reachable by everyone and still feel untouched by anyone. The phone says you are included. The body says no one is here. And the strange part is that the data does not treat this as a tiny mood problem. Primack et al. (2017, American Journal of Preventive Medicine) found that young adults with the highest social media use reported roughly twice the perceived social isolation of those with the lowest use. More feed. More apparent contact. More loneliness. That should bother us, because loneliness is not just a soft word for being sad on a Sunday night. Holt-Lunstad, Smith, and Layton (2010, PLoS Medicine) found that weak social relationships predicted mortality risk on a scale serious enough to compare with major health hazards, and Holt-Lunstad et al. (2015, Perspectives on Psychological Science) later showed that both loneliness and social isolation were meaningful risk factors for early death. In other words, belonging is not decoration. It is infrastructure. So when a generation gets the most connective technology in history and also reports more isolation, the easy answer is that people are using it wrong. But that answer is too clean. The harder answer is that the platform may be giving you signals that look like contact while quietly withholding the kind of contact your nervous system can use. A view count is not a witness. A like is not a hand on your shoulder. A story from a party you were not invited to is not company. It is a window. And if you stare through enough windows, eventually the room you are actually in starts to feel even smaller. So before we blame weakness, we have to look at the machine you are asking your brain to stand inside.","visualNote":"A cold blue bedroom is overlaid with two thin graph lines, one labeled connection and one labeled loneliness, both rising together while a small figure sits under the glow of a phone.","duration":96,"register":"lab","start":26.5,"end":122.5,"captions":["Here's the thing about connection now: you can be reachable by everyone and","still feel untouched by anyone.","The phone says you are included.","The body says no one is here.","And the strange part is that the data does not treat this as","a tiny mood problem.","Primack et al.","(2017, American Journal of Preventive Medicine) found that young adults with the highest","social media use reported roughly twice the perceived social isolation of those with","the lowest use.","More feed.","More apparent contact.","More loneliness.","That should bother us, because loneliness is not just a soft word for","being sad on a Sunday night.","Holt-Lunstad, Smith, and Layton (2010, PLoS Medicine) found that weak social relationships predicted","mortality risk on a scale serious enough to compare with major health hazards,","and Holt-Lunstad et al.","(2015, Perspectives on Psychological Science) later showed that both loneliness and social isolation","were meaningful risk factors for early death.","In other words, belonging is not decoration.","It is infrastructure.","So when a generation gets the most connective technology in history and also","reports more isolation, the easy answer is that people are using it wrong.","But that answer is too clean.","The harder answer is that the platform may be giving you signals that","look like contact while quietly withholding the kind of contact your nervous system","can use.","A view count is not a witness.","A like is not a hand on your shoulder.","A story from a party you were not invited to is not company.","It is a window.","And if you stare through enough windows, eventually the room you are actually","in starts to feel even smaller.","So before we blame weakness, we have to look at the machine you","are asking your brain to stand inside."]},{"id":"seg-02-the-comparison-machine","part":"PART 03","heading":"The Comparison Machine","title":"The Comparison Machine","narration":"And this is where the feed stops being neutral. It is not just showing you people. It is giving your brain a measuring stick that never touches the floor. Festinger (1954, Human Relations) argued that humans have a built-in drive to evaluate themselves by comparison, especially when there is no objective standard. Am I happy enough. Successful enough. Loved enough. Normal enough. The feed answers by handing you thousands of upward comparisons, each one edited down to a moment that survived its owner's insecurity. Chou and Edge (2012, Cyberpsychology, Behavior, and Social Networking) found that heavier Facebook users were more likely to believe that other people were happier and had better lives, and Vogel et al. (2014, Psychology of Popular Media Culture) found that frequent social media comparison predicted lower self-esteem. That is the mechanism hiding inside the paradox. You came for connection, but you were placed on a treadmill of evaluation. Every scroll says, compare your ordinary Tuesday to someone's best dinner. Compare your tired face to their best angle. Compare your unmade bed to their vacation balcony. None of these posts have to be fake to distort you. The distortion comes from sample selection. People post what feels shareable, and what feels shareable is usually the version of life that survived embarrassment. So your brain, which evolved to scan the group for status and belonging, starts treating a curated global feed as if it were the local tribe. But the tribe is impossible. Too attractive. Too successful. Too socially alive. You can never catch it, because it was never one real group of people in the first place. It was a composite ghost built from everyone's brightest five seconds. And once comparison replaces connection, loneliness starts to make terrible sense.","visualNote":"A glowing vertical feed becomes an uphill escalator made of highlight posts, with a small figure trying to climb while each step tilts steeper above them.","duration":100,"register":"archive","start":122.5,"end":222.5,"captions":["And this is where the feed stops being neutral.","It is not just showing you people.","It is giving your brain a measuring stick that never touches the floor.","Festinger (1954, Human Relations) argued that humans have a built-in drive to evaluate","themselves by comparison, especially when there is no objective standard.","Am I happy enough.","Successful enough.","Loved enough.","Normal enough.","The feed answers by handing you thousands of upward comparisons, each one edited","down to a moment that survived its owner's insecurity.","Chou and Edge (2012, Cyberpsychology, Behavior, and Social Networking) found that heavier Facebook","users were more likely to believe that other people were happier and had","better lives, and Vogel et al.","(2014, Psychology of Popular Media Culture) found that frequent social media comparison predicted","lower self-esteem.","That is the mechanism hiding inside the paradox.","You came for connection, but you were placed on a treadmill of evaluation.","Every scroll says, compare your ordinary Tuesday to someone's best dinner.","Compare your tired face to their best angle.","Compare your unmade bed to their vacation balcony.","None of these posts have to be fake to distort you.","The distortion comes from sample selection.","People post what feels shareable, and what feels shareable is usually the version","of life that survived embarrassment.","So your brain, which evolved to scan the group for status and belonging,","starts treating a curated global feed as if it were the local tribe.","But the tribe is impossible.","Too attractive.","Too successful.","Too socially alive.","You can never catch it, because it was never one real group of","people in the first place.","It was a composite ghost built from everyone's brightest five seconds.","And once comparison replaces connection, loneliness starts to make terrible sense."]},{"id":"seg-03-why-it-reaches-so-deep","part":"PART 04","heading":"Why It Reaches So Deep","title":"Why It Reaches So Deep","narration":"Here is why this hurts more than it feels like it should. Loneliness is not just an opinion you have about your weekend. Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for Social Connection) described loneliness as an evolved alarm, closer to hunger or thirst than to a personality flaw. For most of human history, being separated from the group was dangerous. The pain had a job: make you move back toward the people who could protect you. That ancient alarm is still running. The problem is that it was not built for watching. It cannot cleanly separate belonging from surveillance, presence from visibility, company from footage of company. Kross et al. (2013, PLoS ONE) found that the more people used Facebook, the worse they felt over the following hours, with use predicting declines in moment-to-moment well-being. Deci and Ryan (2000, Psychological Inquiry) also placed relatedness beside competence and autonomy as a basic psychological need, which means the ache is not vanity. It is a need announcing itself. But the app answers the need with representations. A meal you were not at. A joke you did not hear. A face you know smiling beside people you do not. Your mind registers social information; your body registers an empty room. That mismatch is brutal. It creates a specific kind of loneliness where you are not deprived of people exactly. You are saturated with evidence that people are happening without you. So when you close the app and feel worse, that is not proof that you are fragile. It is proof that an old survival alarm is receiving the wrong input. And the next question is obvious: which parts of online life are feeding the alarm instead of quieting it.","visualNote":"A dim figure sits with a small ember glowing in the chest, and when it flares for warmth a flat phone image of a crowded dinner slides into the space where another person should be.","duration":99,"register":"industry","start":222.5,"end":321.5,"captions":["Here is why this hurts more than it feels like it should.","Loneliness is not just an opinion you have about your weekend.","Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for Social Connection)","described loneliness as an evolved alarm, closer to hunger or thirst than to","a personality flaw.","For most of human history, being separated from the group was dangerous.","The pain had a job: make you move back toward the people who","could protect you.","That ancient alarm is still running.","The problem is that it was not built for watching.","It cannot cleanly separate belonging from surveillance, presence from visibility, company from footage","of company.","Kross et al.","(2013, PLoS ONE) found that the more people used Facebook, the worse they","felt over the following hours, with use predicting declines in moment-to-moment well-being.","Deci and Ryan (2000, Psychological Inquiry) also placed relatedness beside competence and autonomy","as a basic psychological need, which means the ache is not vanity.","It is a need announcing itself.","But the app answers the need with representations.","A meal you were not at.","A joke you did not hear.","A face you know smiling beside people you do not.","Your mind registers social information; your body registers an empty room.","That mismatch is brutal.","It creates a specific kind of loneliness where you are not deprived of","people exactly.","You are saturated with evidence that people are happening without you.","So when you close the app and feel worse, that is not proof","that you are fragile.","It is proof that an old survival alarm is receiving the wrong input.","And the next question is obvious: which parts of online life are feeding","the alarm instead of quieting it."]},{"id":"seg-04-passive-scrolling-is-the-poison","part":"PART 05","heading":"Passive Scrolling Is the Poison","title":"Passive Scrolling Is the Poison","narration":"This is where the distinction matters, because the problem is not simply screens. It is passive exposure pretending to be participation. Verduyn et al. (2015, Journal of Experimental Psychology: General) found that passive Facebook use undermined affective well-being, while active interaction did not carry the same cost. The silent scroll is the corrosive part. You watch. You absorb. You compare. You provide your nervous system with social cues but no reciprocal exchange. No voice. No timing. No mutual attention. Twenge, Spitzberg, and Campbell (2019, Journal of Social and Personal Relationships) found that as screen-based contact replaced in-person time among U.S. adolescents, loneliness rose, and Hunt, Marx, Lipson, and Young (2018, Journal of Social and Clinical Psychology) found experimentally that limiting social media to thirty minutes a day reduced loneliness and depression. Notice what that implies. The answer is not moral purity. It is not throwing the phone into the sea and pretending modern life did not happen. The answer is understanding dose and type. A message from a friend can count. A call can count. A strange little honest comment can count. But an hour of lurking through other people's rooms usually does not. It is social sugar: sweet on the tongue, thin in the blood. It gives you the flavor of belonging without the nutrients. And because it almost counts, it is more dangerous than obvious isolation. If you were simply alone, the signal would be clear. You might call someone. You might leave the apartment. But passive scrolling confuses the signal. It lets you feel as if you have done something relational while your body is still waiting for another nervous system to answer back. So the question becomes practical, not philosophical. What kind of contact actually counts.","visualNote":"A split screen shows a gray passive scroll sinking downward on one side while a warm active message thread lights two-way arrows on the other, with a thirty-minute dial clicking into place above them.","duration":102,"register":"decision","start":321.5,"end":423.5,"captions":["This is where the distinction matters, because the problem is not simply screens.","It is passive exposure pretending to be participation.","Verduyn et al.","(2015, Journal of Experimental Psychology: General) found that passive Facebook use undermined affective","well-being, while active interaction did not carry the same cost.","The silent scroll is the corrosive part.","You watch.","You absorb.","You compare.","You provide your nervous system with social cues but no reciprocal exchange.","No voice.","No timing.","No mutual attention.","Twenge, Spitzberg, and Campbell (2019, Journal of Social and Personal Relationships) found that","as screen-based contact replaced in-person time among U.S.","adolescents, loneliness rose, and Hunt, Marx, Lipson, and Young (2018, Journal of Social","and Clinical Psychology) found experimentally that limiting social media to thirty minutes a","day reduced loneliness and depression.","Notice what that implies.","The answer is not moral purity.","It is not throwing the phone into the sea and pretending modern life","did not happen.","The answer is understanding dose and type.","A message from a friend can count.","A call can count.","A strange little honest comment can count.","But an hour of lurking through other people's rooms usually does not.","It is social sugar: sweet on the tongue, thin in the blood.","It gives you the flavor of belonging without the nutrients.","And because it almost counts, it is more dangerous than obvious isolation.","If you were simply alone, the signal would be clear.","You might call someone.","You might leave the apartment.","But passive scrolling confuses the signal.","It lets you feel as if you have done something relational while your","body is still waiting for another nervous system to answer back.","So the question becomes practical, not philosophical.","What kind of contact actually counts."]},{"id":"seg-05-what-your-nervous-system-actually-counts","part":"PART 06","heading":"What Your Nervous System Actually Counts","title":"What Your Nervous System Actually Counts","narration":"Okay. So what do you actually do with this. Start by separating contact from consumption. Verduyn et al. (2015, Journal of Experimental Psychology: General) gives the cleanest rule: active beats passive. Send the message. Ask the real question. Leave the voice note. Comment like a person, not like a spectator tapping glass. The goal is not to become perfectly offline. It is to turn vague exposure into reciprocal contact. Then lower the bar for what counts as real. Epley and Schroeder (2014, Journal of Experimental Psychology: General) found that commuters instructed to talk to a stranger had a measurably better commute than those who sat in solitude, even though people predicted the opposite. That matters because loneliness often convinces you that only deep belonging will help, so you reject the small openings that could begin to thaw it. A two-minute conversation with a cashier is not a best friend. It is still contact. It tells the body that the social world is not sealed shut. Protect relatedness the way you protect sleep. Deci and Ryan (2000, Psychological Inquiry) treated relatedness as a basic psychological need, not an optional reward for when your work is finished. So schedule it before you feel deserving. Put people on the calendar. Make standing plans boring enough to survive. And cap the scroll before it becomes anesthesia. Hunt et al. (2018, Journal of Social and Clinical Psychology) showed that a thirty-minute social media limit was enough to move loneliness and depression, which means the lever does not have to be dramatic to be real. Curate out accounts that leave you feeling watched by a life you cannot enter. Keep the ones that make you reach outward. Because the cure for loneliness was never more contact in the abstract. It was the few minutes of the real kind your body has been waiting to count.","visualNote":"The same dark-room figure sends one real message, the cold feed-column dims, and a warm light now comes from inside the room as another person enters the frame.","duration":105,"register":"practice","start":423.5,"end":528.5,"captions":["Okay.","So what do you actually do with this.","Start by separating contact from consumption.","Verduyn et al.","(2015, Journal of Experimental Psychology: General) gives the cleanest rule: active beats passive.","Send the message.","Ask the real question.","Leave the voice note.","Comment like a person, not like a spectator tapping glass.","The goal is not to become perfectly offline.","It is to turn vague exposure into reciprocal contact.","Then lower the bar for what counts as real.","Epley and Schroeder (2014, Journal of Experimental Psychology: General) found that commuters instructed","to talk to a stranger had a measurably better commute than those who","sat in solitude, even though people predicted the opposite.","That matters because loneliness often convinces you that only deep belonging will help,","so you reject the small openings that could begin to thaw it.","A two-minute conversation with a cashier is not a best friend.","It is still contact.","It tells the body that the social world is not sealed shut.","Protect relatedness the way you protect sleep.","Deci and Ryan (2000, Psychological Inquiry) treated relatedness as a basic psychological need,","not an optional reward for when your work is finished.","So schedule it before you feel deserving.","Put people on the calendar.","Make standing plans boring enough to survive.","And cap the scroll before it becomes anesthesia.","Hunt et al.","(2018, Journal of Social and Clinical Psychology) showed that a thirty-minute social media","limit was enough to move loneliness and depression, which means the lever does","not have to be dramatic to be real.","Curate out accounts that leave you feeling watched by a life you cannot","enter.","Keep the ones that make you reach outward.","Because the cure for loneliness was never more contact in the abstract.","It was the few minutes of the real kind your body has been","waiting to count."]},{"id":"seg-06-outro","part":"PART 07","heading":"Outro","title":"Closing Thought","narration":"You are not broken for feeling alone inside a crowd of notifications. Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for Social Connection) would call that ache a signal, not a verdict, and Deci and Ryan (2000, Psychological Inquiry) would say relatedness is part of what a human life needs in order to function. The cruel trick of modern connection is that it can surround the signal with almost-answers. Views. Stories. Feeds. Little sparks that look warm from a distance. Once you know what loneliness is asking for, you can stop feeding it pictures of contact and start giving it moments of contact. If this helped you name the feeling, send it to one person instead of just saving it. I will see you in the next one.","visualNote":"The argument collapses into one quiet sentence, then leaves the viewer with a question.","duration":53.1,"register":"outro","start":528.5,"end":581.6,"captions":["You are not broken for feeling alone inside a crowd of notifications.","Cacioppo and Patrick (2008, Loneliness: Human Nature and the Need for Social Connection)","would call that ache a signal, not a verdict, and Deci and Ryan","(2000, Psychological Inquiry) would say relatedness is part of what a human life","needs in order to function.","The cruel trick of modern connection is that it can surround the signal","with almost-answers.","Views.","Stories.","Feeds.","Little sparks that look warm from a distance.","Once you know what loneliness is asking for, you can stop feeding it","pictures of contact and start giving it moments of contact.","If this helped you name the feeling, send it to one person instead","of just saving it.","I will see you in the next one."]}];
+      function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+      const rnd = mulberry32(1108418901);
+      const particleHost = document.getElementById("particles");
+      for (let i = 0; i < 90; i++) {
+        const p = document.createElement("div");
+        p.className = "particle";
+        p.style.left = (rnd() * 1920).toFixed(1) + "px";
+        p.style.top = (rnd() * 1080).toFixed(1) + "px";
+        p.style.transform = "scale(" + (0.5 + rnd() * 1.4).toFixed(2) + ")";
+        p.dataset.drift = (rnd() * 2 - 1).toFixed(3);
+        particleHost.appendChild(p);
+      }
+
+      function makeCaptions(scene, segment) {
+        const host = scene.querySelector(".caps");
+        segment.captions.forEach((text, index) => {
+          const cap = document.createElement("div");
+          cap.className = "caption";
+          const split = text.split(/\s+/);
+          const pivot = Math.min(split.length - 1, Math.max(0, Math.floor(split.length * 0.62)));
+          cap.innerHTML = split.map((word, i) => i === pivot ? "<b>" + escapeHtml(word) + "</b>" : escapeHtml(word)).join(" ");
+          host.appendChild(cap);
+        });
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+      }
+
+      function scatter(scene, seedOffset) {
+        const localRnd = mulberry32(1108418901 + seedOffset * 101);
+        const diagram = scene.querySelector(".diagram");
+        for (let i = 0; i < 42; i++) {
+          const d = document.createElement("div");
+          d.className = i % 4 === 0 ? "ghost" : "dot";
+          d.style.left = (120 + localRnd() * 380).toFixed(1) + "px";
+          d.style.top = (92 + localRnd() * 330).toFixed(1) + "px";
+          diagram.appendChild(d);
+        }
+      }
+
+      SEGMENTS.forEach((segment, index) => {
+        const scene = document.getElementById(segment.id);
+        makeCaptions(scene, segment);
+        scatter(scene, index + 1);
+      });
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      gsap.utils.toArray(".particle").forEach((p, i) => {
+        const d = parseFloat(p.dataset.drift) || 0;
+        tl.to(p, { y: "+=" + (d * 36), duration: 28, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+      });
+
+      SEGMENTS.forEach((segment, index) => {
+        const scene = document.getElementById(segment.id);
+        const start = segment.start;
+        const dur = segment.duration;
+        const captions = gsap.utils.toArray(scene.querySelectorAll(".caption"));
+        tl.set(scene, { opacity: 0 }, Math.max(0, start - 0.02));
+        tl.to(scene, { opacity: 1, duration: 0.55, ease: "power2.out" }, start);
+        tl.fromTo(scene.querySelector(".line"), { scaleX: 0 }, { scaleX: 1, duration: 1.1, ease: "power2.inOut" }, start + 0.3);
+        tl.fromTo(scene.querySelector(".title"), { opacity: 0, y: 32 }, { opacity: 1, y: 0, duration: 0.85, ease: "power3.out" }, start + 0.6);
+        tl.fromTo(scene.querySelector(".thesis"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.85, ease: "power3.out" }, start + 1.5);
+        tl.fromTo(scene.querySelector(".panel"), { opacity: 0, scale: 0.985 }, { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" }, start + 1.1);
+        tl.fromTo(scene.querySelector(".trace path"), { strokeDashoffset: 780 }, { strokeDashoffset: 0, duration: Math.min(12, dur * 0.3), ease: "power2.inOut" }, start + 2.3);
+        tl.fromTo(scene.querySelectorAll(".dot"), { opacity: 0, scale: 0 }, { opacity: 0.9, scale: 1, duration: 0.28, stagger: { each: Math.min(0.14, dur / 420), from: "random" }, ease: "back.out(1.8)" }, start + 3.2);
+        tl.fromTo(scene.querySelectorAll(".ghost"), { opacity: 0, scale: 0.4 }, { opacity: 0.42, scale: 1, duration: 0.45, stagger: 0.08, ease: "power2.out" }, start + Math.max(5, dur * 0.24));
+        tl.fromTo(scene.querySelector(".hidden-band"), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "power4.in" }, start + Math.max(8, dur * 0.48));
+        tl.fromTo(scene.querySelector(".beat-word"), { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: 0.28, ease: "power4.in", immediateRender: false, overwrite: "auto" }, start + Math.max(9, dur * 0.5));
+        tl.to(scene.querySelector(".beat-word"), { opacity: 0.08, duration: 1.2, ease: "power2.out", overwrite: "auto" }, start + Math.max(10, dur * 0.5 + 1.1));
+
+        captions.forEach((cap, capIndex) => {
+          const span = Math.max(2.4, (dur - 6) / Math.max(1, captions.length));
+          const capStart = start + 3 + capIndex * span;
+          const capEnd = Math.min(start + dur - 0.4, capStart + span * 0.82);
+          tl.fromTo(cap, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, capStart);
+          tl.to(cap, { opacity: 0, y: -10, duration: 0.28, ease: "power2.in" }, capEnd);
+        });
+
+        if (index < SEGMENTS.length - 1) {
+          tl.to(scene, { opacity: 0, duration: 0.45, ease: "power2.inOut" }, start + dur - 0.45);
+        }
+      });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
