@@ -3,158 +3,208 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1080, height=1920" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/dist/esm/simplex-noise.js",
+          "roughjs": "https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.esm.js"
+        }
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/lib/scene-kit.js"></script>
     <script src="assets/narration/00-words.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body {
-        width: 1080px; height: 1920px; overflow: hidden;
-        background: #0b1018; font-family: "Helvetica Neue", Arial, sans-serif;
-        --cold: #5fd0ff; --cold-deep: #2b5cc4; --warm: #ffb24c; --warm-hot: #ff8a3d;
-        --ink: #f6f1e8; --dim: #5d6b80;
-      }
-      #root { position: absolute; inset: 0; overflow: hidden; }
-      /* background layers */
-      #bg { position: absolute; inset: 0; background:
-        radial-gradient(120% 80% at 50% 18%, #16243b 0%, #0b1018 55%, #070a10 100%); }
-      #glow { position: absolute; left: 50%; top: 34%; width: 1200px; height: 1200px;
-        margin-left: -600px; margin-top: -600px; border-radius: 50%;
-        background: radial-gradient(circle, rgba(95,208,255,0.34) 0%, rgba(95,208,255,0) 62%);
-        filter: blur(8px); }
-      #warmglow { position: absolute; left: 50%; top: 60%; width: 1300px; height: 1300px;
-        margin-left: -650px; margin-top: -650px; border-radius: 50%; opacity: 0;
-        background: radial-gradient(circle, rgba(255,178,76,0.40) 0%, rgba(255,138,61,0) 60%);
-        filter: blur(10px); }
-      #scan { position: absolute; inset: 0; opacity: 0.06; pointer-events: none;
-        background-image: repeating-linear-gradient(0deg, #ffffff 0, #ffffff 1px, transparent 2px, transparent 4px); }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0a0e15;
+        font-family: "Helvetica Neue", Arial, sans-serif; }
+      #stage { position: absolute; inset: 0; width: 1080px; height: 1920px; display: block; }
       #vignette { position: absolute; inset: 0; pointer-events: none;
-        background: radial-gradient(ellipse 75% 65% at 50% 42%, transparent 42%, rgba(0,0,0,0.62) 100%); }
-      .particle { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #9fc6ff; opacity: 0.35; }
-
-      /* kicker + caption */
-      #kicker { position: absolute; top: 300px; left: 0; right: 0; text-align: center;
-        font-size: 30px; letter-spacing: 0.42em; text-transform: uppercase; color: var(--cold);
-        opacity: 0; font-weight: 700; }
-      #stage { position: absolute; left: 90px; right: 90px; top: 640px; height: 640px; }
-      .chunk { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
-        text-align: center; opacity: 0; }
-      .chunk .w { display: inline-block; margin: 4px 11px; font-size: 92px; line-height: 1.12;
-        font-weight: 800; color: var(--dim); letter-spacing: -0.5px; transform-origin: center bottom; }
-      .chunk .w.lead { font-size: 104px; }
-      #progress { position: absolute; left: 90px; right: 90px; bottom: 230px; height: 6px;
-        background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
-      #progressfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
-        background: linear-gradient(90deg, var(--cold), var(--warm)); }
+        background: radial-gradient(ellipse 82% 70% at 50% 42%, transparent 40%, rgba(0,0,0,0.66) 100%); }
+      #kicker { position: absolute; top: 150px; left: 0; right: 0; text-align: center;
+        font-size: 30px; letter-spacing: 0.42em; text-transform: uppercase; color: #7fb6e6;
+        font-weight: 700; opacity: 0.85; text-shadow: 0 2px 18px rgba(0,0,0,0.8); }
+      #caps { position: absolute; left: 50%; bottom: 360px; transform: translateX(-50%);
+        width: 920px; text-align: center; pointer-events: none; }
+      .phrase { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0;
+        font-weight: 800; font-size: 60px; line-height: 1.18; letter-spacing: -0.5px;
+        color: #5b6472; text-shadow: 0 3px 28px rgba(0,0,0,0.92); }
+      .phrase .w { color: #5b6472; }
       #handle { position: absolute; left: 0; right: 0; bottom: 150px; text-align: center;
-        font-size: 30px; letter-spacing: 0.12em; color: var(--dim); opacity: 0.0; font-weight: 600; }
+        font-size: 30px; letter-spacing: 0.12em; color: #6b7686; opacity: 0.7; font-weight: 600; }
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main">
-      <div id="bg"></div>
-      <div id="glow"></div>
-      <div id="warmglow"></div>
-      <div id="particles"></div>
-      <div id="scan"></div>
-      <div id="vignette"></div>
-      <div id="kicker">PSYCOLLEGE</div>
-      <div id="stage"></div>
-      <div id="progress"><div id="progressfill"></div></div>
-      <div id="handle">@psycollege</div>
-    </div>
-    <script>
-      const WORDS = (window.SEG00_WORDS || []).map(([t, a, b]) => ({ t, a, b }));
-      const TAIL = 0.8;
-      const DURATION = (WORDS.length ? WORDS[WORDS.length - 1].b : 1) + TAIL;
+    <canvas id="stage" width="1080" height="1920"></canvas>
+    <div id="vignette"></div>
+    <div id="kicker">PSYCOLLEGE</div>
+    <div id="caps"></div>
+    <div id="handle">@psycollege</div>
 
-      // deterministic particles
+    <script type="module">
+      import * as THREE from "three";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { createNoise2D } from "simplex-noise";
+      window.THREE = THREE;
+      const SK = window.SceneKit;
+
+      // fx helpers inlined (local ES-module imports are blocked under file:// by CORS;
+      // CDN https modules above are allowed). Deterministic — seeded, no clock.
       function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-      const rnd = mulberry32(20260608);
-      const pHost = document.getElementById("particles");
-      for (let i = 0; i < 60; i++) {
-        const p = document.createElement("div");
-        p.className = "particle";
-        p.style.left = (rnd() * 1080).toFixed(1) + "px";
-        p.style.top = (rnd() * 1920).toFixed(1) + "px";
-        p.style.transform = "scale(" + (0.5 + rnd() * 1.6).toFixed(2) + ")";
-        p.dataset.drift = (rnd() * 2 - 1).toFixed(3);
-        pHost.appendChild(p);
+      function makeNoise(seed){ return { noise2D: createNoise2D(mulberry32(seed == null ? 1 : seed)) }; }
+      function makeBloomComposer(renderer, scene, camera, opts = {}) {
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloom = new UnrealBloomPass(new THREE.Vector2(1080, 1920),
+          opts.strength == null ? 1.0 : opts.strength,
+          opts.radius == null ? 0.6 : opts.radius,
+          opts.threshold == null ? 0.0 : opts.threshold);
+        composer.addPass(bloom);
+        return { composer, bloom };
+      }
+      const V = THREE.Vector3;
+      const WORDS = window.SEG00_WORDS || [];
+      const END = (WORDS.length ? WORDS[WORDS.length - 1][2] : 47) + 0.6;
+
+      const COLD = new THREE.Color(0x5fd0ff);
+      const WARM = new THREE.Color(0xffb24c);
+
+      const canvas = document.getElementById("stage");
+      const renderer = SK.makeRenderer(canvas);
+      renderer.setSize(1080, 1920, false);
+      renderer.toneMappingExposure = 1.32;
+
+      const scene = SK.makeScene(7, 24);
+      scene.background = new THREE.Color(0x0a0e15);
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80),
+        new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 1.0 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+      // ---- protagonist: lone figure, head bowed to a glowing phone -----------
+      const fig = SK.makeChibi(0xe8c9a8, 1.0);
+      scene.add(fig.group);
+      fig.head.rotation.x = 0.5;                 // bow head down to the phone
+      fig.armL.sh.rotation.x = -1.15; fig.armR.sh.rotation.x = -1.15; // arms up/forward
+      fig.armL.fore.rotation.x = -0.55; fig.armR.fore.rotation.x = -0.55;
+
+      const phoneMat = new THREE.MeshStandardMaterial({ color: 0x05070a,
+        emissive: COLD.clone(), emissiveIntensity: 1.6, roughness: 0.3 });
+      const phone = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.6), phoneMat);
+      phone.position.set(0, 0.92, 0.52); phone.rotation.x = -0.62; fig.group.add(phone);
+      const phoneLight = new THREE.PointLight(0x6fd2ff, 2.3, 4.5, 2);
+      phoneLight.position.set(0, 1.05, 0.5); fig.group.add(phoneLight);
+
+      // ---- the feed: cold "windows" / highlight reels floating in the dark ---
+      const wrnd = mulberry32(20260608);
+      const windows = [];
+      for (let i = 0; i < 18; i++) {
+        const w = 0.5 + wrnd() * 0.55, h = w * 1.72;
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+          new THREE.MeshStandardMaterial({ color: 0x05070a, emissive: 0x49a8ff,
+            emissiveIntensity: 1.3, roughness: 0.4, transparent: true, opacity: 0, depthWrite: false }));
+        const ang = wrnd() * Math.PI * 2;
+        const rad = 2.8 + wrnd() * 5.5;
+        const yy = 1.4 + wrnd() * 5.2;
+        m.position.set(Math.cos(ang) * rad, yy, -2.4 - wrnd() * 6 + Math.sin(ang) * 1.6);
+        m.rotation.y = (wrnd() - 0.5) * 0.9;
+        m.userData = { baseY: yy, drift: 0.25 + wrnd() * 0.5, seed: wrnd() * 12, bright: 0.7 + wrnd() * 0.9 };
+        scene.add(m); windows.push(m);
       }
 
-      // group words into short phrase chunks (<=4 words, break on sentence/comma)
-      function buildChunks(words) {
-        const chunks = [];
-        let cur = [];
-        const flush = () => { if (cur.length) { chunks.push(cur); cur = []; } };
-        for (const w of words) {
-          cur.push(w);
-          const hard = /[.!?]$/.test(w.t);
-          const soft = /[,;:]$/.test(w.t);
-          if (hard || (soft && cur.length >= 3) || cur.length >= 4) flush();
-        }
-        flush();
-        return chunks;
+      // ---- the warm payoff: another presence + warm light --------------------
+      const fig2 = SK.makeChibi(0xc9a98a, 1.0);
+      fig2.mat.transparent = true; fig2.mat.opacity = 0;
+      fig2.group.position.set(2.5, 0, 2.0); fig2.group.rotation.y = -0.7;
+      scene.add(fig2.group);
+      const warmKey = new THREE.PointLight(0xffa758, 0.0, 16, 2);
+      warmKey.position.set(2.8, 2.6, 3.2); scene.add(warmKey);
+      const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 3.0),
+        new THREE.MeshStandardMaterial({ color: 0x05070a, emissive: WARM.clone(),
+          emissiveIntensity: 1.6, transparent: true, opacity: 0, depthWrite: false }));
+      doorGlow.position.set(4.0, 1.5, 1.0); doorGlow.rotation.y = -0.8; scene.add(doorGlow);
+
+      // ---- lights (cold baseline) --------------------------------------------
+      const key = SK.makeKeyLight(); key.intensity = 0.42; key.position.set(-2.2, 5.0, 3.0); scene.add(key);
+      const ambient = new THREE.AmbientLight(0x2a3a4f, 0.5); scene.add(ambient);
+      scene.add(SK.makeFill(0.38));
+
+      // ---- camera framings (portrait 9:16) -----------------------------------
+      const rig = SK.makeCameraRig([
+        { pos: new V(0.15, 1.95, 4.3), posNear: new V(0.1, 1.78, 3.4), look: new V(0, 1.12, 0.15) }, // 0 hook: lone figure in the dark, phone glow
+        { pos: new V(0.4, 2.7, 8.2), look: new V(0, 1.7, -0.6) },                                     // 1 wide: tiny figure, dark room + windows
+        { pos: new V(-1.7, 2.2, 3.0), look: new V(-0.6, 2.9, -3.0) },                                 // 2 over-shoulder into the feed
+        { pos: new V(3.0, 1.55, 2.6), posNear: new V(2.4, 1.5, 2.0), look: new V(0, 1.25, 0.1) },     // 3 side profile, dwarfed
+        { pos: new V(1.6, 1.85, 4.6), posNear: new V(1.2, 1.8, 3.7), look: new V(0.7, 1.3, 1.1) },    // 4 warm payoff: figure + presence
+      ], 40);
+      rig.camera.aspect = 1080 / 1920; rig.camera.updateProjectionMatrix();
+      const camera = rig.camera;
+
+      const { composer, bloom } = makeBloomComposer(renderer, scene, camera,
+        { strength: 0.8, radius: 0.6, threshold: 0.32 });
+      composer.setSize(1080, 1920);
+
+      // ---- deterministic per-frame render ------------------------------------
+      const noise = makeNoise(7);
+      const proxy = { t: 0, crowd: 0, warm: 0, dim: 0 };
+      function render() {
+        const t = proxy.t;
+        // phone scroll flicker + cold->warm tint as the "real message" is sent
+        phoneMat.emissiveIntensity = 1.5 + noise.noise2D(t * 0.7, 0) * 0.5;
+        phoneMat.emissive.copy(COLD).lerp(WARM, Math.max(0, (proxy.warm - 0.4) / 0.6));
+        phoneLight.color.copy(COLD).lerp(WARM, Math.max(0, (proxy.warm - 0.4) / 0.6));
+        phoneLight.intensity = 2.0 + noise.noise2D(t * 0.7, 1) * 0.5;
+        // floating windows: drift, twinkle, fade in (crowd) then out (dim in warm)
+        windows.forEach((m) => {
+          m.position.y = m.userData.baseY + Math.sin(t * m.userData.drift + m.userData.seed) * 0.28;
+          const tw = noise.noise2D(t * 0.5 + m.userData.seed, 2);
+          m.material.emissiveIntensity = m.userData.bright * (0.7 + tw * 0.3);
+          m.material.opacity = Math.min(1, proxy.crowd * 1.25) * (1 - proxy.dim) * (0.45 + 0.4 * (m.userData.bright / 1.6));
+        });
+        // warm phase
+        warmKey.intensity = proxy.warm * 3.4;
+        doorGlow.material.opacity = proxy.warm * 0.9;
+        fig2.mat.opacity = Math.max(0, (proxy.warm - 0.15) / 0.85);
+        ambient.color.setRGB(0.16 + proxy.warm * 0.26, 0.225 + proxy.warm * 0.06, 0.31 - proxy.warm * 0.12);
+        ambient.intensity = 0.5 + proxy.warm * 0.25;
+        bloom.strength = 0.72 + proxy.crowd * 0.45 + proxy.warm * 0.5;
+        rig.apply();
+        composer.render();
       }
 
-      const chunks = buildChunks(WORDS);
-      const stage = document.getElementById("stage");
-      const chunkEls = chunks.map((words, ci) => {
-        const el = document.createElement("div");
-        el.className = "chunk";
-        words.forEach((w, wi) => {
-          const span = document.createElement("span");
-          span.className = "w" + (ci === 0 ? " lead" : "");
-          span.textContent = w.t;
-          span._word = w;
-          el.appendChild(span);
-        });
-        stage.appendChild(el);
-        return el;
-      });
+      // ---- captions -----------------------------------------------------------
+      const capHost = document.getElementById("caps");
+      const phraseEls = SK.buildCaptions(WORDS, capHost);
 
-      window.__timelines = window.__timelines || {};
-      const tl = gsap.timeline({ paused: true });
+      // ---- timeline (all motion seek-driven) ---------------------------------
+      const tl = gsap.timeline({ paused: true, onUpdate: render });
+      tl.to(proxy, { t: END, duration: END, ease: "none" }, 0);
+      tl.to(proxy, { crowd: 1, duration: 6.5, ease: "power1.out" }, 8.0);   // windows appear at "the design"
+      tl.to(proxy, { warm: 1, duration: 8.5, ease: "power2.in" }, 36.5);    // warmth from "the fix"
+      tl.to(proxy, { dim: 1, duration: 7.5, ease: "power2.in" }, 38.0);     // cold feed dims as warmth wins
+      // micro life: gentle breathing + head drift so the figure never feels frozen
+      tl.to(fig.head.rotation, { x: 0.58, duration: 6, ease: "sine.inOut", yoyo: true, repeat: -1 }, 0);
+      tl.to(fig.group.position, { y: 0.03, duration: 3.5, ease: "sine.inOut", yoyo: true, repeat: -1 }, 0);
 
-      // background drift + cold->warm shift
-      gsap.utils.toArray(".particle").forEach((p) => {
-        const d = parseFloat(p.dataset.drift) || 0;
-        tl.to(p, { y: "+=" + (d * 60), duration: DURATION, ease: "sine.inOut" }, 0);
-      });
-      tl.fromTo("#glow", { opacity: 0.9, scale: 1 }, { opacity: 0.5, scale: 1.15, duration: DURATION, ease: "none" }, 0);
-      // warm bloom over the final third (the "realer contact / send this" payoff)
-      const warmStart = DURATION * 0.66;
-      tl.to("#warmglow", { opacity: 0.0, duration: warmStart }, 0);
-      tl.to("#warmglow", { opacity: 1, duration: DURATION - warmStart, ease: "power2.in" }, warmStart);
-      tl.to("#kicker", { color: "#ffd9a0", duration: DURATION - warmStart, ease: "none" }, warmStart);
+      // ---- camera cuts (no framing held > ~4s) -------------------------------
+      const cut = SK.makeCutter(tl, rig.state);
+      cut.cut(0.0, 0, 8.0);                       // hook: slow push on the cold-lit face
+      cut.auto(8.0, 26.0, 3.6, [1, 2, 1, 3], true);   // reveal + the comparison machine
+      cut.auto(26.0, 36.4, 3.3, [2, 3, 1], true);     // windows crowd in ("not a witness / a window")
+      cut.cut(36.4, 1, 4.0);                      // the fix: pull back, room breathes
+      cut.auto(40.5, END, 3.4, [4, 1, 4], true);      // realer contact: warm payoff
 
-      // kicker in/out
-      tl.fromTo("#kicker", { opacity: 0, y: -16 }, { opacity: 0.9, y: 0, duration: 0.5, ease: "power2.out" }, 0.1);
-      tl.to("#kicker", { opacity: 0.35, duration: 0.6 }, 1.6);
-      tl.fromTo("#handle", { opacity: 0 }, { opacity: 0.7, duration: 0.6 }, warmStart);
+      SK.wireCaptions(tl, phraseEls, END);
 
-      // progress bar
-      tl.fromTo("#progressfill", { width: "0%" }, { width: "100%", duration: DURATION, ease: "none" }, 0);
+      // kicker fade after hook
+      tl.to("#kicker", { opacity: 0.28, duration: 0.8 }, 2.2);
 
-      // chunks: pop in at first word start, out at last word end (or next chunk start)
-      chunks.forEach((words, ci) => {
-        const el = chunkEls[ci];
-        const start = words[0].a;
-        const end = words[words.length - 1].b;
-        const next = ci < chunks.length - 1 ? chunks[ci + 1][0].a : DURATION;
-        const out = Math.min(next - 0.04, end + 0.18);
-        tl.fromTo(el, { opacity: 0, y: 26, scale: 0.96 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.26, ease: "back.out(1.6)" }, Math.max(0, start - 0.08));
-        tl.to(el, { opacity: 0, y: -18, scale: 0.98, duration: 0.22, ease: "power2.in" }, out);
-
-        // per-word karaoke highlight (seek-safe: explicit on at start, off at end)
-        words.forEach((w) => {
-          const span = [...el.querySelectorAll(".w")].find((s) => s._word === w);
-          tl.to(span, { color: "#f6f1e8", scale: 1.09, duration: 0.08, ease: "power2.out" }, w.a);
-          tl.to(span, { color: "#9aa6b8", scale: 1.0, duration: 0.08, ease: "none" }, Math.max(w.a + 0.09, w.b));
-        });
-      });
-
-      window.__timelines["main"] = tl;
+      render();
+      window.__timelines = { main: tl };
     </script>
   </body>
 </html>

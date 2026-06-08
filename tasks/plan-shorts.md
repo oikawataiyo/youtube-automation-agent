@@ -8,13 +8,21 @@
 
 Test **hook + topic** resonance fast. Ship a handful of Shorts, read retention/views/shares within days, then double down on whatever lands. This is a *signal-finding* exercise, not polish.
 
-## Format (locked)
+## Format (locked) — 3D character (text-only was too weak)
 
-- **1080×1920 vertical**, ~40–50s, kinetic typography (NO heavy 3D — that defeats cheap/fast).
-- Bold animated text + word-level karaoke captions synced from `words.js`, simple moving background (grain/gradient/drift), one accent color.
-- Voice: Kokoro `am_adam` (brand-consistent) via `scripts/generate-kokoro-narration-onnx.py`; word timings via `scripts/transcribe-word-timings.py`.
-- Structure: **0–2s pattern-interrupt hook → counterintuitive mechanism → one takeaway → share CTA.**
-- Render via existing `scripts/render-video-playwright.js` (HTML composition), output 1080×1920.
+First pass was kinetic typography only; user feedback: "テキストだけ・フック弱い". **Locked on 3D character** (reuse `scene-kit.js` chibi + `fx-kit` bloom, same lib as long-form) in vertical.
+
+- **1080×1920 vertical**, ~40–50s. A lone chibi character carries the hook (e.g. figure hunched over a cold phone-glow in a dark empty room = loneliness).
+- Word-level karaoke captions (lower third) via `SceneKit.buildCaptions/wireCaptions` from `00-words.js`.
+- Cold→warm visual arc; camera cuts every ≤4s (`SceneKit.makeCutter`); all motion seek-driven (GSAP `paused:true, onUpdate:render`), exposed as `window.__timelines.main`.
+- Voice: Kokoro `am_adam` via `scripts/generate-kokoro-narration-onnx.py`; word timings via `scripts/transcribe-word-timings.py`.
+- Structure: **0–2s pattern-interrupt visual hook → counterintuitive mechanism → one takeaway → share CTA.**
+- Render via `scripts/render-video-playwright.js` (now has `--width/--height`), output 1080×1920.
+
+### GOTCHA (cost me a render): file:// blocks LOCAL ES-module imports
+The playwright renderer loads `index.html` via `file://`. Chromium blocks `import ... from "./assets/lib/fx-kit.js"` (CORS, origin null) → the module never runs → `__timelines.main` never set → `waitForFunction` times out. **CDN https imports (`three`, `three/addons/`, `simplex-noise`) are fine.** So: keep `scene-kit.js` as a classic `<script src>` (works), and **inline** the few fx-kit helpers (mulberry32 / makeNoise / makeBloomComposer) in the page module, importing `EffectComposer`/`RenderPass`/`UnrealBloomPass`/`createNoise2D` straight from the CDN importmap. Do NOT `import` any local file as a module. (Diagnose page errors by loading via playwright and logging `console`/`pageerror`.)
+
+Also: when launching the renderer in background, do NOT pipe through `grep` — the pipeline exit code becomes grep's, masking a non-zero render crash. Redirect to a log file instead.
 
 ## Pipeline per short (fast loop)
 
